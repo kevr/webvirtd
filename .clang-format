@@ -1,0 +1,16 @@
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakBeforeBraces: Linux
+AllowShortIfStatementsOnASingleLine: false
+IndentWidth: 4
+UseTab: Never
+IndentCaseLabels: false
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortLambdasOnASingleLine: None
+ColumnLimit: 79
+Cpp11BracedListStyle: false
+SpaceBeforeCpp11BracedList: true
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: true
