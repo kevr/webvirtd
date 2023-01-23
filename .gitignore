@@ -1,2 +1,7 @@
 # Directories
 build/
+.cache/
+subprojects/*/
+
+# Files
+*.gcov
