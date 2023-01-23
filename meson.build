@@ -14,8 +14,13 @@ boost_dep = dependency(
   required : true
 )
 
+libvirt_dep = dependency(
+  'libvirt',
+  required : true
+)
+
 deps = [
-  boost_dep,
+  boost_dep, libvirt_dep,
 ]
 
 test_deps = [
