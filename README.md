@@ -1,6 +1,8 @@
 webvirtd
 --------
 
+![tests](https://github.com/kevr/webvirtd/actions/workflows/tests.yaml/badge.svg?branch=master)
+
 System libvirt control daemon for the webvirt project
 
 Licensing
