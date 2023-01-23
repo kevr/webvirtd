@@ -172,6 +172,32 @@ TEST_F(server_test, method_not_allowed)
         static_cast<int>(boost::beast::http::status::method_not_allowed));
 }
 
+TEST_F(server_test, not_found)
+{
+    auto server_thread = std::thread([&] {
+        server->on_close([&] {
+            io.stop();
+        });
+        server->run();
+    });
+
+    using client_t = webvirt::http::client<webvirt::net::unix>;
+    std::shared_ptr<client_t> client =
+        std::make_shared<client_t>(client_io, socket_path.string());
+
+    boost::beast::http::response<boost::beast::http::string_body> response;
+    client->on_response([&response](const auto &response_) {
+        response = response_;
+    });
+    client->async_get("/not-found");
+    client_io.process();
+
+    server_thread.join();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(boost::beast::http::status::not_found));
+}
+
 TEST_F(server_test, client_connect_error)
 {
     auto server_thread = std::thread([&] {

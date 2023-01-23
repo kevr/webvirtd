@@ -104,18 +104,6 @@ private:
         response_.set(beast::http::field::content_type, "text/plain");
         response_.set(beast::http::field::server, BOOST_BEAST_VERSION_STRING);
 
-        switch (request_.method()) {
-        case beast::http::verb::get:
-            response_.result(beast::http::status::ok);
-            break;
-        case beast::http::verb::post:
-            response_.result(beast::http::status::ok);
-            break;
-        default:
-            response_.result(beast::http::status::method_not_allowed);
-            break;
-        }
-
         create_response();
         write_response();
     }
