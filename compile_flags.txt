@@ -1,0 +1,4 @@
+-std=c++20
+-DPROJECT_ROOT="."
+-DVERSION="0.0.0"
+-I./src
