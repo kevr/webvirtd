@@ -11,6 +11,10 @@ namespace webvirt
 class config
 {
 private:
+    static config instance_;
+    static config *ptr_;
+
+private:
     boost::program_options::options_description cmdline_desc_ {
         "command-line options"
     };
@@ -45,6 +49,11 @@ public:
     config &parse(const std::filesystem::path &file);
 
     friend std::ostream &operator<<(std::ostream &, const config &);
+
+public:
+    static config &change(config &conf);
+    static config &instance();
+    static config &reset();
 
 private:
     void init();

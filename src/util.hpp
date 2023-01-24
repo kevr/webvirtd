@@ -2,8 +2,17 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
+#include "syscaller.hpp"
+#include <atomic>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <pwd.h>
+#include <sys/fsuid.h>
+#include <sys/wait.h>
+#include <thread>
+#include <unistd.h>
 
 namespace webvirt
 {
@@ -29,6 +38,8 @@ void print_response(const T &value)
 {
     print_stdout("RESPONSE", value);
 }
+
+std::string exec(std::string user, const std::string &cmdline);
 
 }; // namespace webvirt
 

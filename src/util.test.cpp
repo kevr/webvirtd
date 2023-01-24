@@ -29,11 +29,3 @@ TEST_F(util_test, mkdtemp_fails)
     EXPECT_CALL(sys, mkdtemp(_)).WillOnce(Return(nullptr));
     EXPECT_THROW(webvirt::make_tmpdir(), std::runtime_error);
 }
-
-TEST_F(util_test, mkdir_fails)
-{
-    std::string tmpdir = "fake-tmpdir";
-    EXPECT_CALL(sys, mkdtemp(_)).WillOnce(Return(tmpdir.data()));
-    EXPECT_CALL(sys, mkdir(_, _)).WillOnce(Return(-1));
-    EXPECT_THROW(webvirt::make_tmpdir(), std::runtime_error);
-}

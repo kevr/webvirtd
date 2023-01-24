@@ -6,6 +6,9 @@
 #include <sstream>
 using namespace webvirt;
 
+config config::instance_;
+config *config::ptr_ = &instance_;
+
 config::config()
 {
     init();
@@ -71,6 +74,23 @@ std::ostream &webvirt::operator<<(std::ostream &os,
        << conf.desc_ << std::endl;
     os << ss.str();
     return os;
+}
+
+config &config::change(config &conf)
+{
+    ptr_ = &conf;
+    return instance();
+}
+
+config &config::instance()
+{
+    return *ptr_;
+}
+
+config &config::reset()
+{
+    ptr_ = &instance_;
+    return instance();
 }
 
 void config::init()
