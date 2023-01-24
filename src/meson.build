@@ -23,6 +23,13 @@ test_deps = [webvirtd_dep] + test_deps
 executable('webvirtd',
            'main.cpp',
            dependencies : deps,
+           cpp_args : flags,
+           install : true)
+
+executable('webvirt',
+           'console.cpp',
+           dependencies : deps,
+           cpp_args : flags,
            install : true)
 
 main_test = executable(
