@@ -6,6 +6,8 @@ libwebvirtd = static_library(
   'util.cpp',
   'json.cpp',
   'config.cpp',
+  'virt/connection.cpp',
+  'virt/util.cpp',
   'http/router.cpp',
   'http/handlers.cpp',
   'http/io_service.cpp',
