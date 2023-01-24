@@ -5,6 +5,7 @@ libwebvirtd = static_library(
   'syscaller.cpp',
   'util.cpp',
   'http/processor.cpp',
+  'config.cpp',
   'http/handlers.cpp',
   'http/io_service.cpp',
   'stubs/io_service.cpp',
