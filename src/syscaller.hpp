@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <grp.h>
+#include <pwd.h>
 #include <unistd.h>
 
 namespace webvirt
@@ -15,15 +16,35 @@ public:
     virtual ~syscaller() = default;
 
 public:
+    virtual FILE *popen(const char *, const char *);
+    virtual int pclose(FILE *);
+
+    virtual char *fgets(char *, int, FILE *);
+
     virtual bool fs_remove(const std::filesystem::path &);
     virtual bool fs_remove_all(const std::filesystem::path &);
 
     virtual int mkdir(const char *, int);
     virtual char *mkdtemp(char *);
 
+    virtual pid_t fork();
+
     virtual uid_t getuid();
+    virtual int setuid(uid_t);
+    virtual struct passwd *getpwnam(const char *);
+    virtual struct passwd *getpwuid(uid_t);
+
+    virtual int setgid(gid_t);
     virtual struct group *getgrnam(const char *);
+
     virtual int chown(const char *, uid_t, gid_t);
+
+    virtual char *getenv(const char *);
+    virtual int setenv(const char *, const char *, int);
+
+    virtual pid_t waitpid(pid_t, int *, int);
+
+    virtual void exit(int);
 
 private:
     static syscaller root_;
