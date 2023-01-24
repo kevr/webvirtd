@@ -8,6 +8,9 @@ gtest_main_dep = gtest_proj.get_variable('gtest_main_dep')
 gmock_dep = gtest_proj.get_variable('gmock_dep')
 gmock_main_dep = gtest_proj.get_variable('gmock_main_dep')
 
+jsoncpp_proj = subproject('jsoncpp')
+jsoncpp_dep = jsoncpp_proj.get_variable('jsoncpp_dep')
+
 boost_dep = dependency(
   'boost',
   modules : ['program_options', 'system'],
@@ -20,7 +23,7 @@ libvirt_dep = dependency(
 )
 
 deps = [
-  boost_dep, libvirt_dep,
+  boost_dep, libvirt_dep, jsoncpp_dep,
 ]
 
 test_deps = [
