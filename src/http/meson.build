@@ -5,4 +5,4 @@ server_test = executable(
   dependencies : test_deps,
   cpp_args : flags,
 )
-test('http::server test', server_test)
+test('http server test', server_test)

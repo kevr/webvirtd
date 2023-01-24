@@ -1,4 +1,5 @@
 /* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+#include "config.hpp"
 #include "http/connection.hpp"
 #include "http/io_service.hpp"
 #include "http/server.hpp"
@@ -57,9 +58,35 @@ int webvirt_main(const char *prog, webvirt::io_service &io,
     return 0;
 }
 
-int main(int, const char *argv[])
+int main(int argc, const char *argv[])
 {
-    const std::string socket_path = "socket.sock";
+    webvirt::config conf;
+    conf.add_option("socket,s",
+                    boost::program_options::value<std::string>()
+                        ->default_value("socket.sock")
+                        ->multitoken(),
+                    "unix socket path");
+    conf.add_option("webvirt-binary",
+                    boost::program_options::value<std::string>()
+                        ->default_value("webvirt")
+                        ->multitoken(),
+                    "binary used to perform webvirt actions as other users");
+    conf.parse(argc, argv);
+
+    if (conf.has("help")) {
+        std::cout << conf;
+        return 0;
+    }
+
+    std::filesystem::path config_path(conf.get<std::string>("config"));
+    conf.parse(config_path);
+
+    // Parse command-line again; those options are prioritized over config
+    conf.parse(argc, argv);
+
+    const auto socket_path = conf.get<std::string>("socket");
+
+    webvirt::config::change(conf);
     webvirt::io_service io;
     return webvirt_main(argv[0], io, socket_path);
 }

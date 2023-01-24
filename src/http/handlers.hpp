@@ -2,8 +2,17 @@
 #ifndef HTTP_HANDLERS_HPP
 #define HTTP_HANDLERS_HPP
 
-#include "processor.hpp"
+#include "../json.hpp"
+#include "../util.hpp"
+#include "../virt/connection.hpp"
+#include "../virt/util.hpp"
+#include "router.hpp"
+#include <boost/asio/buffer.hpp>
 #include <boost/beast.hpp>
+#include <boost/beast/http/dynamic_body.hpp>
+#include <libvirt/libvirt.h>
+#include <sys/wait.h>
+#include <thread>
 
 namespace webvirt::http
 {
@@ -30,6 +39,44 @@ void on_request(
     boost::beast::http::response<boost::beast::http::string_body> &response)
 {
     http::router router(request, response);
+
+    router.route(
+        "/domains",
+        [](const beast::http::request<beast::http::dynamic_body> &request,
+           beast::http::response<beast::http::string_body> &response) {
+            if (!http::allowed_methods({ boost::beast::http::verb::post },
+                                       request.method())) {
+                return response.result(
+                    beast::http::status::method_not_allowed);
+            }
+
+            // Any response we send is JSON-serialized
+            response.set("Content-Type", "application/json");
+
+            // Parse expected JSON from the request body.
+            Json::Value root;
+            try {
+                root = json::parse(request.body());
+            } catch (const std::invalid_argument &e) {
+                std::cerr << e.what();
+                Json::Value error;
+                error["error"] = "unable to parse request body json";
+                response.body().append(json::stringify(error));
+                return response.result(beast::http::status::bad_request);
+            }
+
+            auto &sys = syscaller::instance();
+            auto user = root.get("user", "").asString();
+            if (!sys.getpwnam(user.c_str())) {
+                std::cerr << "error: unable to find user\n";
+                return response.result(beast::http::status::not_found);
+            }
+
+            auto output = webvirt::exec(user, "domains");
+            response.body().append(output);
+            response.content_length(response.body().size());
+        });
+
     router.run();
 }
 

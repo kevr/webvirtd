@@ -23,13 +23,13 @@ class connection
     boost::beast::flat_buffer buffer_ { 8192 };
 
     beast::http::request<beast::http::dynamic_body> request_;
-    beast::http::response<beast::http::dynamic_body> response_;
+    beast::http::response<beast::http::string_body> response_;
 
     boost::asio::steady_timer deadline_;
 
     std::function<void(connection<net::unix::acceptor, net::unix::socket> &,
                        const beast::http::request<beast::http::dynamic_body> &,
-                       beast::http::response<beast::http::dynamic_body> &)>
+                       beast::http::response<beast::http::string_body> &)>
         on_request_ = webvirt::http::on_request<
             connection<net::unix::acceptor, net::unix::socket>>;
 
@@ -60,7 +60,7 @@ public:
     on_request(std::function<
                void(connection<net::unix::acceptor, net::unix::socket> &,
                     const beast::http::request<beast::http::dynamic_body> &,
-                    beast::http::response<beast::http::dynamic_body> &)>
+                    beast::http::response<beast::http::string_body> &)>
                    fn)
     {
         on_request_ = fn;

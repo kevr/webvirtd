@@ -40,7 +40,7 @@ private:
     std::function<void(
         connection<net::unix::acceptor, net::unix::socket> &,
         const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-        boost::beast::http::response<boost::beast::http::dynamic_body> &)>
+        boost::beast::http::response<boost::beast::http::string_body> &)>
         on_request_ = webvirt::http::on_request<
             connection<net::unix::acceptor, net::unix::socket>>;
 
@@ -102,7 +102,7 @@ public:
             connection<net::unix::acceptor, net::unix::socket> &,
             const boost::beast::http::request<boost::beast::http::dynamic_body>
                 &,
-            boost::beast::http::response<boost::beast::http::dynamic_body> &)>
+            boost::beast::http::response<boost::beast::http::string_body> &)>
             fn)
     {
         on_request_ = fn;
