@@ -27,10 +27,10 @@ void on_request(
     connection_t &,
     const boost::beast::http::request<boost::beast::http::dynamic_body>
         &request,
-    boost::beast::http::response<boost::beast::http::dynamic_body> &response)
+    boost::beast::http::response<boost::beast::http::string_body> &response)
 {
-    processor proc(request, response);
-    proc.run();
+    http::router router(request, response);
+    router.run();
 }
 
 void on_response(

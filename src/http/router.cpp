@@ -1,4 +1,4 @@
-#include "processor.hpp"
+#include "router.hpp"
 #include <vector>
 using namespace webvirt;
 
@@ -9,7 +9,7 @@ bool http::allowed_methods(const std::vector<beast::http::verb> &methods,
     return it != methods.end();
 }
 
-http::processor::processor(const request_t &request, response_t &response)
+http::router::router(const request_t &request, response_t &response)
     : request_(request)
     , response_(response)
 {
@@ -24,7 +24,7 @@ http::processor::processor(const request_t &request, response_t &response)
     });
 }
 
-void http::processor::run()
+void http::router::run()
 {
     const std::string request_uri = request_.target().to_string();
     auto it = routes_.find(request_uri);
@@ -36,7 +36,7 @@ void http::processor::run()
     }
 }
 
-void http::processor::route(
+void http::router::route(
     std::string request_uri,
     std::function<void(const request_t &, response_t &)> fn)
 {
