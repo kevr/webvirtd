@@ -28,6 +28,7 @@ jobs:
           sudo apt-get -y install git
           sudo apt-get -y install gcc meson pkg-config gcovr lcov
           sudo apt-get -y install libboost-program-options-dev libboost-system-dev
+          sudo apt-get -y install libvirt-dev
           mkdir -p ${SOURCE}
           cp --force -v /var/cache/apt/archives/*.deb ${SOURCE}/
 
