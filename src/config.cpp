@@ -60,8 +60,11 @@ config &config::parse(int argc, const char *argv[])
 
 config &config::parse(const std::filesystem::path &file)
 {
-    boost::program_options::store(
-        boost::program_options::parse_config_file(file.c_str(), desc_), vm_);
+    if (std::filesystem::exists(file)) {
+        boost::program_options::store(
+            boost::program_options::parse_config_file(file.c_str(), desc_),
+            vm_);
+    }
     return *this;
 }
 
