@@ -41,8 +41,9 @@ void on_request(
     http::router router(request, response);
 
     router.route(
-        "/domains",
-        [](const beast::http::request<beast::http::dynamic_body> &request,
+        R"(/domains)",
+        [](const auto &,
+           const beast::http::request<beast::http::dynamic_body> &request,
            beast::http::response<beast::http::string_body> &response) {
             if (!http::allowed_methods({ boost::beast::http::verb::post },
                                        request.method())) {

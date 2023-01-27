@@ -1,4 +1,5 @@
 #include "router.hpp"
+#include <regex>
 #include <vector>
 using namespace webvirt;
 
@@ -13,7 +14,7 @@ http::router::router(const request_t &request, response_t &response)
     : request_(request)
     , response_(response)
 {
-    route("/", [](const auto &request, auto &response) {
+    route("/", [](const auto &, const auto &request, auto &response) {
         if (allowed_methods(
                 { beast::http::verb::get, beast::http::verb::post },
                 request.method())) {
@@ -27,18 +28,22 @@ http::router::router(const request_t &request, response_t &response)
 void http::router::run()
 {
     const std::string request_uri = request_.target().to_string();
-    auto it = routes_.find(request_uri);
-    if (it == routes_.end()) {
-        response_.result(beast::http::status::not_found);
-    } else {
-        auto route = it->second;
-        route(request_, response_);
+
+    for (auto &route_ : routes_) {
+        const std::regex re(route_.first);
+        std::smatch match;
+        if (std::regex_match(request_uri, match, re)) {
+            return route_.second(match, request_, response_);
+        }
     }
+
+    return response_.result(beast::http::status::not_found);
 }
 
 void http::router::route(
     std::string request_uri,
-    std::function<void(const request_t &, response_t &)> fn)
+    std::function<void(const std::smatch &, const request_t &, response_t &)>
+        fn)
 {
     routes_[request_uri] = fn;
 }
