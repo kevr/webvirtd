@@ -67,12 +67,28 @@ void on_request(
 
             auto &sys = syscaller::instance();
             auto user = root.get("user", "").asString();
-            if (!sys.getpwnam(user.c_str())) {
+            auto *passwd = sys.getpwnam(user.c_str());
+            if (!passwd) {
                 std::cerr << "error: unable to find user\n";
                 return response.result(beast::http::status::not_found);
             }
 
-            auto output = webvirt::exec(user, "domains");
+            Json::Value json(Json::arrayValue);
+            virt::connection conn(virt::uri(passwd->pw_name));
+            auto domains_ = conn.domains();
+            for (auto &domain : domains_) {
+                Json::Value map(Json::objectValue);
+                for (auto &kv : domain) {
+                    map[kv.first] = kv.second;
+                }
+                json.append(map);
+            }
+
+            Json::FastWriter writer;
+            std::stringstream ss;
+            ss << writer.write(json);
+            auto output = ss.str();
+
             response.body().append(output);
             response.content_length(response.body().size());
         });

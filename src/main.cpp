@@ -66,11 +66,6 @@ int main(int argc, const char *argv[])
                         ->default_value("socket.sock")
                         ->multitoken(),
                     "unix socket path");
-    conf.add_option("webvirt-binary",
-                    boost::program_options::value<std::string>()
-                        ->default_value("webvirt")
-                        ->multitoken(),
-                    "binary used to perform webvirt actions as other users");
     conf.parse(argc, argv);
 
     if (conf.has("help")) {

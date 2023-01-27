@@ -1,5 +1,6 @@
 /* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
 #include "connection.hpp"
+#include "util.hpp"
 #include <iostream>
 #include <stdexcept>
 using namespace webvirt;
@@ -47,7 +48,7 @@ virt::connection &virt::connection::connect(const std::string &str)
     return *this;
 }
 
-std::vector<std::string> virt::connection::domains()
+std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 {
     virDomainPtr *domains = nullptr;
     int count;
@@ -56,10 +57,23 @@ std::vector<std::string> virt::connection::domains()
         throw std::domain_error("virConnectListAllDomains error");
     }
 
-    std::vector<std::string> output;
+    std::vector<std::map<std::string, Json::Value>> output;
     for (int i = 0; i < count; ++i) {
+        std::map<std::string, Json::Value> item;
+
         const char *name = virDomainGetName(domains[i]);
-        output.emplace_back(name);
+        item["name"] = name;
+
+        int state = 0, reason = 0;
+        virDomainGetState(domains[i], &state, &reason, 0);
+        item["state"] = Json::Value(Json::objectValue);
+        item["state"]["id"] = state;
+        item["state"]["string"] = state_string(state);
+
+        int id = virDomainGetID(domains[i]);
+        item["id"] = id;
+
+        output.emplace_back(std::move(item));
     }
 
     return output;

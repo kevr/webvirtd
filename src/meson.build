@@ -26,12 +26,6 @@ executable('webvirtd',
            cpp_args : flags,
            install : true)
 
-executable('webvirt',
-           'console.cpp',
-           dependencies : deps,
-           cpp_args : flags,
-           install : true)
-
 main_test = executable(
   'main.test',
   'main.test.cpp',

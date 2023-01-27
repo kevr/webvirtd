@@ -8,7 +8,8 @@ namespace webvirt::virt
 {
 
 std::string uri(const std::string &user);
+std::string state_string(int state);
 
-};
+}; // namespace webvirt::virt
 
 #endif /* VIRT_UTIL_HPP */

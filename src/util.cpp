@@ -22,35 +22,3 @@ std::filesystem::path webvirt::make_tmpdir()
 
     return result;
 }
-
-std::string webvirt::exec(std::string user, const std::string &cmdline)
-{
-    auto webvirt_bin = config::instance().get<std::string>("webvirt-binary");
-    for (const auto *e : { "'", "\"" }) {
-        auto it = user.find(e);
-        while (it != std::string::npos) {
-            user.replace(it, 1, std::string("\\") + e);
-            it = user.find(e);
-        }
-
-        it = webvirt_bin.find(e);
-        while (it != std::string::npos) {
-            webvirt_bin.replace(it, 1, std::string("\\") + e);
-            it = webvirt_bin.find(e);
-        }
-    }
-
-    std::string command("sudo -u '");
-    command.append(user);
-    command.append("' " + webvirt_bin + " " + cmdline);
-
-    auto &sys = syscaller::instance();
-    auto proc = sys.popen(command.c_str(), "r");
-    std::string output;
-    char buffer[256];
-    while (sys.fgets(buffer, 256, proc) != nullptr)
-        output.append(buffer);
-    sys.pclose(proc);
-
-    return output;
-}

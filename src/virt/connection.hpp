@@ -4,7 +4,9 @@
 
 #include <cstring>
 #include <errno.h>
+#include <json/json.h>
 #include <libvirt/libvirt.h>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -33,7 +35,7 @@ public:
 
     connection &connect(const std::string &str);
 
-    std::vector<std::string> domains();
+    std::vector<std::map<std::string, Json::Value>> domains();
 
     int error();
     const char *strerror();

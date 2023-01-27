@@ -39,8 +39,6 @@ void print_response(const T &value)
     print_stdout("RESPONSE", value);
 }
 
-std::string exec(std::string user, const std::string &cmdline);
-
 }; // namespace webvirt
 
 #endif /* UTIL_HPP */
