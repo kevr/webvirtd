@@ -22,3 +22,22 @@ std::filesystem::path webvirt::make_tmpdir()
 
     return result;
 }
+
+int webvirt::println(std::string message)
+{
+    message.push_back('\n');
+    return print(std::move(message));
+}
+
+int webvirt::error(std::string message, int return_code)
+{
+    message = "error: " + message;
+    std::cerr << message;
+    return return_code;
+}
+
+int webvirt::errorln(std::string message, int return_code)
+{
+    message.push_back('\n');
+    return error(std::move(message), return_code);
+}

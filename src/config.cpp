@@ -71,10 +71,18 @@ config &config::parse(const std::filesystem::path &file)
 std::ostream &webvirt::operator<<(std::ostream &os,
                                   const webvirt::config &conf)
 {
+    const std::string epilog(
+        "configuration\n"
+        "  Options found in the 'program options' section can be set both in\n"
+        "  configuration files and with command-line usage.\n\n"
+        "  Default configuration is located at ~/.webvirtd.conf and can be\n"
+        "  overridden using the command-line '--config' option.\n");
+
     std::stringstream ss;
     ss << "usage: webvirtd [options]\n\n"
        << conf.cmdline_desc_ << std::endl
-       << conf.desc_ << std::endl;
+       << conf.desc_ << std::endl
+       << epilog << std::endl;
     os << ss.str();
     return os;
 }

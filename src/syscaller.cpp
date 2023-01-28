@@ -84,6 +84,11 @@ struct passwd *syscaller::getpwnam(const char *name)
     return ::getpwnam(name);
 }
 
+gid_t syscaller::getgid()
+{
+    return ::getgid();
+}
+
 int syscaller::setgid(gid_t gid)
 {
     return ::setgid(gid);
@@ -92,6 +97,11 @@ int syscaller::setgid(gid_t gid)
 struct group *syscaller::getgrnam(const char *name)
 {
     return ::getgrnam(name);
+}
+
+struct group *syscaller::getgrgid(gid_t gid)
+{
+    return ::getgrgid(gid);
 }
 
 int syscaller::chown(const char *path, uid_t uid, gid_t gid)

@@ -5,11 +5,15 @@
 #include "http/io_service.hpp"
 #include "http/server.hpp"
 #include "syscaller.hpp"
+#include <boost/program_options/errors.hpp>
 #include <filesystem>
+#include <fmt/format.h>
 #include <functional>
 #include <grp.h>
 #include <iostream>
 #include <unistd.h>
+using webvirt::errorln;
+using webvirt::print;
 
 int setup_socket(webvirt::syscaller &sys,
                  const std::filesystem::path &socket_path)
@@ -19,35 +23,27 @@ int setup_socket(webvirt::syscaller &sys,
                                      std::filesystem::perms::group_all,
                                  std::filesystem::perm_options::replace);
 
-    auto group = sys.getgrnam("shadow");
+    auto &conf = webvirt::config::instance();
+    auto group_str = conf.get<std::string>("socket-group");
+    auto group = sys.getgrnam(group_str.c_str());
     if (!group) {
-        std::cerr << "error: group 'shadow' not found" << std::endl;
-        return 2;
+        return errorln(fmt::format("error: group '{}' not found", group_str),
+                       2);
     }
 
     auto uid = sys.getuid();
     auto gid = group->gr_gid;
     if (sys.chown(socket_path.c_str(), uid, gid) == -1) {
-        std::cerr << "error: chown failed (" << errno << ")" << std::endl;
-        return 3;
+        return errorln(fmt::format("error: chown failed ({})", errno), 3);
     }
 
     return 0;
 }
 
-int webvirt_main(const char *prog, webvirt::io_service &io,
+int webvirt_main(const char *, webvirt::io_service &io,
                  const std::string &socket_path)
 {
     auto &sys = webvirt::syscaller::instance();
-
-    auto uid = sys.getuid();
-    if (uid != 0) {
-        std::cerr << "error: " << prog
-                  << " must be executed as root, as this daemon"
-                  << " performs actions as other users on the system."
-                  << std::endl;
-        return 1;
-    }
 
     sys.fs_remove(socket_path);
     webvirt::app app(io, socket_path);
@@ -61,17 +57,31 @@ int webvirt_main(const char *prog, webvirt::io_service &io,
 
 int main(int argc, const char *argv[])
 {
+    auto &sys = webvirt::syscaller::instance();
+
     webvirt::config conf;
     conf.add_option("socket,s",
                     boost::program_options::value<std::string>()
-                        ->default_value("socket.sock")
+                        ->default_value("/var/run/webvirtd.sock")
                         ->multitoken(),
                     "unix socket path");
-    conf.parse(argc, argv);
+
+    auto gid = sys.getgid();
+    auto default_group = sys.getgrgid(gid);
+    conf.add_option("socket-group",
+                    boost::program_options::value<std::string>()
+                        ->default_value(default_group->gr_name)
+                        ->multitoken(),
+                    "socket group");
+
+    try {
+        conf.parse(argc, argv);
+    } catch (const boost::program_options::unknown_option &ec) {
+        return errorln(ec.what(), 1);
+    }
 
     if (conf.has("help")) {
-        std::cout << conf;
-        return 0;
+        return print(conf);
     }
 
     std::filesystem::path config_path(conf.get<std::string>("config"));

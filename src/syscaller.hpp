@@ -34,8 +34,10 @@ public:
     virtual struct passwd *getpwnam(const char *);
     virtual struct passwd *getpwuid(uid_t);
 
+    virtual gid_t getgid();
     virtual int setgid(gid_t);
     virtual struct group *getgrnam(const char *);
+    virtual struct group *getgrgid(gid_t);
 
     virtual int chown(const char *, uid_t, gid_t);
 

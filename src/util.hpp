@@ -39,6 +39,17 @@ void print_response(const T &value)
     print_stdout("RESPONSE", value);
 }
 
+template <typename T>
+int print(const T &message)
+{
+    std::cout << message;
+    return 0;
+}
+
+int println(std::string);
+int error(std::string, int return_code = 1);
+int errorln(std::string, int return_code = 1);
+
 }; // namespace webvirt
 
 #endif /* UTIL_HPP */
