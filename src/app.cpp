@@ -5,11 +5,12 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
     : io_(io)
     , server_(io_, socket_path.string())
 {
-    router_.route(R"(^/domains/?$)",
+    router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash));
+    router_.route(R"(^/domains/$)",
                   http::router::with_methods(
                       { beast::http::verb::post },
                       http::router::with_user(bind_user(&app::domains))));
-    router_.route(R"(^/domains/([^/]+)/?$)",
+    router_.route(R"(^/domains/([^/]+)/$)",
                   http::router::with_methods(
                       { beast::http::verb::post },
                       http::router::with_user(bind_user(&app::domain))));
@@ -22,6 +23,17 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
 std::size_t app::run()
 {
     return server_.run();
+}
+
+void app::append_trailing_slash(
+    const std::smatch &location,
+    const beast::http::request<beast::http::dynamic_body> &,
+    beast::http::response<beast::http::string_body> &response)
+{
+    std::string uri(location[0]);
+    uri.push_back('/');
+    response.set(beast::http::field::location, uri);
+    response.result(beast::http::status::temporary_redirect);
 }
 
 void app::domains(const std::string &user, const std::smatch &,

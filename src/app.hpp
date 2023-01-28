@@ -43,6 +43,10 @@ private:
     }
 
 private:
+    void append_trailing_slash(
+        const std::smatch &,
+        const beast::http::request<beast::http::dynamic_body> &,
+        beast::http::response<beast::http::string_body> &);
     void domains(const std::string &, const std::smatch &,
                  const beast::http::request<beast::http::dynamic_body> &,
                  beast::http::response<beast::http::string_body> &);
