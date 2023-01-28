@@ -2,6 +2,7 @@ flags = ['-pthread']
 
 libwebvirtd = static_library(
   'libwebvirtd',
+  'app.cpp',
   'syscaller.cpp',
   'util.cpp',
   'json.cpp',

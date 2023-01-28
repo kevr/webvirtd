@@ -18,19 +18,14 @@ class router
 {
 private:
     using request_t = beast::http::request<beast::http::dynamic_body>;
-    const request_t &request_;
-
     using response_t = beast::http::response<beast::http::string_body>;
-    response_t &response_;
 
     using route_function_t = std::function<void(
         const std::smatch &, const request_t &, response_t &)>;
     std::map<std::string, route_function_t> routes_;
 
 public:
-    explicit router(const request_t &request, response_t &response);
-
-    void run();
+    void run(const request_t &request, response_t &response);
     void route(std::string request_uri,
                std::function<void(const std::smatch &, const request_t &,
                                   response_t &)>);

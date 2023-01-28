@@ -1,4 +1,5 @@
 /* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+#include "app.hpp"
 #include "config.hpp"
 #include "http/connection.hpp"
 #include "http/io_service.hpp"
@@ -49,12 +50,12 @@ int webvirt_main(const char *prog, webvirt::io_service &io,
     }
 
     sys.fs_remove(socket_path);
-    webvirt::http::server<webvirt::net::unix> server(io, socket_path);
+    webvirt::app app(io, socket_path);
     if (auto rc = setup_socket(sys, socket_path); rc != 0) {
         return rc;
     }
 
-    server.run();
+    app.run();
     return 0;
 }
 

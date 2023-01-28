@@ -12,34 +12,19 @@ bool http::allowed_methods(const std::vector<beast::http::verb> &methods,
     return it != methods.end();
 }
 
-http::router::router(const request_t &request, response_t &response)
-    : request_(request)
-    , response_(response)
+void http::router::run(const request_t &request, response_t &response)
 {
-    route("/", [](const auto &, const auto &request, auto &response) {
-        if (allowed_methods(
-                { beast::http::verb::get, beast::http::verb::post },
-                request.method())) {
-            response.result(beast::http::status::ok);
-        } else {
-            response.result(beast::http::status::method_not_allowed);
-        }
-    });
-}
-
-void http::router::run()
-{
-    const std::string request_uri = request_.target().to_string();
+    const std::string request_uri = request.target().to_string();
 
     for (auto &route_ : routes_) {
         const std::regex re(route_.first);
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
-            return route_.second(match, request_, response_);
+            return route_.second(match, request, response);
         }
     }
 
-    return response_.result(beast::http::status::not_found);
+    return response.result(beast::http::status::not_found);
 }
 
 void http::router::route(
