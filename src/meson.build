@@ -26,20 +26,22 @@ executable('webvirtd',
            cpp_args : flags,
            install : true)
 
-main_test = executable(
-  'main.test',
-  'main.test.cpp',
-  dependencies : test_deps,
-  cpp_args : flags,
-)
-test('main test', main_test)
+if not get_option('disable_tests')
+  main_test = executable(
+    'main.test',
+    'main.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags,
+  )
+  test('main test', main_test)
 
-util_test = executable(
-  'util.test',
-  'util.test.cpp',
-  dependencies : test_deps,
-  cpp_args : flags,
-)
-test('util test', util_test)
+  util_test = executable(
+    'util.test',
+    'util.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags,
+  )
+  test('util test', util_test)
+endif
 
 subdir('http')
