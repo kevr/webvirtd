@@ -40,7 +40,7 @@ virt::connection &virt::connection::connect(const std::string &str)
         std::string message("error: ");
         message.append(this->strerror());
         message.push_back('\n');
-        std::cerr << message;
+        throw std::runtime_error(message);
     } else {
         conn_ = std::shared_ptr<virConnect>(ptr, free_conn());
     }
@@ -74,6 +74,39 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
         item["id"] = id;
 
         output.emplace_back(std::move(item));
+    }
+
+    return output;
+}
+
+std::map<std::string, Json::Value>
+virt::connection::domain(const std::string &name)
+{
+    std::map<std::string, Json::Value> output;
+
+    virDomainPtr *domains = nullptr;
+    int count;
+    count = virConnectListAllDomains(conn_.get(), &domains, 0);
+    if (count < 0) {
+        throw std::domain_error("virConnectListAllDomains error");
+    }
+
+    for (int i = 0; i < count; ++i) {
+        const char *domain_name = virDomainGetName(domains[i]);
+        if (name != domain_name) {
+            continue;
+        }
+
+        output["name"] = name;
+
+        int state = 0, reason = 0;
+        virDomainGetState(domains[i], &state, &reason, 0);
+        output["state"] = Json::Value(Json::objectValue);
+        output["state"]["id"] = state;
+        output["state"]["string"] = state_string(state);
+
+        int id = virDomainGetID(domains[i]);
+        output["id"] = id;
     }
 
     return output;

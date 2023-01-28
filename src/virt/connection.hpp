@@ -36,6 +36,7 @@ public:
     connection &connect(const std::string &str);
 
     std::vector<std::map<std::string, Json::Value>> domains();
+    std::map<std::string, Json::Value> domain(const std::string &);
 
     int error();
     const char *strerror();
