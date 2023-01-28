@@ -25,7 +25,7 @@ int setup_socket(webvirt::syscaller &sys,
         return 2;
     }
 
-    auto uid = getuid();
+    auto uid = sys.getuid();
     auto gid = group->gr_gid;
     if (sys.chown(socket_path.c_str(), uid, gid) == -1) {
         std::cerr << "error: chown failed (" << errno << ")" << std::endl;
