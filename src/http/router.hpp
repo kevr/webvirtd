@@ -33,8 +33,27 @@ public:
     void run();
     void route(std::string request_uri,
                std::function<void(const std::smatch &, const request_t &,
-                                  response_t &)>
-                   fn);
+                                  response_t &)>);
+
+public:
+    static std::function<
+        void(const std::smatch &,
+             const beast::http::request<beast::http::dynamic_body> &,
+             beast::http::response<beast::http::string_body> &)>
+    with_methods(const std::vector<boost::beast::http::verb> &methods,
+                 std::function<void(
+                     const std::smatch &,
+                     const beast::http::request<beast::http::dynamic_body> &,
+                     beast::http::response<beast::http::string_body> &)>);
+
+    static std::function<
+        void(const std::smatch &,
+             const beast::http::request<beast::http::dynamic_body> &,
+             beast::http::response<beast::http::string_body> &)>
+        with_user(std::function<
+                  void(const std::string &, const std::smatch &,
+                       const beast::http::request<beast::http::dynamic_body> &,
+                       beast::http::response<beast::http::string_body> &)>);
 };
 
 }; // namespace webvirt::http
