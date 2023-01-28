@@ -40,42 +40,36 @@ void on_request(
 {
     http::router router(request, response);
 
-    router.route(
-        R"(/domains)",
-        [](const auto &,
-           const beast::http::request<beast::http::dynamic_body> &request,
-           beast::http::response<beast::http::string_body> &response) {
-            if (!http::allowed_methods({ boost::beast::http::verb::post },
-                                       request.method())) {
-                return response.result(
-                    beast::http::status::method_not_allowed);
-            }
+    router.route(R"(/.+[^/]$)",
+                 [](const auto &m, const auto &, auto &response) {
+                     std::string uri(m[0]);
+                     response.set(beast::http::field::location, uri + "/");
+                     response.result(beast::http::status::moved_permanently);
+                 });
 
+    auto domains = http::router::with_user(
+        [](const auto &user,
+           const auto &,
+           const beast::http::request<beast::http::dynamic_body> &,
+           beast::http::response<beast::http::string_body> &response) {
             // Any response we send is JSON-serialized
             response.set("Content-Type", "application/json");
 
-            // Parse expected JSON from the request body.
-            Json::Value root;
-            try {
-                root = json::parse(request.body());
-            } catch (const std::invalid_argument &e) {
-                std::cerr << e.what();
-                Json::Value error;
-                error["error"] = "unable to parse request body json";
-                response.body().append(json::stringify(error));
-                return response.result(beast::http::status::bad_request);
-            }
-
-            auto &sys = syscaller::instance();
-            auto user = root.get("user", "").asString();
-            auto *passwd = sys.getpwnam(user.c_str());
-            if (!passwd) {
-                std::cerr << "error: unable to find user\n";
-                return response.result(beast::http::status::not_found);
-            }
-
             Json::Value json(Json::arrayValue);
-            virt::connection conn(virt::uri(passwd->pw_name));
+            virt::connection conn;
+            try {
+                conn.connect(virt::uri(user));
+            } catch (const std::runtime_error &e) {
+                std::cerr << e.what();
+                json = Json::Value(Json::objectValue);
+                json["detail"] = "Unable to connect to libvirt";
+                response.result(beast::http::status::internal_server_error);
+                auto output = json::stringify(json);
+                response.body().append(output);
+                response.content_length(response.body().size());
+                return;
+            }
+
             auto domains_ = conn.domains();
             for (auto &domain : domains_) {
                 Json::Value map(Json::objectValue);
@@ -85,14 +79,53 @@ void on_request(
                 json.append(map);
             }
 
-            Json::FastWriter writer;
-            std::stringstream ss;
-            ss << writer.write(json);
-            auto output = ss.str();
-
+            auto output = json::stringify(json);
             response.body().append(output);
             response.content_length(response.body().size());
         });
+    router.route(
+        R"(/domains/)",
+        http::router::with_methods({ beast::http::verb::post }, domains));
+
+    auto domain = http::router::with_user(
+        [](const auto &user, const auto &m, const auto &, auto &response) {
+            const auto name = m[1];
+
+            // Any response we send is JSON-serialized
+            response.set("Content-Type", "application/json");
+
+            Json::Value json(Json::objectValue);
+            virt::connection conn;
+            try {
+                conn.connect(virt::uri(user));
+            } catch (const std::runtime_error &e) {
+                std::cerr << e.what();
+                json = Json::Value(Json::objectValue);
+                json["detail"] = "Unable to connect to libvirt";
+                response.result(beast::http::status::internal_server_error);
+                auto output = json::stringify(json);
+                response.body().append(output);
+                response.content_length(response.body().size());
+                return;
+            }
+
+            auto domain = conn.domain(name);
+            if (domain.find("id") == domain.end()) {
+                json["detail"] = "Unable to find domain";
+                response.result(beast::http::status::not_found);
+            }
+
+            for (auto &kv : domain) {
+                json[kv.first] = kv.second;
+            }
+
+            auto output = json::stringify(json);
+            response.body().append(output);
+            response.content_length(response.body().size());
+        });
+    router.route(
+        R"(/domains/([^/]+)/)",
+        http::router::with_methods({ beast::http::verb::post }, domain));
 
     router.run();
 }
