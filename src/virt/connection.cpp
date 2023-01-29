@@ -2,6 +2,7 @@
 #include "connection.hpp"
 #include "util.hpp"
 #include <iostream>
+#include <pugixml.hpp>
 #include <stdexcept>
 using namespace webvirt;
 
@@ -66,6 +67,8 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 
         int state = 0, reason = 0;
         virDomainGetState(domains[i], &state, &reason, 0);
+        if (state == -1)
+            state = 0;
         item["state"] = Json::Value(Json::objectValue);
         item["state"]["id"] = state;
         item["state"]["string"] = state_string(state);
@@ -79,43 +82,98 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
     return output;
 }
 
-std::map<std::string, Json::Value>
-virt::connection::domain(const std::string &name)
+Json::Value virt::connection::domain(const std::string &name)
 {
-    std::map<std::string, Json::Value> output;
-
-    virDomainPtr *domains = nullptr;
-    int count = virConnectListAllDomains(conn_.get(), &domains, 0);
-    if (count < 0) {
-        throw std::domain_error("virConnectListAllDomains error");
+    virDomainPtr domain = virDomainLookupByName(conn_.get(), name.c_str());
+    if (!domain) {
+        throw std::domain_error("virDomainLookupByName error");
     }
 
-    for (int i = 0; i < count; ++i) {
-        virDomainPtr domain = domains[i];
-        const char *domain_name = virDomainGetName(domain);
-        if (name != domain_name) {
-            continue;
-        }
+    auto desc = _xml_desc(domain);
+    pugi::xml_document doc;
+    doc.load_buffer(desc.c_str(), desc.size());
+    auto domain_ = doc.child("domain");
 
-        output["name"] = name;
+    Json::Value output(Json::objectValue);
+    output["name"] = name;
+    output["id"] = domain_.attribute("id").as_int();
 
-        int state = 0, reason = 0;
-        virDomainGetState(domain, &state, &reason, 0);
-        output["state"] = Json::Value(Json::objectValue);
-        output["state"]["id"] = state;
-        output["state"]["string"] = state_string(state);
+    Json::Value info(Json::objectValue);
+    info["cpus"] = domain_.child("vcpu").text().as_uint();
+    info["maxMemory"] = domain_.child("memory").text().as_uint();
+    info["memory"] = domain_.child("currentMemory").text().as_uint();
+    info["os"] = domain_.child("metadata")
+                     .child("libosinfo:libosinfo")
+                     .child("libosinfo:os")
+                     .attribute("id")
+                     .as_string();
 
-        int id = virDomainGetID(domains[i]);
-        output["id"] = id;
+    info["devices"] = Json::Value(Json::objectValue);
 
-        virDomainInfo info_ { 0, 0, 0, 0, 0 };
-        virDomainGetInfo(domain, &info_);
+    info["devices"]["disks"] = Json::Value(Json::arrayValue);
+    auto disks = domain_.child("devices").children("disk");
+    for (auto &disk : disks) {
+        Json::Value object(Json::objectValue);
+        object["device"] = disk.attribute("device").as_string();
+        object["driver"] = Json::Value(Json::objectValue);
+        object["driver"]["name"] =
+            disk.child("driver").attribute("name").as_string();
+        object["driver"]["type"] =
+            disk.child("driver").attribute("type").as_string();
+        object["source"] = Json::Value(Json::objectValue);
+        object["source"]["file"] =
+            disk.child("source").attribute("file").as_string();
+        object["target"] = Json::Value(Json::objectValue);
+        object["target"]["dev"] =
+            disk.child("target").attribute("dev").as_string();
+        object["target"]["bus"] =
+            disk.child("target").attribute("bus").as_string();
 
-        Json::Value info(Json::objectValue);
-        info["maxMemory"] = static_cast<unsigned int>(info_.maxMem);
-        info["memory"] = static_cast<unsigned int>(info_.memory);
-        info["cpus"] = info_.nrVirtCpu;
-        output["info"] = std::move(info);
+        info["devices"]["disks"].append(std::move(object));
+    }
+
+    info["devices"]["interfaces"] = Json::Value(Json::arrayValue);
+    auto interfaces = domain_.child("devices").children("interface");
+    for (auto &interface : interfaces) {
+        Json::Value object(Json::objectValue);
+        object["macAddress"] =
+            interface.child("mac").attribute("address").as_string();
+        object["model"] =
+            interface.child("model").attribute("type").as_string();
+        object["name"] =
+            interface.child("alias").attribute("name").as_string();
+        info["devices"]["interfaces"].append(std::move(object));
+    }
+
+    output["info"] = std::move(info);
+
+    int state = 0, reason = 0;
+    virDomainGetState(domain, &state, &reason, 0);
+    output["state"] = Json::Value(Json::objectValue);
+    output["state"]["id"] = state;
+    output["state"]["string"] = state_string(state);
+
+    return output;
+}
+
+std::string virt::connection::xml_desc(const std::string &name)
+{
+    virDomainPtr domain = virDomainLookupByName(conn_.get(), name.c_str());
+    if (!domain) {
+        throw std::domain_error("virDomainLookupByName error");
+    }
+
+    return _xml_desc(domain);
+}
+
+std::string virt::connection::_xml_desc(virDomainPtr domain)
+{
+    std::string output;
+
+    char *desc = virDomainGetXMLDesc(domain, 0);
+    if (desc) {
+        output = std::string(desc);
+        free(desc);
     }
 
     return output;

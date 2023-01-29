@@ -53,6 +53,14 @@ private:
     void domain(const std::string &, const std::smatch &,
                 const beast::http::request<beast::http::dynamic_body> &,
                 beast::http::response<beast::http::string_body> &);
+    void
+    domain_interfaces(const std::string &, const std::smatch &,
+                      const beast::http::request<beast::http::dynamic_body> &,
+                      beast::http::response<beast::http::string_body> &);
+
+private:
+    void virt_connect(virt::connection &, const std::string &,
+                      beast::http::response<beast::http::string_body> &);
 };
 
 }; // namespace webvirt

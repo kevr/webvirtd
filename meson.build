@@ -14,6 +14,9 @@ jsoncpp_dep = jsoncpp_proj.get_variable('jsoncpp_dep')
 fmt_proj = subproject('fmt')
 fmt_dep = fmt_proj.get_variable('fmt_dep')
 
+pugixml_proj = subproject('pugixml')
+pugixml_dep = pugixml_proj.get_variable('pugixml_dep')
+
 boost_dep = dependency(
   'boost',
   modules : ['program_options', 'system'],
@@ -26,7 +29,11 @@ libvirt_dep = dependency(
 )
 
 deps = [
-  boost_dep, libvirt_dep, jsoncpp_dep, fmt_dep,
+  boost_dep,
+  libvirt_dep,
+  jsoncpp_dep,
+  fmt_dep,
+  pugixml_dep,
 ]
 
 test_deps = [

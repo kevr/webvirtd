@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include <pugixml.hpp>
 using namespace webvirt;
 
 app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
@@ -14,6 +15,10 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
                   http::router::with_methods(
                       { beast::http::verb::post },
                       http::router::with_user(bind_user(&app::domain))));
+    router_.route(R"(^/domains/([^/]+)/interfaces/$)",
+                  http::router::with_methods({ beast::http::verb::post },
+                                             http::router::with_user(bind_user(
+                                                 &app::domain_interfaces))));
 
     server_.on_request([this](auto &, const auto &request, auto &response) {
         return router_.run(request, response);
@@ -46,15 +51,8 @@ void app::domains(const std::string &user, const std::smatch &,
     Json::Value json(Json::arrayValue);
     virt::connection conn;
     try {
-        conn.connect(virt::uri(user));
-    } catch (const std::runtime_error &e) {
-        std::cerr << e.what();
-        json = Json::Value(Json::objectValue);
-        json["detail"] = "Unable to connect to libvirt";
-        response.result(beast::http::status::internal_server_error);
-        auto output = json::stringify(json);
-        response.body().append(output);
-        response.content_length(response.body().size());
+        virt_connect(conn, user, response);
+    } catch (const std::runtime_error &) {
         return;
     }
 
@@ -81,32 +79,73 @@ void app::domain(const std::string &user, const std::smatch &location,
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
 
-    Json::Value json(Json::objectValue);
     virt::connection conn;
+    try {
+        virt_connect(conn, user, response);
+    } catch (const std::runtime_error &) {
+        return;
+    }
+
+    auto domain = conn.domain(name);
+    if (domain.get("id", "") == "") {
+        domain["detail"] = "Unable to find domain";
+        response.result(beast::http::status::not_found);
+    }
+
+    auto output = json::stringify(domain);
+    response.body().append(output);
+    response.content_length(response.body().size());
+}
+
+void app::domain_interfaces(
+    const std::string &user, const std::smatch &location,
+    const beast::http::request<beast::http::dynamic_body> &,
+    beast::http::response<beast::http::string_body> &response)
+{
+    virt::connection conn;
+    try {
+        virt_connect(conn, user, response);
+    } catch (const std::runtime_error &) {
+        return;
+    }
+
+    const std::string name(location[1]);
+    auto desc = conn.xml_desc(name);
+    pugi::xml_document doc;
+    doc.load_buffer(desc.c_str(), desc.size());
+
+    auto interfaces =
+        doc.child("domain").child("devices").children("interface");
+    Json::Value json(Json::arrayValue);
+    for (auto &interface : interfaces) {
+        Json::Value object(Json::objectValue);
+        object["macAddress"] =
+            interface.child("mac").attribute("address").as_string();
+        object["model"] =
+            interface.child("model").attribute("type").as_string();
+        object["name"] =
+            interface.child("alias").attribute("name").as_string();
+        json.append(std::move(object));
+    }
+
+    response.body().append(json::stringify(json));
+    response.content_length(response.body().size());
+}
+
+void app::virt_connect(
+    virt::connection &conn, const std::string &user,
+    beast::http::response<beast::http::string_body> &response)
+{
+    Json::Value json(Json::objectValue);
     try {
         conn.connect(virt::uri(user));
     } catch (const std::runtime_error &e) {
         std::cerr << e.what();
-        json = Json::Value(Json::objectValue);
         json["detail"] = "Unable to connect to libvirt";
         response.result(beast::http::status::internal_server_error);
         auto output = json::stringify(json);
         response.body().append(output);
         response.content_length(response.body().size());
-        return;
+        throw e;
     }
-
-    auto domain = conn.domain(name);
-    if (domain.find("id") == domain.end()) {
-        json["detail"] = "Unable to find domain";
-        response.result(beast::http::status::not_found);
-    }
-
-    for (auto &kv : domain) {
-        json[kv.first] = kv.second;
-    }
-
-    auto output = json::stringify(json);
-    response.body().append(output);
-    response.content_length(response.body().size());
 }

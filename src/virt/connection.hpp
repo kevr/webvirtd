@@ -36,10 +36,14 @@ public:
     connection &connect(const std::string &str);
 
     std::vector<std::map<std::string, Json::Value>> domains();
-    std::map<std::string, Json::Value> domain(const std::string &);
+    Json::Value domain(const std::string &);
+    std::string xml_desc(const std::string &domain);
 
     int error();
     const char *strerror();
+
+private:
+    std::string _xml_desc(virDomainPtr);
 };
 
 }; // namespace webvirt::virt
