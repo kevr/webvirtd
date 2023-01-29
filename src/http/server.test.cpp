@@ -5,7 +5,7 @@
 #include <boost/beast/http/status.hpp>
 #include <gtest/gtest.h>
 #include <thread>
-
+using namespace webvirt;
 using testing::Test;
 
 class server_test : public Test
@@ -13,11 +13,13 @@ class server_test : public Test
 protected:
     static std::filesystem::path tmpdir, socket_path;
 
-    webvirt::io_service io;
-    webvirt::io_service client_io;
-
     using server_t = webvirt::http::server<webvirt::net::unix>;
+    webvirt::io_service io;
     std::shared_ptr<server_t> server;
+
+    using client_t = webvirt::http::client<webvirt::net::unix>;
+    webvirt::io_service client_io;
+    std::shared_ptr<client_t> client;
 
 public:
     static void SetUpTestSuite()
@@ -34,6 +36,7 @@ public:
 
         server = std::make_shared<webvirt::http::server<webvirt::net::unix>>(
             io, socket_path);
+        client = std::make_shared<client_t>(client_io, socket_path.string());
     }
 
     void TearDown() override
@@ -65,12 +68,7 @@ TEST_F(server_test, runs_with_defaults)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
-
-    client->async_get("/");
-    client_io.process();
+    client->async_get("/").run();
 
     server_thread.join();
 }
@@ -84,16 +82,11 @@ TEST_F(server_test, get)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
-
-    boost::beast::http::response<boost::beast::http::string_body> response;
+    http::response response;
     client->on_response([&response](const auto &response_) {
         response = response_;
     });
-    client->async_get("/");
-    client_io.process();
+    client->async_get("/").run();
 
     server_thread.join();
 
@@ -118,18 +111,14 @@ TEST_F(server_test, post)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
     EXPECT_EQ(client->host(), "localhost");
     EXPECT_EQ(client->version(), webvirt::http::version::http_1_1);
 
-    boost::beast::http::response<boost::beast::http::string_body> response;
+    http::response response;
     client->on_response([&response](const auto &response_) {
         response = response_;
     });
-    client->async_post("/");
-    client_io.process();
+    client->async_post("/").run();
 
     server_thread.join();
 
@@ -157,11 +146,7 @@ TEST_F(server_test, client_connect_error)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
-    client->async_get("/");
-    client_io.process();
+    client->async_get("/").run();
 
     server_thread.join();
 }
@@ -175,14 +160,10 @@ TEST_F(server_test, read_error)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
     client->on_connect([](auto &client) {
         client.close();
     });
-    client->async_get("/");
-    client_io.process();
+    client->async_get("/").run();
 
     server_thread.join();
 }
@@ -199,14 +180,10 @@ TEST_F(server_test, write_error)
         server->run();
     });
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    std::shared_ptr<client_t> client =
-        std::make_shared<client_t>(client_io, socket_path.string());
     client->on_error([&](const char *, boost::beast::error_code) {
         client_io.stop();
     });
-    client->async_get("/");
-    client_io.process();
+    client->async_get("/").run();
 
     server_thread.join();
 }
