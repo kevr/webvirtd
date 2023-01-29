@@ -85,14 +85,14 @@ virt::connection::domain(const std::string &name)
     std::map<std::string, Json::Value> output;
 
     virDomainPtr *domains = nullptr;
-    int count;
-    count = virConnectListAllDomains(conn_.get(), &domains, 0);
+    int count = virConnectListAllDomains(conn_.get(), &domains, 0);
     if (count < 0) {
         throw std::domain_error("virConnectListAllDomains error");
     }
 
     for (int i = 0; i < count; ++i) {
-        const char *domain_name = virDomainGetName(domains[i]);
+        virDomainPtr domain = domains[i];
+        const char *domain_name = virDomainGetName(domain);
         if (name != domain_name) {
             continue;
         }
@@ -100,13 +100,22 @@ virt::connection::domain(const std::string &name)
         output["name"] = name;
 
         int state = 0, reason = 0;
-        virDomainGetState(domains[i], &state, &reason, 0);
+        virDomainGetState(domain, &state, &reason, 0);
         output["state"] = Json::Value(Json::objectValue);
         output["state"]["id"] = state;
         output["state"]["string"] = state_string(state);
 
         int id = virDomainGetID(domains[i]);
         output["id"] = id;
+
+        virDomainInfo info_ { 0, 0, 0, 0, 0 };
+        virDomainGetInfo(domain, &info_);
+
+        Json::Value info(Json::objectValue);
+        info["maxMemory"] = static_cast<unsigned int>(info_.maxMem);
+        info["memory"] = static_cast<unsigned int>(info_.memory);
+        info["cpus"] = info_.nrVirtCpu;
+        output["info"] = std::move(info);
     }
 
     return output;
