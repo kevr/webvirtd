@@ -18,6 +18,7 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
 {
     std::string socket_path_;
 
+    io_service &io_;
     net::unix::socket socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
     beast::http::request<beast::http::empty_body> request_;
@@ -43,7 +44,8 @@ public:
                     std::string host = "localhost",
                     int version = webvirt::http::version::http_1_1)
         : socket_path_(std::move(socket_path))
-        , socket_(boost::beast::net::make_strand(io))
+        , io_(io)
+        , socket_(boost::beast::net::make_strand(io_))
     {
         this->host(std::move(host)).version(version);
     }
@@ -70,25 +72,28 @@ public:
         return version_;
     }
 
-    void async_options(const char *target)
+    client &async_options(const char *target)
     {
         init_request(target);
         request_.method(beast::http::verb::options);
         async_connect();
+        return *this;
     }
 
-    void async_get(const char *target)
+    client &async_get(const char *target)
     {
         init_request(target);
         request_.method(beast::http::verb::get);
         async_connect();
+        return *this;
     }
 
-    void async_post(const char *target)
+    client &async_post(const char *target)
     {
         init_request(target);
         request_.method(beast::http::verb::post);
         async_connect();
+        return *this;
     }
 
     void on_connect(std::function<void(client<protocol_t> &)> fn)
@@ -122,6 +127,11 @@ public:
     void close()
     {
         socket_.close();
+    }
+
+    std::size_t run()
+    {
+        return io_.process();
     }
 
 private:

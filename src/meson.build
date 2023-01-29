@@ -43,6 +43,14 @@ if not get_option('disable_tests')
     cpp_args : flags,
   )
   test('util test', util_test)
+
+  app_test = executable(
+    'app.test',
+    'app.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags,
+  )
+  test('app test', app_test)
 endif
 
 subdir('http')

@@ -25,7 +25,10 @@ enum version : int {
     http_1_1 = 11,
 };
 
-};
+using request = beast::http::request<beast::http::dynamic_body>;
+using response = beast::http::response<beast::http::string_body>;
+
+}; // namespace http
 
 }; // namespace webvirt
 
