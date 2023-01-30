@@ -2,6 +2,7 @@
 #ifndef VIRT_CONNECTION_HPP
 #define VIRT_CONNECTION_HPP
 
+#include "../libvirt.hpp"
 #include <cstring>
 #include <errno.h>
 #include <json/json.h>
@@ -43,7 +44,7 @@ public:
     const char *strerror();
 
 private:
-    std::string _xml_desc(virDomainPtr);
+    std::string _xml_desc(libvirt::domain_ptr);
 };
 
 }; // namespace webvirt::virt

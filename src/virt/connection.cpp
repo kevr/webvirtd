@@ -35,15 +35,14 @@ virt::connection &virt::connection::connect(const std::string &str)
         throw std::overflow_error("cannot connect more than once");
     }
 
-    auto *ptr = virConnectOpen(str.c_str());
-    if (!ptr) {
+    auto &lv = libvirt::ref();
+    conn_ = lv.virConnectOpen(str.c_str());
+    if (!conn_) {
         errno_ = errno;
         std::string message("error: ");
         message.append(this->strerror());
         message.push_back('\n');
         throw std::runtime_error(message);
-    } else {
-        conn_ = std::shared_ptr<virConnect>(ptr, free_conn());
     }
 
     return *this;
@@ -51,29 +50,24 @@ virt::connection &virt::connection::connect(const std::string &str)
 
 std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 {
-    virDomainPtr *domains = nullptr;
-    int count;
-    count = virConnectListAllDomains(conn_.get(), &domains, 0);
-    if (count < 0) {
-        throw std::domain_error("virConnectListAllDomains error");
-    }
+    auto &lv = libvirt::ref();
+    auto domains = lv.virConnectListAllDomains(conn_, 0);
 
     std::vector<std::map<std::string, Json::Value>> output;
-    for (int i = 0; i < count; ++i) {
+    for (auto &domain : domains) {
         std::map<std::string, Json::Value> item;
 
-        const char *name = virDomainGetName(domains[i]);
-        item["name"] = name;
+        item["name"] = lv.virDomainGetName(domain);
 
         int state = 0, reason = 0;
-        virDomainGetState(domains[i], &state, &reason, 0);
+        lv.virDomainGetState(domain, &state, &reason, 0);
         if (state == -1)
             state = 0;
         item["state"] = Json::Value(Json::objectValue);
         item["state"]["id"] = state;
         item["state"]["string"] = state_string(state);
 
-        int id = virDomainGetID(domains[i]);
+        int id = lv.virDomainGetID(domain);
         item["id"] = id;
 
         output.emplace_back(std::move(item));
@@ -84,7 +78,8 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 
 Json::Value virt::connection::domain(const std::string &name)
 {
-    virDomainPtr domain = virDomainLookupByName(conn_.get(), name.c_str());
+    auto &lv = libvirt::ref();
+    auto domain = lv.virDomainLookupByName(conn_, name.c_str());
     if (!domain) {
         throw std::domain_error("virDomainLookupByName error");
     }
@@ -148,7 +143,7 @@ Json::Value virt::connection::domain(const std::string &name)
     output["info"] = std::move(info);
 
     int state = 0, reason = 0;
-    virDomainGetState(domain, &state, &reason, 0);
+    lv.virDomainGetState(domain, &state, &reason, 0);
     output["state"] = Json::Value(Json::objectValue);
     output["state"]["id"] = state;
     output["state"]["string"] = state_string(state);
@@ -158,7 +153,8 @@ Json::Value virt::connection::domain(const std::string &name)
 
 std::string virt::connection::xml_desc(const std::string &name)
 {
-    virDomainPtr domain = virDomainLookupByName(conn_.get(), name.c_str());
+    auto &lv = libvirt::ref();
+    auto domain = lv.virDomainLookupByName(conn_, name.c_str());
     if (!domain) {
         throw std::domain_error("virDomainLookupByName error");
     }
@@ -166,14 +162,14 @@ std::string virt::connection::xml_desc(const std::string &name)
     return _xml_desc(domain);
 }
 
-std::string virt::connection::_xml_desc(virDomainPtr domain)
+std::string virt::connection::_xml_desc(libvirt::domain_ptr domain)
 {
     std::string output;
 
-    char *desc = virDomainGetXMLDesc(domain, 0);
+    auto &lv = libvirt::ref();
+    auto desc = lv.virDomainGetXMLDesc(domain, 0);
     if (desc) {
-        output = std::string(desc);
-        free(desc);
+        output = std::string(desc.get());
     }
 
     return output;
