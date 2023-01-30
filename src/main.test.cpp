@@ -8,17 +8,27 @@
 #undef main
 
 using testing::_;
+using testing::Invoke;
 using testing::Return;
 using testing::Test;
 
 class main_test : public Test
 {
 protected:
+public:
+    virtual void SetUp() override
+    {
+    }
+};
+
+class webvirt_main_test : public main_test
+{
+protected:
     static std::filesystem::path tmpdir, socket_path;
 
-    webvirt::syscaller real_syscall;
-    std::shared_ptr<webvirt::mocks::syscaller> syscall_ =
-        std::make_shared<webvirt::mocks::syscaller>();
+    webvirt::syscaller sys;
+    webvirt::config conf;
+    webvirt::stubs::io_service io { 0 };
 
 public:
     static void SetUpTestSuite()
@@ -29,74 +39,65 @@ public:
 
     void SetUp() override
     {
-        auto &sys = webvirt::syscaller::instance();
-        sys.fs_remove(socket_path);
+        auto gid = sys.getgid();
+        auto *default_group = sys.getgrgid(gid);
+        conf.add_option("socket-group",
+                        boost::program_options::value<std::string>()
+                            ->default_value(default_group->gr_name)
+                            ->multitoken(),
+                        "socket group");
 
-        webvirt::syscaller::change(syscall_.get());
+        webvirt::config::change(conf);
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
     }
 
     void TearDown() override
     {
         webvirt::syscaller::reset();
+        webvirt::config::reset();
     }
 
-    static void TestDownTestSuite()
+    static void TearDownTestSuite()
     {
-        auto &sys = webvirt::syscaller::instance();
-        sys.fs_remove_all(tmpdir);
+        webvirt::syscaller().fs_remove_all(tmpdir);
     }
 };
 
-std::filesystem::path main_test::tmpdir, main_test::socket_path;
+std::filesystem::path webvirt_main_test::tmpdir;
+std::filesystem::path webvirt_main_test::socket_path;
 
-TEST_F(main_test, must_be_root)
+TEST_F(webvirt_main_test, runs)
 {
-    auto &syscall = *syscall_.get();
-    EXPECT_CALL(syscall, getuid()).WillOnce(Return(1000));
-
-    const char *argv[] = { "webvirtd" };
-    EXPECT_EQ(main_(1, argv), 1);
+    EXPECT_EQ(webvirt_main(io, socket_path), 0);
 }
 
-TEST_F(main_test, no_shadow_group)
+TEST_F(webvirt_main_test, group_not_found)
 {
-    auto &syscall = *syscall_.get();
-    EXPECT_CALL(syscall, getuid()).WillOnce(Return(0));
-    EXPECT_CALL(syscall, fs_remove(_)).WillOnce(Return(true));
-    EXPECT_CALL(syscall, getgrnam(_)).WillOnce(Return(nullptr));
+    webvirt::mocks::syscaller sys;
+    webvirt::syscaller::change(&sys);
 
-    webvirt::io_service io;
-    EXPECT_EQ(webvirt_main("webvirtd", io, socket_path), 2);
+    EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
+        return this->sys.fs_remove(arg);
+    }));
+    EXPECT_CALL(sys, getgrnam(_)).WillOnce(Return(nullptr));
+    EXPECT_EQ(webvirt_main(io, socket_path), 2);
 }
 
-TEST_F(main_test, chown_fail)
+TEST_F(webvirt_main_test, chown_failed)
 {
-    auto &syscall = *syscall_.get();
-    EXPECT_CALL(syscall, getuid()).WillOnce(Return(0));
-    EXPECT_CALL(syscall, fs_remove(_)).WillOnce(Return(true));
+    webvirt::mocks::syscaller sys;
+    webvirt::syscaller::change(&sys);
+
+    EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
+        return this->sys.fs_remove(arg);
+    }));
 
     struct group g;
-    g.gr_gid = getgid();
-    EXPECT_CALL(syscall, getgrnam(_)).WillOnce(Return(&g));
+    g.gr_gid = 0;
+    EXPECT_CALL(sys, getgrnam(_)).WillOnce(Return(&g));
+    EXPECT_CALL(sys, getuid()).WillOnce(Return(0));
+    EXPECT_CALL(sys, chown(_, _, _)).WillOnce(Return(-1));
 
-    EXPECT_CALL(syscall, chown(_, _, _)).WillOnce(Return(-1));
-
-    webvirt::io_service io;
-    EXPECT_EQ(webvirt_main("webvirtd", io, socket_path), 3);
-}
-
-TEST_F(main_test, runs)
-{
-    auto &syscall = *syscall_.get();
-    EXPECT_CALL(syscall, getuid()).WillOnce(Return(0));
-    EXPECT_CALL(syscall, fs_remove(_)).WillOnce(Return(true));
-
-    struct group g;
-    g.gr_gid = getgid();
-    EXPECT_CALL(syscall, getgrnam(_)).WillOnce(Return(&g));
-
-    EXPECT_CALL(syscall, chown(_, _, _)).WillOnce(Return(0));
-
-    webvirt::stubs::io_service io;
-    EXPECT_EQ(webvirt_main("webvirtd", io, socket_path), 0);
+    EXPECT_EQ(webvirt_main(io, socket_path), 3);
 }
