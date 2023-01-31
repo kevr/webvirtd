@@ -17,6 +17,7 @@
 #include "http/client.hpp"
 #include "mocks/libvirt.hpp"
 #include "util.hpp"
+#include "json/forwards.h"
 #include <gtest/gtest.h>
 #include <json/json.h>
 #include <thread>
@@ -225,4 +226,55 @@ TEST_F(mock_app_test, domain_unknown)
     client->async_post("/domains/test/", json::stringify(data)).run();
 
     std::cout << response << std::endl;
+}
+
+TEST_F(mock_app_test, domain_interfaces)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
+
+    std::string buffer(R"(
+<domain id="1">
+    <vcpu>2</vcpu>
+    <currentMemory>1024</currentMemory>
+    <memory>1024</memory>
+    <devices>
+        <interface>
+            <mac address="aa:bb:cc:dd:11:22:33:44" />
+            <model type="virtio" />
+            <alias name="net0" />
+        </interface>
+    </devices>
+</domain>
+)");
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/interfaces/", json::stringify(data))
+        .run();
+
+    data = json::parse(response.body());
+    auto interface =
+        data.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
+
+    EXPECT_EQ(interface["macAddress"], "aa:bb:cc:dd:11:22:33:44");
+    EXPECT_EQ(interface["model"], "virtio");
+    EXPECT_EQ(interface["name"], "net0");
+}
+
+TEST_F(mock_app_test, domain_interfaces_libvirt_error)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/interfaces/", json::stringify(data))
+        .run();
+
+    auto object = json::parse(response.body());
+    EXPECT_TRUE(object.isObject());
+    EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
 }
