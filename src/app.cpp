@@ -125,7 +125,13 @@ void app::domain_interfaces(
     }
 
     const std::string name(location[1]);
-    auto desc = conn.xml_desc(name);
+    std::string desc;
+    try {
+        desc = conn.xml_desc(name);
+    } catch (const std::domain_error &exc) {
+        response.result(beast::http::status::not_found);
+    }
+
     pugi::xml_document doc;
     doc.load_buffer(desc.c_str(), desc.size());
 

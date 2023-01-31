@@ -293,7 +293,7 @@ TEST_F(mock_app_test, domain_libvirt_error)
     EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
 }
 
-TEST_F(mock_app_test, domain_unknown)
+TEST_F(mock_app_test, domain_not_found)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
@@ -337,6 +337,20 @@ TEST_F(mock_app_test, domain_interfaces)
     EXPECT_EQ(interface["macAddress"], "aa:bb:cc:dd:11:22:33:44");
     EXPECT_EQ(interface["model"], "virtio");
     EXPECT_EQ(interface["name"], "net0");
+}
+
+TEST_F(mock_app_test, domain_interfaces_not_found)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/interfaces/", json::stringify(data))
+        .run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::not_found));
 }
 
 TEST_F(mock_app_test, domain_interfaces_libvirt_error)
