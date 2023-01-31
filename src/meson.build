@@ -1,4 +1,5 @@
 flags = ['-pthread']
+test_flags = ['-DTEST_BUILD']
 
 libwebvirtd = static_library(
   'libwebvirtd',
@@ -33,7 +34,7 @@ if not get_option('disable_tests')
     'main.test',
     'main.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('main test', main_test)
 
@@ -41,7 +42,7 @@ if not get_option('disable_tests')
     'util.test',
     'util.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('util test', util_test)
 
@@ -49,7 +50,7 @@ if not get_option('disable_tests')
     'app.test',
     'app.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('app test', app_test)
 
@@ -57,7 +58,7 @@ if not get_option('disable_tests')
     'config.test',
     'config.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('config test', config_test)
 
@@ -65,7 +66,7 @@ if not get_option('disable_tests')
     'json.test',
     'json.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('json test', json_test)
 endif

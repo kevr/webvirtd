@@ -4,7 +4,7 @@ if not get_option('disable_tests')
     'server.test',
     'server.test.cpp',
     dependencies : test_deps,
-    cpp_args : flags,
+    cpp_args : flags + test_flags,
   )
   test('http server test', server_test)
 endif

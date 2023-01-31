@@ -25,6 +25,17 @@ namespace webvirt
 
 class libvirt
 {
+public:
+#ifdef TEST_BUILD
+    struct connect {
+    };
+    struct domain {
+    };
+#else
+    using connect = virConnect;
+    using domain = virDomain;
+#endif
+
 private:
     static libvirt instance_;
     static libvirt *ptr_;
@@ -44,8 +55,8 @@ private:
     };
 
 public:
-    using connect_ptr = std::shared_ptr<virConnect>;
-    using domain_ptr = std::shared_ptr<virDomain>;
+    using connect_ptr = std::shared_ptr<connect>;
+    using domain_ptr = std::shared_ptr<domain>;
 
 public:
     virtual ~libvirt() = default;
