@@ -18,9 +18,11 @@
 #include "mocks/libvirt.hpp"
 #include "util.hpp"
 #include "json/forwards.h"
+#include <fmt/format.h>
 #include <gtest/gtest.h>
 #include <json/json.h>
 #include <thread>
+#include <tuple>
 using namespace webvirt;
 
 using testing::_;
@@ -95,6 +97,43 @@ public:
         app_test::TearDown();
         libvirt::reset();
     }
+
+    std::string libvirt_domain_xml(
+        unsigned id = 1, unsigned int vcpu = 2,
+        unsigned int current_memory = 1024, unsigned int memory = 1024,
+        std::vector<std::tuple<std::string, std::string, std::string>>
+            interfaces = {})
+    {
+        std::string interfaces_;
+        for (auto [mac, model, name] : interfaces) {
+            interfaces_.append(fmt::format(R"(
+<interface>
+    <mac address="{}" />
+    <model type="{}" />
+    <alias name="{}" />
+</interface>
+)",
+                                           mac,
+                                           model,
+                                           name));
+        }
+
+        return fmt::format(R"(
+<domain id="{}">
+    <vcpu>{}</vcpu>
+    <currentMemory>{}</currentMemory>
+    <memory>{}</memory>
+    <devices>
+        {}
+    </devices>
+</domain>
+)",
+                           id,
+                           vcpu,
+                           current_memory,
+                           memory,
+                           interfaces_);
+    }
 };
 
 TEST_F(app_test, method_not_allowed)
@@ -147,7 +186,6 @@ TEST_F(mock_app_test, domains)
     client->async_post("/domains/", json::stringify(data)).run();
 
     auto array = json::parse(response.body());
-    std::cout << array << std::endl;
     EXPECT_TRUE(array.isArray());
     EXPECT_EQ(array.size(), 1);
 
@@ -167,6 +205,9 @@ TEST_F(mock_app_test, domains_libvirt_error)
     data["user"] = username;
     client->async_post("/domains/", json::stringify(data)).run();
 
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::internal_server_error));
+
     auto object = json::parse(response.body());
     EXPECT_TRUE(object.isObject());
     EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
@@ -185,22 +226,17 @@ TEST_F(mock_app_test, domain)
             return 0;
         }));
 
-    std::string buffer(R"(
-<domain id="1">
-    <vcpu>2</vcpu>
-    <currentMemory>1024</currentMemory>
-    <memory>1024</memory>
-    <devices>
-    </devices>
-</domain>
-)");
+    auto buffer = libvirt_domain_xml();
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     Json::Value data(Json::objectValue);
     data["user"] = username;
     client->async_post("/domains/test/", json::stringify(data)).run();
 
-    std::cout << response << std::endl;
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::ok));
+    data = json::parse(response.body());
+    EXPECT_EQ(data["id"], 1);
 }
 
 TEST_F(mock_app_test, domain_libvirt_error)
@@ -210,6 +246,9 @@ TEST_F(mock_app_test, domain_libvirt_error)
     Json::Value data(Json::objectValue);
     data["user"] = username;
     client->async_post("/domains/test/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::internal_server_error));
 
     auto object = json::parse(response.body());
     EXPECT_TRUE(object.isObject());
@@ -225,7 +264,8 @@ TEST_F(mock_app_test, domain_unknown)
     data["user"] = username;
     client->async_post("/domains/test/", json::stringify(data)).run();
 
-    std::cout << response << std::endl;
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::not_found));
 }
 
 TEST_F(mock_app_test, domain_interfaces)
@@ -235,20 +275,13 @@ TEST_F(mock_app_test, domain_interfaces)
     libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
 
-    std::string buffer(R"(
-<domain id="1">
-    <vcpu>2</vcpu>
-    <currentMemory>1024</currentMemory>
-    <memory>1024</memory>
-    <devices>
-        <interface>
-            <mac address="aa:bb:cc:dd:11:22:33:44" />
-            <model type="virtio" />
-            <alias name="net0" />
-        </interface>
-    </devices>
-</domain>
-)");
+    auto buffer = libvirt_domain_xml(
+        1,
+        2,
+        1024,
+        1024,
+        { std::make_tuple<std::string, std::string, std::string>(
+            "aa:bb:cc:dd:11:22:33:44", "virtio", "net0") });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     Json::Value data(Json::objectValue);
@@ -256,10 +289,12 @@ TEST_F(mock_app_test, domain_interfaces)
     client->async_post("/domains/test/interfaces/", json::stringify(data))
         .run();
 
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::ok));
+
     data = json::parse(response.body());
     auto interface =
         data.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
-
     EXPECT_EQ(interface["macAddress"], "aa:bb:cc:dd:11:22:33:44");
     EXPECT_EQ(interface["model"], "virtio");
     EXPECT_EQ(interface["name"], "net0");
@@ -273,6 +308,9 @@ TEST_F(mock_app_test, domain_interfaces_libvirt_error)
     data["user"] = username;
     client->async_post("/domains/test/interfaces/", json::stringify(data))
         .run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::internal_server_error));
 
     auto object = json::parse(response.body());
     EXPECT_TRUE(object.isObject());
