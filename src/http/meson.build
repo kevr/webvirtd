@@ -7,4 +7,12 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('http server test', server_test)
+
+  client_test = executable(
+    'client.test',
+    'client.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('http client test', client_test)
 endif
