@@ -24,6 +24,7 @@
 #include <thread>
 #include <tuple>
 using namespace webvirt;
+using namespace std::string_literals;
 
 using testing::_;
 using testing::Invoke;
@@ -253,18 +254,15 @@ TEST_F(mock_app_test, domain)
             return 0;
         }));
 
-    auto buffer = libvirt_domain_xml(
-        1,
-        2,
-        1024,
-        1024,
-        { std::make_tuple("test_device",
-                          "test_driver",
-                          "sata",
-                          "/path/to/source.qcow",
-                          "vda",
-                          "virtio") },
-        { std::make_tuple("aa:bb:cc:dd:11:22:33:44", "virtio", "net0") });
+    auto disk = std::make_tuple("test_device"s,
+                                "test_driver"s,
+                                "sata"s,
+                                "/path/to/source.qcow"s,
+                                "vda"s,
+                                "virtio"s);
+    auto iface =
+        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
+    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     Json::Value data(Json::objectValue);
@@ -313,14 +311,9 @@ TEST_F(mock_app_test, domain_interfaces)
     libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
 
-    auto buffer = libvirt_domain_xml(
-        1,
-        2,
-        1024,
-        1024,
-        {},
-        { std::make_tuple<std::string, std::string, std::string>(
-            "aa:bb:cc:dd:11:22:33:44", "virtio", "net0") });
+    auto iface =
+        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
+    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, {}, { iface });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     Json::Value data(Json::objectValue);
