@@ -59,25 +59,15 @@ private:
     }
 
 private:
-    void append_trailing_slash(
-        const std::smatch &,
-        const beast::http::request<beast::http::dynamic_body> &,
-        beast::http::response<beast::http::string_body> &);
+    void append_trailing_slash(const std::smatch &, const http::request &,
+                               http::response &);
     void domains(virt::connection &, const std::string &, const std::smatch &,
-                 const beast::http::request<beast::http::dynamic_body> &,
-                 beast::http::response<beast::http::string_body> &);
+                 const http::request &, http::response &);
     void domain(virt::connection &, const std::string &, const std::smatch &,
-                const beast::http::request<beast::http::dynamic_body> &,
-                beast::http::response<beast::http::string_body> &);
-    void
-    domain_interfaces(virt::connection &, const std::string &,
-                      const std::smatch &,
-                      const beast::http::request<beast::http::dynamic_body> &,
-                      beast::http::response<beast::http::string_body> &);
-
-private:
-    void virt_connect(virt::connection &, const std::string &,
-                      beast::http::response<beast::http::string_body> &);
+                const http::request &, http::response &);
+    void domain_interfaces(virt::connection &, const std::string &,
+                           const std::smatch &, const http::request &,
+                           http::response &);
 };
 
 }; // namespace webvirt

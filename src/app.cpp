@@ -47,10 +47,9 @@ std::size_t app::run()
     return server_.run();
 }
 
-void app::append_trailing_slash(
-    const std::smatch &location,
-    const beast::http::request<beast::http::dynamic_body> &,
-    beast::http::response<beast::http::string_body> &response)
+void app::append_trailing_slash(const std::smatch &location,
+                                const http::request &,
+                                http::response &response)
 {
     std::string uri(location[0]);
     uri.push_back('/');
@@ -59,9 +58,8 @@ void app::append_trailing_slash(
 }
 
 void app::domains(virt::connection &conn, const std::string &,
-                  const std::smatch &,
-                  const beast::http::request<beast::http::dynamic_body> &,
-                  beast::http::response<beast::http::string_body> &response)
+                  const std::smatch &, const http::request &,
+                  http::response &response)
 {
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
@@ -101,10 +99,9 @@ void app::domain(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void app::domain_interfaces(
-    virt::connection &conn, const std::string &, const std::smatch &location,
-    const beast::http::request<beast::http::dynamic_body> &,
-    beast::http::response<beast::http::string_body> &response)
+void app::domain_interfaces(virt::connection &conn, const std::string &,
+                            const std::smatch &location, const http::request &,
+                            http::response &response)
 {
     const std::string name(location[1]);
     std::string desc;
