@@ -47,14 +47,15 @@ private:
     }
 
     template <typename Func>
-    auto bind_user(Func fn)
+    auto bind_libvirt(Func fn)
     {
         return std::bind(fn,
                          this,
                          std::placeholders::_1,
                          std::placeholders::_2,
                          std::placeholders::_3,
-                         std::placeholders::_4);
+                         std::placeholders::_4,
+                         std::placeholders::_5);
     }
 
 private:
@@ -62,14 +63,15 @@ private:
         const std::smatch &,
         const beast::http::request<beast::http::dynamic_body> &,
         beast::http::response<beast::http::string_body> &);
-    void domains(const std::string &, const std::smatch &,
+    void domains(virt::connection &, const std::string &, const std::smatch &,
                  const beast::http::request<beast::http::dynamic_body> &,
                  beast::http::response<beast::http::string_body> &);
-    void domain(const std::string &, const std::smatch &,
+    void domain(virt::connection &, const std::string &, const std::smatch &,
                 const beast::http::request<beast::http::dynamic_body> &,
                 beast::http::response<beast::http::string_body> &);
     void
-    domain_interfaces(const std::string &, const std::smatch &,
+    domain_interfaces(virt::connection &, const std::string &,
+                      const std::smatch &,
                       const beast::http::request<beast::http::dynamic_body> &,
                       beast::http::response<beast::http::string_body> &);
 

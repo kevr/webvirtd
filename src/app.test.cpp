@@ -275,22 +275,6 @@ TEST_F(mock_app_test, domain)
     EXPECT_EQ(data["id"], 1);
 }
 
-TEST_F(mock_app_test, domain_libvirt_error)
-{
-    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
-
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/", json::stringify(data)).run();
-
-    EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::internal_server_error));
-
-    auto object = json::parse(response.body());
-    EXPECT_TRUE(object.isObject());
-    EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
-}
-
 TEST_F(mock_app_test, domain_not_found)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
@@ -344,21 +328,4 @@ TEST_F(mock_app_test, domain_interfaces_not_found)
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
-}
-
-TEST_F(mock_app_test, domain_interfaces_libvirt_error)
-{
-    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
-
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/interfaces/", json::stringify(data))
-        .run();
-
-    EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::internal_server_error));
-
-    auto object = json::parse(response.body());
-    EXPECT_TRUE(object.isObject());
-    EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
 }

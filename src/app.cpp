@@ -22,18 +22,20 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
     , server_(io_, socket_path.string())
 {
     router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash));
-    router_.route(R"(^/domains/$)",
-                  http::router::with_methods(
-                      { beast::http::verb::post },
-                      http::router::with_user(bind_user(&app::domains))));
+    router_.route(
+        R"(^/domains/$)",
+        http::router::with_methods(
+            { beast::http::verb::post },
+            http::router::with_libvirt(bind_libvirt(&app::domains))));
     router_.route(R"(^/domains/([^/]+)/$)",
                   http::router::with_methods(
                       { beast::http::verb::post },
-                      http::router::with_user(bind_user(&app::domain))));
-    router_.route(R"(^/domains/([^/]+)/interfaces/$)",
-                  http::router::with_methods({ beast::http::verb::post },
-                                             http::router::with_user(bind_user(
-                                                 &app::domain_interfaces))));
+                      http::router::with_libvirt(bind_libvirt(&app::domain))));
+    router_.route(
+        R"(^/domains/([^/]+)/interfaces/$)",
+        http::router::with_methods({ beast::http::verb::post },
+                                   http::router::with_libvirt(bind_libvirt(
+                                       &app::domain_interfaces))));
 
     server_.on_request([this](auto &, const auto &request, auto &response) {
         return router_.run(request, response);
@@ -56,7 +58,8 @@ void app::append_trailing_slash(
     response.result(beast::http::status::temporary_redirect);
 }
 
-void app::domains(const std::string &user, const std::smatch &,
+void app::domains(virt::connection &conn, const std::string &,
+                  const std::smatch &,
                   const beast::http::request<beast::http::dynamic_body> &,
                   beast::http::response<beast::http::string_body> &response)
 {
@@ -64,13 +67,6 @@ void app::domains(const std::string &user, const std::smatch &,
     response.set("Content-Type", "application/json");
 
     Json::Value json(Json::arrayValue);
-    virt::connection conn;
-    try {
-        virt_connect(conn, user, response);
-    } catch (const std::runtime_error &) {
-        return;
-    }
-
     auto domains_ = conn.domains();
     for (auto &domain : domains_) {
         Json::Value map(Json::objectValue);
@@ -85,21 +81,14 @@ void app::domains(const std::string &user, const std::smatch &,
     response.content_length(response.body().size());
 }
 
-void app::domain(const std::string &user, const std::smatch &location,
-                 const beast::http::request<beast::http::dynamic_body> &,
-                 beast::http::response<beast::http::string_body> &response)
+void app::domain(virt::connection &conn, const std::string &,
+                 const std::smatch &location, const http::request &,
+                 http::response &response)
 {
     const std::string name(location[1]);
 
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
-
-    virt::connection conn;
-    try {
-        virt_connect(conn, user, response);
-    } catch (const std::runtime_error &) {
-        return;
-    }
 
     auto domain = conn.domain(name);
     if (domain.get("id", "") == "") {
@@ -113,17 +102,10 @@ void app::domain(const std::string &user, const std::smatch &location,
 }
 
 void app::domain_interfaces(
-    const std::string &user, const std::smatch &location,
+    virt::connection &conn, const std::string &, const std::smatch &location,
     const beast::http::request<beast::http::dynamic_body> &,
     beast::http::response<beast::http::string_body> &response)
 {
-    virt::connection conn;
-    try {
-        virt_connect(conn, user, response);
-    } catch (const std::runtime_error &) {
-        return;
-    }
-
     const std::string name(location[1]);
     std::string desc;
     try {
@@ -151,22 +133,4 @@ void app::domain_interfaces(
 
     response.body().append(json::stringify(json));
     response.content_length(response.body().size());
-}
-
-void app::virt_connect(
-    virt::connection &conn, const std::string &user,
-    beast::http::response<beast::http::string_body> &response)
-{
-    Json::Value json(Json::objectValue);
-    try {
-        conn.connect(virt::uri(user));
-    } catch (const std::runtime_error &e) {
-        std::cerr << e.what();
-        json["detail"] = "Unable to connect to libvirt";
-        response.result(beast::http::status::internal_server_error);
-        auto output = json::stringify(json);
-        response.body().append(output);
-        response.content_length(response.body().size());
-        throw e;
-    }
 }

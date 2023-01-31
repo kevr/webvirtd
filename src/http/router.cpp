@@ -16,6 +16,8 @@
 #include "router.hpp"
 #include "../json.hpp"
 #include "../syscaller.hpp"
+#include "../virt/util.hpp"
+#include <iostream>
 #include <regex>
 #include <vector>
 using namespace webvirt;
@@ -50,16 +52,12 @@ void http::router::route(
     routes_[request_uri] = fn;
 }
 
-std::function<
-    void(const std::smatch &,
-         const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-         boost::beast::http::response<boost::beast::http::string_body> &)>
+std::function<void(const std::smatch &, const http::request &,
+                   http::response &)>
 http::router::with_methods(
     const std::vector<boost::beast::http::verb> &methods,
-    std::function<void(
-        const std::smatch &,
-        const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-        boost::beast::http::response<boost::beast::http::string_body> &)>
+    std::function<void(const std::smatch &, const http::request &,
+                       http::response &)>
         route_fn)
 {
     return [methods,
@@ -72,15 +70,40 @@ http::router::with_methods(
     };
 }
 
-std::function<
-    void(const std::smatch &,
-         const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-         boost::beast::http::response<boost::beast::http::string_body> &)>
+std::function<void(const std::smatch &, const http::request &,
+                   http::response &)>
+http::router::with_libvirt(
+    std::function<void(virt::connection &conn, const std::string &,
+                       const std::smatch &, const http::request &,
+                       http::response &)>
+        route_fn)
+{
+    return with_user([route_fn](const auto &user,
+                                const auto &m,
+                                const auto &request,
+                                auto &response) {
+        virt::connection conn;
+        Json::Value json(Json::objectValue);
+        try {
+            conn.connect(virt::uri(user));
+        } catch (const std::runtime_error &e) {
+            json["detail"] = "Unable to connect to libvirt";
+            response.result(beast::http::status::internal_server_error);
+            auto output = json::stringify(json);
+            response.body().append(output);
+            response.content_length(response.body().size());
+            return;
+        }
+
+        return route_fn(conn, user, m, request, response);
+    });
+}
+
+std::function<void(const std::smatch &, const http::request &,
+                   http::response &)>
 http::router::with_user(
-    std::function<void(
-        const std::string &, const std::smatch &,
-        const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-        boost::beast::http::response<boost::beast::http::string_body> &)>
+    std::function<void(const std::string &, const std::smatch &,
+                       const http::request &, http::response &)>
         route_fn)
 {
     return [route_fn](const auto &m, const auto &request, auto &response) {

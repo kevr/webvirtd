@@ -16,6 +16,7 @@
 #ifndef HTTP_ROUTER_HPP
 #define HTTP_ROUTER_HPP
 
+#include "../virt/connection.hpp"
 #include "namespaces.hpp"
 #include <boost/beast.hpp>
 #include <map>
@@ -45,24 +46,24 @@ public:
                                   response_t &)>);
 
 public:
-    static std::function<
-        void(const std::smatch &,
-             const beast::http::request<beast::http::dynamic_body> &,
-             beast::http::response<beast::http::string_body> &)>
+    static std::function<void(const std::smatch &, const http::request &,
+                              http::response &)>
     with_methods(const std::vector<boost::beast::http::verb> &methods,
-                 std::function<void(
-                     const std::smatch &,
-                     const beast::http::request<beast::http::dynamic_body> &,
-                     beast::http::response<beast::http::string_body> &)>);
+                 std::function<void(const std::smatch &, const http::request &,
+                                    http::response &)>);
 
-    static std::function<
-        void(const std::smatch &,
-             const beast::http::request<beast::http::dynamic_body> &,
-             beast::http::response<beast::http::string_body> &)>
-        with_user(std::function<
-                  void(const std::string &, const std::smatch &,
-                       const beast::http::request<beast::http::dynamic_body> &,
-                       beast::http::response<beast::http::string_body> &)>);
+    static std::function<void(const std::smatch &, const http::request &,
+                              http::response &)>
+        with_libvirt(
+            std::function<void(virt::connection &, const std::string &,
+                               const std::smatch &, const http::request &,
+                               http::response &)>);
+
+    static std::function<void(const std::smatch &, const http::request &,
+                              http::response &)>
+        with_user(
+            std::function<void(const std::string &, const std::smatch &,
+                               const http::request &, http::response &)>);
 };
 
 }; // namespace webvirt::http
