@@ -35,7 +35,7 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
     io_service &io_;
     net::unix::socket socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
-    beast::http::request<beast::http::empty_body> request_;
+    beast::http::request<beast::http::string_body> request_;
     beast::http::response<beast::http::string_body> response_;
 
     std::string host_;
@@ -102,10 +102,13 @@ public:
         return *this;
     }
 
-    client &async_post(const char *target)
+    client &async_post(const char *target,
+                       const std::string &data = std::string())
     {
         init_request(target);
         request_.method(beast::http::verb::post);
+        request_.body().append(data);
+        request_.content_length(request_.body().size());
         async_connect();
         return *this;
     }
@@ -133,7 +136,7 @@ public:
         on_response_ = fn;
     }
 
-    const beast::http::request<beast::http::empty_body> &request() const
+    const beast::http::request<beast::http::string_body> &request() const
     {
         return request_;
     }
