@@ -72,3 +72,4 @@ if not get_option('disable_tests')
 endif
 
 subdir('http')
+subdir('virt')
