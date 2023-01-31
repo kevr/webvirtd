@@ -60,6 +60,14 @@ if not get_option('disable_tests')
     cpp_args : flags,
   )
   test('config test', config_test)
+
+  json_test = executable(
+    'json.test',
+    'json.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags,
+  )
+  test('json test', json_test)
 endif
 
 subdir('http')
