@@ -22,14 +22,10 @@ using namespace webvirt;
 
 std::string virt::uri(const std::string &user)
 {
-    std::string proto("qemu+ssh");
-    std::string path(fmt::format("{}@localhost/session", user));
     if (user == "root") {
-        proto = "qemu";
-        path = "/system";
+        return "qemu:///system";
     }
-
-    return fmt::format("{}://{}", proto, path);
+    return fmt::format("qemu+ssh://{}@localhost/session", user);
 }
 
 const std::map<int, std::string> STATE_STRINGS {
