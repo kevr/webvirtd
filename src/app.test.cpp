@@ -101,9 +101,34 @@ public:
     std::string libvirt_domain_xml(
         unsigned id = 1, unsigned int vcpu = 2,
         unsigned int current_memory = 1024, unsigned int memory = 1024,
+        std::vector<std::tuple<std::string, std::string, std::string,
+                               std::string, std::string, std::string>>
+            disks = {},
         std::vector<std::tuple<std::string, std::string, std::string>>
             interfaces = {})
     {
+        std::string disks_;
+        for (auto [device,
+                   driver_name,
+                   driver_type,
+                   source_file,
+                   target_dev,
+                   target_bus] : disks) {
+            disks_.append(fmt::format(R"(
+<disk device="{}">
+    <driver name="{}" type="{}" />
+    <source file="{}" />
+    <target dev="{}" bus="{}" />
+</disk>
+)",
+                                      device,
+                                      driver_name,
+                                      driver_type,
+                                      source_file,
+                                      target_dev,
+                                      target_bus));
+        }
+
         std::string interfaces_;
         for (auto [mac, model, name] : interfaces) {
             interfaces_.append(fmt::format(R"(
@@ -125,6 +150,7 @@ public:
     <memory>{}</memory>
     <devices>
         {}
+        {}
     </devices>
 </domain>
 )",
@@ -132,6 +158,7 @@ public:
                            vcpu,
                            current_memory,
                            memory,
+                           disks_,
                            interfaces_);
     }
 };
@@ -226,7 +253,18 @@ TEST_F(mock_app_test, domain)
             return 0;
         }));
 
-    auto buffer = libvirt_domain_xml();
+    auto buffer = libvirt_domain_xml(
+        1,
+        2,
+        1024,
+        1024,
+        { std::make_tuple("test_device",
+                          "test_driver",
+                          "sata",
+                          "/path/to/source.qcow",
+                          "vda",
+                          "virtio") },
+        { std::make_tuple("aa:bb:cc:dd:11:22:33:44", "virtio", "net0") });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     Json::Value data(Json::objectValue);
@@ -280,6 +318,7 @@ TEST_F(mock_app_test, domain_interfaces)
         2,
         1024,
         1024,
+        {},
         { std::make_tuple<std::string, std::string, std::string>(
             "aa:bb:cc:dd:11:22:33:44", "virtio", "net0") });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
