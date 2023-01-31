@@ -15,7 +15,6 @@
  */
 #include "util.hpp"
 #include "mocks/syscaller.hpp"
-#include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
 using testing::_;
