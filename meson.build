@@ -1,6 +1,9 @@
 project('webvirtd', 'cpp',
   version : '0.1.0',
-  default_options : ['warning_level=3', 'cpp_std=c++17'])
+  default_options : [
+    'warning_level=3',
+    'cpp_std=c++17',
+])
 
 gtest_proj = subproject('gtest')
 gtest_dep = gtest_proj.get_variable('gtest_dep')
@@ -14,7 +17,9 @@ jsoncpp_dep = jsoncpp_proj.get_variable('jsoncpp_dep')
 fmt_proj = subproject('fmt')
 fmt_dep = fmt_proj.get_variable('fmt_dep')
 
-pugixml_proj = subproject('pugixml')
+pugixml_proj = subproject('pugixml', default_options : [
+  'tests=false',
+])
 pugixml_dep = pugixml_proj.get_variable('pugixml_dep')
 
 boost_dep = dependency(
