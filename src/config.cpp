@@ -40,18 +40,6 @@ config::config(config &&other)
 {
 }
 
-config::config(int argc, const char *argv[])
-    : config()
-{
-    parse(argc, argv);
-}
-
-config::config(const std::filesystem::path &file)
-    : config()
-{
-    parse(file);
-}
-
 config &config::add_option(const char *name, const char *desc)
 {
     desc_.add_options()(name, desc);

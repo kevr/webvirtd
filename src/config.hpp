@@ -39,8 +39,6 @@ public:
     config();
     config(const config &);
     config(config &&);
-    config(int, const char *[]);
-    config(const std::filesystem::path &file);
 
     config &add_option(const char *name, const char *desc);
 
