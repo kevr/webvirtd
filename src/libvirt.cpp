@@ -62,10 +62,12 @@ libvirt::domain_ptr libvirt::virDomainLookupByName(connect_ptr conn,
                       free_domain_ptr());
 }
 
-std::shared_ptr<char> libvirt::virDomainGetXMLDesc(domain_ptr domain,
-                                                   int flags)
+std::string libvirt::virDomainGetXMLDesc(domain_ptr domain, int flags)
 {
-    return std::shared_ptr<char>(::virDomainGetXMLDesc(domain.get(), flags));
+    auto *buffer = ::virDomainGetXMLDesc(domain.get(), flags);
+    std::string s(buffer);
+    free(buffer);
+    return s;
 }
 
 int libvirt::virDomainGetState(domain_ptr domain, int *state, int *reason,

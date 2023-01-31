@@ -18,6 +18,7 @@
 
 #include <libvirt/libvirt.h>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace webvirt
@@ -62,7 +63,7 @@ public:
     virtual ~libvirt() = default;
     virtual connect_ptr virConnectOpen(const char *);
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
-    virtual std::shared_ptr<char> virDomainGetXMLDesc(domain_ptr, int);
+    virtual std::string virDomainGetXMLDesc(domain_ptr, int);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);
     virtual int virDomainGetID(domain_ptr);
     virtual const char *virDomainGetName(domain_ptr);

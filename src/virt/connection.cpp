@@ -93,9 +93,10 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 Json::Value virt::connection::domain(const std::string &name)
 {
     auto &lv = libvirt::ref();
+    Json::Value output(Json::objectValue);
     auto domain = lv.virDomainLookupByName(conn_, name.c_str());
     if (!domain) {
-        throw std::domain_error("virDomainLookupByName error");
+        return output;
     }
 
     auto desc = _xml_desc(domain);
@@ -103,7 +104,6 @@ Json::Value virt::connection::domain(const std::string &name)
     doc.load_buffer(desc.c_str(), desc.size());
     auto domain_ = doc.child("domain");
 
-    Json::Value output(Json::objectValue);
     output["name"] = name;
     output["id"] = domain_.attribute("id").as_int();
 
@@ -178,15 +178,8 @@ std::string virt::connection::xml_desc(const std::string &name)
 
 std::string virt::connection::_xml_desc(libvirt::domain_ptr domain)
 {
-    std::string output;
-
     auto &lv = libvirt::ref();
-    auto desc = lv.virDomainGetXMLDesc(domain, 0);
-    if (desc) {
-        output = std::string(desc.get());
-    }
-
-    return output;
+    return lv.virDomainGetXMLDesc(domain, 0);
 }
 
 int virt::connection::error()
