@@ -11,5 +11,5 @@ jobs:
         with:
           fetch-depth: '0'
 
-      - name: Check SPDX identifiers
-        run: bash scripts/spdx-lint.sh src
+      - name: Check Apache 2.0 license presence in source files
+        run: bash scripts/check-license.sh src
