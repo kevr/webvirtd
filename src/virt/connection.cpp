@@ -20,11 +20,6 @@
 #include <stdexcept>
 using namespace webvirt;
 
-void virt::connection::free_conn::operator()(virConnectPtr ptr)
-{
-    virConnectClose(ptr);
-}
-
 virt::connection::connection(const connection &conn)
     : conn_(conn.conn_)
     , errno_(conn.errno_)

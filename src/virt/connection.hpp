@@ -33,11 +33,6 @@ namespace webvirt::virt
 class connection
 {
 private:
-    struct free_conn {
-        void operator()(virConnectPtr ptr);
-    };
-
-private:
     std::shared_ptr<virConnect> conn_ = nullptr;
     int errno_ = 0;
 
