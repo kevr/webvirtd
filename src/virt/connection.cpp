@@ -75,8 +75,6 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
 
         int state = 0, reason = 0;
         lv.virDomainGetState(domain, &state, &reason, 0);
-        if (state == -1)
-            state = 0;
         item["state"] = Json::Value(Json::objectValue);
         item["state"]["id"] = state;
         item["state"]["string"] = state_string(state);
