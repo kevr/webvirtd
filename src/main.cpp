@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "app.hpp"
 #include "config.hpp"
 #include "http/connection.hpp"
@@ -25,16 +25,15 @@ int setup_socket(webvirt::syscaller &sys,
 
     auto &conf = webvirt::config::instance();
     auto group_str = conf.get<std::string>("socket-group");
-    auto group = sys.getgrnam(group_str.c_str());
+    auto *group = sys.getgrnam(group_str.c_str());
     if (!group) {
-        return errorln(fmt::format("error: group '{}' not found", group_str),
-                       2);
+        return errorln(fmt::format("group '{}' not found", group_str), 2);
     }
 
     auto uid = sys.getuid();
     auto gid = group->gr_gid;
     if (sys.chown(socket_path.c_str(), uid, gid) == -1) {
-        return errorln(fmt::format("error: chown failed ({})", errno), 3);
+        return errorln(fmt::format("chown failed ({})", errno), 3);
     }
 
     return 0;

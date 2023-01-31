@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "config.hpp"
 #include "syscaller.hpp"
 #include <boost/program_options/options_description.hpp>

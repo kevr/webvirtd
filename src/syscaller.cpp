@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "syscaller.hpp"
 #include <sys/stat.h>
 #include <sys/wait.h>

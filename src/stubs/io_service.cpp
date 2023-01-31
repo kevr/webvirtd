@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "io_service.hpp"
 
 webvirt::stubs::io_service::io_service(std::size_t iterations)

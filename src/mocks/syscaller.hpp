@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #ifndef MOCKS_SYSCALLER_HPP
 #define MOCKS_SYSCALLER_HPP
 
@@ -21,7 +21,9 @@ public:
     MOCK_METHOD(int, mkdir, (const char *, int));
     MOCK_METHOD(char *, mkdtemp, (char *));
     MOCK_METHOD(uid_t, getuid, ());
+    MOCK_METHOD(struct group *, getgruid, (const char *));
     MOCK_METHOD(struct group *, getgrnam, (const char *));
+    MOCK_METHOD(gid_t, getgid, ());
     MOCK_METHOD(int, chown, (const char *, uid_t, gid_t));
 };
 

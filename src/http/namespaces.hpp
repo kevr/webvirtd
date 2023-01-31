@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache 2.0 */
 #ifndef NAMESPACES_HPP
 #define NAMESPACES_HPP
 

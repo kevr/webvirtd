@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #ifndef MOCKS_LIBVIRT_HPP
 #define MOCKS_LIBVIRT_HPP
 

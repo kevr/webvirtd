@@ -1,6 +1,7 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org */
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "util.hpp"
 #include "mocks/syscaller.hpp"
+#include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
 using testing::_;
@@ -28,4 +29,12 @@ TEST_F(util_test, mkdtemp_fails)
 {
     EXPECT_CALL(sys, mkdtemp(_)).WillOnce(Return(nullptr));
     EXPECT_THROW(webvirt::make_tmpdir(), std::runtime_error);
+}
+
+TEST_F(util_test, println)
+{
+    testing::internal::CaptureStdout();
+    webvirt::println("Test");
+    auto stdout_ = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(stdout_, "Test\n");
 }

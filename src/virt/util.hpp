@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #ifndef VIRT_UTIL_HPP
 #define VIRT_UTIL_HPP
 

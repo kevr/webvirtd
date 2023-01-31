@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "app.hpp"
 #include <pugixml.hpp>
 using namespace webvirt;

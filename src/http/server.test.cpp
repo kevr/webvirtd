@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "server.hpp"
 #include "../syscaller.hpp"
 #include "../util.hpp"

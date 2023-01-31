@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache 2.0 */
 #include "util.hpp"
 #include <libvirt/libvirt.h>
 #include <map>

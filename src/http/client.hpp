@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Kevin Morris <kevr@0cost.org> */
+/* SPDX-License-Identifier: Apache 2.0 */
 #ifndef HTTP_CLIENT_HPP
 #define HTTP_CLIENT_HPP
 
