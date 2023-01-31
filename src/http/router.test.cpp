@@ -26,15 +26,23 @@ using testing::Test;
 class router_test : public Test
 {
 protected:
+    static void noop(const std::string &, const std::smatch &,
+                     const http::request &, http::response &)
+    {
+    }
+
     http::router router_;
 };
 
+TEST_F(router_test, noop)
+{
+    http::response response;
+    noop("", std::smatch(), http::request(), response);
+}
+
 TEST_F(router_test, with_user_invalid_json)
 {
-    router_.route("/test/",
-                  http::router::with_user(
-                      [](const auto &, const auto &, const auto &, auto &) {
-                      }));
+    router_.route("/test/", http::router::with_user(noop));
 
     http::request request;
     request.target("/test/");
@@ -50,10 +58,7 @@ TEST_F(router_test, with_user_invalid_json)
 
 TEST_F(router_test, with_user_unknown_user)
 {
-    router_.route("/test/",
-                  http::router::with_user(
-                      [](const auto &, const auto &, const auto &, auto &) {
-                      }));
+    router_.route("/test/", http::router::with_user(noop));
 
     http::request request;
     request.target("/test/");
