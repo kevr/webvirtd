@@ -36,6 +36,16 @@ virt::connection::connection(const std::string &uri)
     connect(uri);
 }
 
+bool virt::connection::operator==(const connection &other) const
+{
+    return conn_ == other.conn_;
+}
+
+bool virt::connection::operator!=(const connection &other) const
+{
+    return !operator==(other);
+}
+
 virt::connection &virt::connection::operator=(const virt::connection &conn)
 {
     conn_ = conn.conn_;

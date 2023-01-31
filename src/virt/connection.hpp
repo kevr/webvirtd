@@ -47,7 +47,8 @@ public:
     connection(const std::string &uri);
 
     connection &operator=(const connection &conn);
-
+    bool operator==(const connection &other) const;
+    bool operator!=(const connection &other) const;
     connection &connect(const std::string &str);
 
     std::vector<std::map<std::string, Json::Value>> domains();
