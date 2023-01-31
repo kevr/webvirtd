@@ -38,7 +38,7 @@ jobs:
           fetch-depth: '0'
 
       - name: Configure Meson
-        run: meson setup -Db_coverage=true build
+        run: meson setup -Db_coverage=true -Ddisable_bin=true build
 
       - name: Build Project
         run: ninja -C build -j2

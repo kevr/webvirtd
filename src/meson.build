@@ -23,11 +23,13 @@ webvirtd_dep = declare_dependency(
 deps = [webvirtd_dep] + deps
 test_deps = [webvirtd_dep] + test_deps
 
-executable('webvirtd',
-           'main.cpp',
-           dependencies : deps,
-           cpp_args : flags,
-           install : true)
+if not get_option('disable_bin')
+  executable('webvirtd',
+             'main.cpp',
+             dependencies : deps,
+             cpp_args : flags,
+             install : true)
+endif
 
 if not get_option('disable_tests')
   main_test = executable(

@@ -1,1 +1,2 @@
 option('disable_tests', type : 'boolean', value : false)
+option('disable_bin', type : 'boolean', value : false)
