@@ -2,7 +2,7 @@ flags = ['-pthread']
 test_flags = ['-DTEST_BUILD']
 
 libwebvirtd = static_library(
-  'libwebvirtd',
+  'webvirtd',
   'app.cpp',
   'syscaller.cpp',
   'util.cpp',
