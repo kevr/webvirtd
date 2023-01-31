@@ -99,7 +99,8 @@ Json::Value virt::connection::domain(const std::string &name)
         return output;
     }
 
-    auto desc = _xml_desc(domain);
+    auto desc = xml_desc(domain);
+
     pugi::xml_document doc;
     doc.load_buffer(desc.c_str(), desc.size());
     auto domain_ = doc.child("domain");
@@ -173,10 +174,10 @@ std::string virt::connection::xml_desc(const std::string &name)
         throw std::domain_error("virDomainLookupByName error");
     }
 
-    return _xml_desc(domain);
+    return xml_desc(domain);
 }
 
-std::string virt::connection::_xml_desc(libvirt::domain_ptr domain)
+std::string virt::connection::xml_desc(libvirt::domain_ptr domain)
 {
     auto &lv = libvirt::ref();
     return lv.virDomainGetXMLDesc(domain, 0);

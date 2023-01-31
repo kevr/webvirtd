@@ -53,12 +53,10 @@ public:
     std::vector<std::map<std::string, Json::Value>> domains();
     Json::Value domain(const std::string &);
     std::string xml_desc(const std::string &domain);
+    std::string xml_desc(libvirt::domain_ptr);
 
     int error();
     const char *strerror();
-
-private:
-    std::string _xml_desc(libvirt::domain_ptr);
 };
 
 }; // namespace webvirt::virt
