@@ -1,0 +1,44 @@
+name: "build"
+
+on: [push]
+
+jobs:
+  compile:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: apt-get Cache
+        id: cache-apt-test
+        uses: actions/cache@v3
+        with:
+          path: ${{ runner.temp }}/cache-apt-test
+          key: ${{ runner.os }}-apt-test
+
+      - name: apt-get Restore Cache
+        if: steps.cache-apt-test.outputs.cache-hit == 'true'
+        env:
+          SOURCE: ${{ runner.temp }}/cache-apt-test
+        run: |
+          sudo cp --force -v ${SOURCE}/*.deb /var/cache/apt/archives/
+
+      - name: Install Dependencies
+        env:
+          SOURCE: ${{ runner.temp }}/cache-apt-test
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git
+          sudo apt-get -y install gcc meson pkg-config
+          sudo apt-get -y install libboost-program-options-dev libboost-system-dev
+          sudo apt-get -y install libvirt-dev
+          mkdir -p ${SOURCE}
+          cp --force -v /var/cache/apt/archives/*.deb ${SOURCE}/
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Configure Meson
+        run: meson setup --buildtype release -Ddisable_tests=true build
+
+      - name: Build Project
+        run: ninja -C build -j2
