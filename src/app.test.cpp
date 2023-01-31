@@ -129,3 +129,65 @@ TEST_F(app_test, append_trailing_slash)
               static_cast<int>(beast::http::status::temporary_redirect));
     EXPECT_EQ(response.at(beast::http::field::location), "/blah/");
 }
+
+TEST_F(mock_app_test, domains)
+{
+    auto conn = std::shared_ptr<libvirt::connect>(ptr_);
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    std::vector<libvirt::domain_ptr> domains;
+    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
+    domains.emplace_back(dom);
+    EXPECT_CALL(lv, virConnectListAllDomains(_, _)).WillOnce(Return(domains));
+
+    const char *domain_name = "test-domain";
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return(domain_name));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *reason, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            *reason = 0;
+            return 0;
+        }));
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+
+    http::response response;
+    client->on_response([&response, this](const auto &response_) {
+        response = response_;
+        io_.stop();
+    });
+    client->async_post("/domains/", json::stringify(data)).run();
+
+    auto array = json::parse(response.body());
+    std::cout << array << std::endl;
+    EXPECT_TRUE(array.isArray());
+    EXPECT_EQ(array.size(), 1);
+
+    auto object =
+        array.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
+    EXPECT_EQ(object["id"], 1);
+    EXPECT_EQ(object["name"], "test-domain");
+    EXPECT_EQ(object["state"]["id"], VIR_DOMAIN_RUNNING);
+    EXPECT_EQ(object["state"]["string"], "Running");
+}
+
+TEST_F(mock_app_test, domains_libvirt_error)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+
+    http::response response;
+    client->on_response([&response, this](const auto &response_) {
+        response = response_;
+        io_.stop();
+    });
+    client->async_post("/domains/", json::stringify(data)).run();
+
+    auto object = json::parse(response.body());
+    EXPECT_TRUE(object.isObject());
+    EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
+}
