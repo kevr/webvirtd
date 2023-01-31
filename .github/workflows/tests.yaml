@@ -51,7 +51,6 @@ jobs:
           cd build
           ninja coverage-text
           ninja coverage-xml
-          ninja coverage-html && ninja filter-coverage
           cat meson-logs/coverage.txt
 
       - uses: actions/upload-artifact@v3
