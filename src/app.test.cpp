@@ -40,6 +40,8 @@ protected:
     webvirt::io_service client_io_;
     std::shared_ptr<client_t> client;
 
+    http::response response;
+
 public:
     void SetUp() override
     {
@@ -47,6 +49,11 @@ public:
         socket_path /= "socket.sock";
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
         client = std::make_shared<client_t>(client_io_, socket_path);
+
+        client->on_response([this](const auto &response_) {
+            response = response_;
+            io_.stop();
+        });
 
         server_thread = std::thread([&] {
             app_->run();
@@ -62,8 +69,7 @@ public:
 class mock_app_test : public app_test
 {
 protected:
-    char *mem_;
-    libvirt::connect *ptr_ = nullptr;
+    libvirt::connect_ptr conn;
     mocks::libvirt lv;
 
     uid_t uid;
@@ -75,8 +81,7 @@ public:
         app_test::SetUp();
         libvirt::change(lv);
 
-        mem_ = new char;
-        ptr_ = reinterpret_cast<libvirt::connect *>(mem_);
+        conn = std::make_shared<libvirt::connect>();
 
         auto &sys = syscaller::instance();
         uid = sys.getuid();
@@ -93,11 +98,6 @@ public:
 
 TEST_F(app_test, method_not_allowed)
 {
-    http::response response;
-    client->on_response([&response, this](const auto &response_) {
-        response = response_;
-        io_.stop();
-    });
     client->async_options("/domains/").run();
 
     EXPECT_EQ(response.result_int(),
@@ -106,11 +106,6 @@ TEST_F(app_test, method_not_allowed)
 
 TEST_F(app_test, not_found)
 {
-    http::response response;
-    client->on_response([&response, this](const auto &response_) {
-        response = response_;
-        io_.stop();
-    });
     client->async_get("/not-found/").run();
 
     EXPECT_EQ(response.result_int(),
@@ -119,11 +114,6 @@ TEST_F(app_test, not_found)
 
 TEST_F(app_test, append_trailing_slash)
 {
-    http::response response;
-    client->on_response([&response, this](const auto &response_) {
-        response = response_;
-        io_.stop();
-    });
     client->async_get("/blah").run();
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::temporary_redirect));
@@ -132,7 +122,7 @@ TEST_F(app_test, append_trailing_slash)
 
 TEST_F(mock_app_test, domains)
 {
-    auto conn = std::shared_ptr<libvirt::connect>(ptr_);
+
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
     std::vector<libvirt::domain_ptr> domains;
@@ -153,11 +143,6 @@ TEST_F(mock_app_test, domains)
     Json::Value data(Json::objectValue);
     data["user"] = username;
 
-    http::response response;
-    client->on_response([&response, this](const auto &response_) {
-        response = response_;
-        io_.stop();
-    });
     client->async_post("/domains/", json::stringify(data)).run();
 
     auto array = json::parse(response.body());
@@ -179,15 +164,65 @@ TEST_F(mock_app_test, domains_libvirt_error)
 
     Json::Value data(Json::objectValue);
     data["user"] = username;
-
-    http::response response;
-    client->on_response([&response, this](const auto &response_) {
-        response = response_;
-        io_.stop();
-    });
     client->async_post("/domains/", json::stringify(data)).run();
 
     auto object = json::parse(response.body());
     EXPECT_TRUE(object.isObject());
     EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
+}
+
+TEST_F(mock_app_test, domain)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    std::string buffer(R"(
+<domain id="1">
+    <vcpu>2</vcpu>
+    <currentMemory>1024</currentMemory>
+    <memory>1024</memory>
+    <devices>
+    </devices>
+</domain>
+)");
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/", json::stringify(data)).run();
+
+    std::cout << response << std::endl;
+}
+
+TEST_F(mock_app_test, domain_libvirt_error)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/", json::stringify(data)).run();
+
+    auto object = json::parse(response.body());
+    EXPECT_TRUE(object.isObject());
+    EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
+}
+
+TEST_F(mock_app_test, domain_unknown)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/", json::stringify(data)).run();
+
+    std::cout << response << std::endl;
 }
