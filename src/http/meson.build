@@ -15,4 +15,12 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('http client test', client_test)
+
+  router_test = executable(
+    'router.test',
+    'router.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('http router test', router_test)
 endif

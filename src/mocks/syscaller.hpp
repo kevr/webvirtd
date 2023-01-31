@@ -33,8 +33,9 @@ public:
 public:
     MOCK_METHOD(bool, fs_remove, (const std::filesystem::path &));
     MOCK_METHOD(char *, mkdtemp, (char *));
+    MOCK_METHOD(struct passwd *, getpwnam, (const char *));
     MOCK_METHOD(uid_t, getuid, ());
-    MOCK_METHOD(struct group *, getgruid, (const char *));
+    MOCK_METHOD(struct group *, getgruid, (uid_t));
     MOCK_METHOD(struct group *, getgrnam, (const char *));
     MOCK_METHOD(gid_t, getgid, ());
     MOCK_METHOD(int, chown, (const char *, uid_t, gid_t));
