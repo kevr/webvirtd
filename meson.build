@@ -48,3 +48,16 @@ test_deps = [
 ] + deps
 
 subdir('src')
+
+bash = find_program('bash')
+root = meson.source_root()
+filtered_lcov = root + '/scripts/filtered-lcov.sh'
+build_dir = meson.current_build_dir()
+
+run_target('filter-coverage',
+  command : [
+    bash, filtered_lcov, build_dir,
+    '**/src/libvirt.cpp',
+    '**/src/syscaller.cpp',
+  ],
+)
