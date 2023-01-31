@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "util.hpp"
+#include <fmt/format.h>
 #include <libvirt/libvirt.h>
 #include <map>
 #include <string>
@@ -21,14 +22,14 @@ using namespace webvirt;
 
 std::string virt::uri(const std::string &user)
 {
-    std::string path(user + "@localhost/session");
+    std::string proto("qemu+ssh");
+    std::string path(fmt::format("{}@localhost/session", user));
     if (user == "root") {
+        proto = "qemu";
         path = "/system";
     }
 
-    std::string uri("qemu+ssh://");
-    uri.append(path);
-    return uri;
+    return fmt::format("{}://{}", proto, path);
 }
 
 const std::map<int, std::string> STATE_STRINGS {
