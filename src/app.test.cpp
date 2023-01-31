@@ -15,10 +15,16 @@
  */
 #include "app.hpp"
 #include "http/client.hpp"
+#include "mocks/libvirt.hpp"
 #include "util.hpp"
 #include <gtest/gtest.h>
+#include <json/json.h>
 #include <thread>
 using namespace webvirt;
+
+using testing::_;
+using testing::Invoke;
+using testing::Return;
 using testing::Test;
 
 class app_test : public Test
@@ -53,6 +59,38 @@ public:
     }
 };
 
+class mock_app_test : public app_test
+{
+protected:
+    char *mem_;
+    libvirt::connect *ptr_ = nullptr;
+    mocks::libvirt lv;
+
+    uid_t uid;
+    std::string username;
+
+public:
+    void SetUp() override
+    {
+        app_test::SetUp();
+        libvirt::change(lv);
+
+        mem_ = new char;
+        ptr_ = reinterpret_cast<libvirt::connect *>(mem_);
+
+        auto &sys = syscaller::instance();
+        uid = sys.getuid();
+        auto *passwd = sys.getpwuid(uid);
+        username = passwd->pw_name;
+    }
+
+    void TearDown() override
+    {
+        app_test::TearDown();
+        libvirt::reset();
+    }
+};
+
 TEST_F(app_test, method_not_allowed)
 {
     http::response response;
@@ -77,4 +115,17 @@ TEST_F(app_test, not_found)
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
+}
+
+TEST_F(app_test, append_trailing_slash)
+{
+    http::response response;
+    client->on_response([&response, this](const auto &response_) {
+        response = response_;
+        io_.stop();
+    });
+    client->async_get("/blah").run();
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::temporary_redirect));
+    EXPECT_EQ(response.at(beast::http::field::location), "/blah/");
 }
