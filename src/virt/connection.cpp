@@ -218,8 +218,9 @@ bool virt::connection::shutdown(libvirt::domain_ptr domain)
     int state = 0, reason;
     std::chrono::steady_clock clock;
     auto start = clock.now();
+    int target_state = (1 << VIR_DOMAIN_SHUTDOWN) | (1 << VIR_DOMAIN_SHUTOFF);
     for (lv.virDomainGetState(domain, &state, &reason, 0);
-         state != VIR_DOMAIN_SHUTDOWN && state != VIR_DOMAIN_SHUTOFF;
+         ((1 << state) & target_state) == 0;
          lv.virDomainGetState(domain, &state, &reason, 0)) {
         auto elapsed = std::chrono::duration<double>(clock.now() - start);
         if (elapsed.count() > timeout) {
