@@ -68,6 +68,9 @@ private:
     void domain_interfaces(virt::connection &, const std::string &,
                            const std::smatch &, const http::request &,
                            http::response &);
+    void domain_start(virt::connection &, const std::string &,
+                      const std::smatch &, const http::request &,
+                      http::response &);
 };
 
 }; // namespace webvirt

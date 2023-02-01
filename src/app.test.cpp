@@ -329,3 +329,42 @@ TEST_F(mock_app_test, domain_interfaces_not_found)
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
 }
+
+TEST_F(mock_app_test, domain_start)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = 1;
+            return 0;
+        }));
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/start/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::created));
+}
+
+TEST_F(mock_app_test, domain_start_error)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(-1));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/start/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::bad_request));
+}

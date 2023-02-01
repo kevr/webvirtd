@@ -169,14 +169,19 @@ Json::Value virt::connection::domain(const std::string &name)
     return output;
 }
 
-std::string virt::connection::xml_desc(const std::string &name)
+libvirt::domain_ptr virt::connection::get_domain_ptr(const std::string &name)
 {
     auto &lv = libvirt::ref();
     auto domain = lv.virDomainLookupByName(conn_, name.c_str());
     if (!domain) {
         throw std::domain_error("virDomainLookupByName error");
     }
+    return domain;
+}
 
+std::string virt::connection::xml_desc(const std::string &name)
+{
+    auto domain = get_domain_ptr(name);
     return xml_desc(domain);
 }
 
@@ -184,6 +189,12 @@ std::string virt::connection::xml_desc(libvirt::domain_ptr domain)
 {
     auto &lv = libvirt::ref();
     return lv.virDomainGetXMLDesc(domain, 0);
+}
+
+bool virt::connection::start(libvirt::domain_ptr domain)
+{
+    auto &lv = libvirt::ref();
+    return lv.virDomainCreate(domain) == 0;
 }
 
 int virt::connection::error()

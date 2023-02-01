@@ -32,6 +32,7 @@ public:
                 (connect_ptr, int));
     MOCK_METHOD(domain_ptr, virDomainLookupByName,
                 (connect_ptr, const char *));
+    MOCK_METHOD(int, virDomainCreate, (domain_ptr));
     MOCK_METHOD(std::string, virDomainGetXMLDesc, (domain_ptr, int));
     MOCK_METHOD(int, virDomainGetState, (domain_ptr, int *, int *, int));
     MOCK_METHOD(int, virDomainGetID, (domain_ptr));

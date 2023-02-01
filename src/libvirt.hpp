@@ -64,6 +64,7 @@ public:
     virtual connect_ptr virConnectOpen(const char *);
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
     virtual std::string virDomainGetXMLDesc(domain_ptr, int);
+    virtual int virDomainCreate(domain_ptr);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);
     virtual int virDomainGetID(domain_ptr);
     virtual const char *virDomainGetName(domain_ptr);

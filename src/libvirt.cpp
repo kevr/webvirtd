@@ -70,6 +70,11 @@ std::string libvirt::virDomainGetXMLDesc(domain_ptr domain, int flags)
     return s;
 }
 
+int libvirt::virDomainCreate(domain_ptr domain)
+{
+    return ::virDomainCreate(domain.get());
+}
+
 int libvirt::virDomainGetState(domain_ptr domain, int *state, int *reason,
                                int flags)
 {
