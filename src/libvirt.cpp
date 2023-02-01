@@ -75,6 +75,11 @@ int libvirt::virDomainCreate(domain_ptr domain)
     return ::virDomainCreate(domain.get());
 }
 
+int libvirt::virDomainShutdown(domain_ptr domain)
+{
+    return ::virDomainShutdown(domain.get());
+}
+
 int libvirt::virDomainGetState(domain_ptr domain, int *state, int *reason,
                                int flags)
 {

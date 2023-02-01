@@ -14,10 +14,15 @@
  * permissions and limitations under the License.
  */
 #include "connection.hpp"
+#include "../config.hpp"
 #include "util.hpp"
+#include <chrono>
+#include <fmt/format.h>
 #include <iostream>
 #include <pugixml.hpp>
 #include <stdexcept>
+#include <thread>
+#include <unistd.h>
 using namespace webvirt;
 
 virt::connection::connection(const connection &conn)
@@ -195,6 +200,36 @@ bool virt::connection::start(libvirt::domain_ptr domain)
 {
     auto &lv = libvirt::ref();
     return lv.virDomainCreate(domain) == 0;
+}
+
+bool virt::connection::shutdown(libvirt::domain_ptr domain)
+{
+    // If we don't get to the 'Shutdown' state within some tries...
+    // then we sent a shutdown when the guest wasn't ready to be
+    // shut down.
+    auto &lv = libvirt::ref();
+    if (lv.virDomainShutdown(domain) != 0) {
+        return false;
+    }
+
+    auto &conf = config::instance();
+    const double timeout = conf.get<double>("libvirt-shutdown-timeout");
+
+    int state = 0, reason;
+    std::chrono::steady_clock clock;
+    auto start = clock.now();
+    for (lv.virDomainGetState(domain, &state, &reason, 0);
+         state != VIR_DOMAIN_SHUTDOWN && state != VIR_DOMAIN_SHUTOFF;
+         lv.virDomainGetState(domain, &state, &reason, 0)) {
+        auto elapsed = std::chrono::duration<double>(clock.now() - start);
+        if (elapsed.count() > timeout) {
+            throw std::out_of_range(
+                fmt::format("{} second timeout exceeded", timeout));
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    return true;
 }
 
 int virt::connection::error()

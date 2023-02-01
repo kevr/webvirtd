@@ -41,6 +41,11 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
         http::router::with_methods(
             { beast::http::verb::post },
             http::router::with_libvirt(bind_libvirt(&app::domain_start))));
+    router_.route(
+        R"(^/domains/([^/]+)/shutdown/)",
+        http::router::with_methods(
+            { beast::http::verb::post },
+            http::router::with_libvirt(bind_libvirt(&app::domain_shutdown))));
 
     server_.on_request([this](auto &, const auto &request, auto &response) {
         return router_.run(request, response);
@@ -152,17 +157,59 @@ void app::domain_start(virt::connection &conn, const std::string &,
         return;
     }
 
+    data = short_json(domain);
+    response.result(beast::http::status::created);
+    response.body().append(json::stringify(data));
+    response.content_length(response.body().size());
+}
+
+void app::domain_shutdown(virt::connection &conn, const std::string &,
+                          const std::smatch &location, const http::request &,
+                          http::response &response)
+{
+    const std::string name(location[1]);
+    auto domain = conn.get_domain_ptr(name);
+    Json::Value data(Json::objectValue);
+
+    bool ok = false;
+    try {
+        ok = conn.shutdown(domain);
+    } catch (const std::out_of_range &exc) {
+        data["detail"] = "Shutdown operation timed out";
+        response.result(beast::http::status::bad_gateway);
+        response.body().append(json::stringify(data));
+        response.content_length(response.body().size());
+        return;
+    }
+
+    if (!ok) {
+        data["detail"] = "Unable to shutdown domain";
+        response.result(beast::http::status::bad_request);
+        response.body().append(json::stringify(data));
+        response.content_length(response.body().size());
+        return;
+    }
+
+    data = short_json(domain);
+    response.result(beast::http::status::ok);
+    response.body().append(json::stringify(data));
+    response.content_length(response.body().size());
+}
+
+Json::Value app::short_json(libvirt::domain_ptr domain)
+{
     auto &lv = libvirt::ref();
     int state, reason;
     lv.virDomainGetState(domain, &state, &reason, 0);
 
+    Json::Value data(Json::objectValue);
     int domain_id = lv.virDomainGetID(domain);
     data["id"] = domain_id;
+    const char *name = lv.virDomainGetName(domain);
     data["name"] = name;
     data["state"] = Json::Value(Json::objectValue);
     data["state"]["id"] = state;
     data["state"]["string"] = virt::state_string(state);
-    response.result(beast::http::status::created);
-    response.body().append(json::stringify(data));
-    response.content_length(response.body().size());
+
+    return data;
 }

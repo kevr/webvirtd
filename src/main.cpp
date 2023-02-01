@@ -86,6 +86,12 @@ int main(int argc, const char *argv[])
                         ->multitoken(),
                     "socket group");
 
+    conf.add_option("libvirt-shutdown-timeout",
+                    boost::program_options::value<double>()
+                        ->default_value(3.0)
+                        ->multitoken(),
+                    "timeout in seconds for domain shutdown state to react");
+
     try {
         conf.parse(argc, argv);
     } catch (const boost::program_options::unknown_option &ec) {

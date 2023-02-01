@@ -53,6 +53,7 @@ public:
     std::string xml_desc(libvirt::domain_ptr);
 
     bool start(libvirt::domain_ptr);
+    bool shutdown(libvirt::domain_ptr);
 
     int error();
     const char *strerror();

@@ -71,6 +71,12 @@ private:
     void domain_start(virt::connection &, const std::string &,
                       const std::smatch &, const http::request &,
                       http::response &);
+    void domain_shutdown(virt::connection &, const std::string &,
+                         const std::smatch &, const http::request &,
+                         http::response &);
+
+private:
+    Json::Value short_json(libvirt::domain_ptr);
 };
 
 }; // namespace webvirt

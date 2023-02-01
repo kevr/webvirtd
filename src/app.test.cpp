@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "app.hpp"
+#include "config.hpp"
 #include "http/client.hpp"
 #include "mocks/libvirt.hpp"
 #include "util.hpp"
@@ -91,6 +92,16 @@ public:
         uid = sys.getuid();
         auto *passwd = sys.getpwuid(uid);
         username = passwd->pw_name;
+
+        auto &conf = config::instance();
+        conf.add_option("libvirt-shutdown-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.2)
+                            ->multitoken(),
+                        "libvirt shutdown timeout");
+
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
     }
 
     void TearDown() override
@@ -344,6 +355,7 @@ TEST_F(mock_app_test, domain_start)
             return 0;
         }));
     EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
 
     Json::Value data(Json::objectValue);
     data["user"] = username;
@@ -364,6 +376,68 @@ TEST_F(mock_app_test, domain_start_error)
     Json::Value data(Json::objectValue);
     data["user"] = username;
     client->async_post("/domains/test/start/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::bad_request));
+}
+
+TEST_F(mock_app_test, domain_shutdown)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTDOWN;
+            return 0;
+        }));
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::ok));
+}
+
+TEST_F(mock_app_test, domain_shutdown_timeout)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::bad_gateway));
+}
+
+TEST_F(mock_app_test, domain_shutdown_bad_request)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(-1));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::bad_request));
