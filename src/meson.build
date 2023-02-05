@@ -13,6 +13,7 @@ libwebvirtd = static_library(
   'virt/util.cpp',
   'views/domains.cpp',
   'http/router.cpp',
+  'http/middleware.cpp',
   'http/handlers.cpp',
   'http/io_service.cpp',
   'stubs/io_service.cpp',
