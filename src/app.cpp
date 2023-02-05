@@ -176,7 +176,7 @@ void app::domain_shutdown(virt::connection &conn, const std::string &,
         ok = conn.shutdown(domain);
     } catch (const std::out_of_range &exc) {
         data["detail"] = "Shutdown operation timed out";
-        response.result(beast::http::status::bad_gateway);
+        response.result(beast::http::status::gateway_timeout);
         response.body().append(json::stringify(data));
         response.content_length(response.body().size());
         return;
@@ -212,4 +212,4 @@ Json::Value app::short_json(libvirt::domain_ptr domain)
     data["state"]["string"] = virt::state_string(state);
 
     return data;
-}
+} // LCOV_EXCL_LINE

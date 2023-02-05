@@ -213,7 +213,7 @@ bool virt::connection::shutdown(libvirt::domain_ptr domain)
     }
 
     auto &conf = config::instance();
-    const double timeout = conf.get<double>("libvirt-shutdown-timeout");
+    double timeout = conf.get<double>("libvirt-shutdown-timeout");
 
     int state = 0, reason;
     std::chrono::steady_clock clock;
@@ -226,6 +226,18 @@ bool virt::connection::shutdown(libvirt::domain_ptr domain)
         if (elapsed.count() > timeout) {
             throw std::out_of_range(
                 fmt::format("{} second timeout exceeded", timeout));
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+
+    timeout = conf.get<double>("libvirt-shutoff-timeout");
+    start = clock.now();
+    for (lv.virDomainGetState(domain, &state, &reason, 0);
+         ((1 << state) & (1 << VIR_DOMAIN_SHUTOFF)) == 0;
+         lv.virDomainGetState(domain, &state, &reason, 0)) {
+        auto elapsed = std::chrono::duration<double>(clock.now() - start);
+        if (elapsed.count() > timeout) {
+            throw std::out_of_range("15 second shutdown timeout exceeded");
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }

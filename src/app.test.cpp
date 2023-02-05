@@ -99,6 +99,11 @@ public:
                             ->default_value(0.2)
                             ->multitoken(),
                         "libvirt shutdown timeout");
+        conf.add_option("libvirt-shutoff-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.5)
+                            ->multitoken(),
+                        "libvirt shutoff timeout");
 
         const char *argv[] = { "webvirtd" };
         conf.parse(1, argv);
@@ -390,8 +395,12 @@ TEST_F(mock_app_test, domain_shutdown)
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
 
     EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
-        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
             *state = VIR_DOMAIN_SHUTDOWN;
+            return 0;
+        }))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTOFF;
             return 0;
         }));
     EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
@@ -424,7 +433,29 @@ TEST_F(mock_app_test, domain_shutdown_timeout)
     client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
 
     EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::bad_gateway));
+              static_cast<int>(beast::http::status::gateway_timeout));
+}
+
+TEST_F(mock_app_test, domain_shutoff_timeout)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    auto domain = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTDOWN;
+            return 0;
+        }));
+
+    Json::Value data(Json::objectValue);
+    data["user"] = username;
+    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::gateway_timeout));
 }
 
 TEST_F(mock_app_test, domain_shutdown_bad_request)
