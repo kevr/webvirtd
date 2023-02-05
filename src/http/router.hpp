@@ -26,9 +26,6 @@
 namespace webvirt::http
 {
 
-bool allowed_methods(const std::vector<boost::beast::http::verb> &methods,
-                     boost::beast::http::verb method);
-
 class router
 {
 private:
@@ -44,26 +41,6 @@ public:
     void route(std::string request_uri,
                std::function<void(const std::smatch &, const request_t &,
                                   response_t &)>);
-
-public:
-    static std::function<void(const std::smatch &, const http::request &,
-                              http::response &)>
-    with_methods(const std::vector<boost::beast::http::verb> &methods,
-                 std::function<void(const std::smatch &, const http::request &,
-                                    http::response &)>);
-
-    static std::function<void(const std::smatch &, const http::request &,
-                              http::response &)>
-        with_libvirt(
-            std::function<void(virt::connection &, const std::string &,
-                               const std::smatch &, const http::request &,
-                               http::response &)>);
-
-    static std::function<void(const std::smatch &, const http::request &,
-                              http::response &)>
-        with_user(
-            std::function<void(const std::string &, const std::smatch &,
-                               const http::request &, http::response &)>);
 };
 
 }; // namespace webvirt::http

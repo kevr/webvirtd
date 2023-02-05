@@ -16,6 +16,7 @@
 #include "router.hpp"
 #include "../json.hpp"
 #include "../mocks/syscaller.hpp"
+#include "middleware.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
 
@@ -42,7 +43,7 @@ TEST_F(router_test, noop)
 
 TEST_F(router_test, with_user_invalid_json)
 {
-    router_.route("/test/", http::router::with_user(noop));
+    router_.route("/test/", http::middleware::with_user(noop));
 
     http::request request;
     request.target("/test/");
@@ -58,7 +59,7 @@ TEST_F(router_test, with_user_invalid_json)
 
 TEST_F(router_test, with_user_unknown_user)
 {
-    router_.route("/test/", http::router::with_user(noop));
+    router_.route("/test/", http::middleware::with_user(noop));
 
     http::request request;
     request.target("/test/");

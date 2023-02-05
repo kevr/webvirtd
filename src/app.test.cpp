@@ -304,48 +304,6 @@ TEST_F(mock_app_test, domain_not_found)
               static_cast<int>(beast::http::status::not_found));
 }
 
-TEST_F(mock_app_test, domain_interfaces)
-{
-    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
-
-    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
-
-    auto iface =
-        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
-    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, {}, { iface });
-    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
-
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/interfaces/", json::stringify(data))
-        .run();
-
-    EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::ok));
-
-    data = json::parse(response.body());
-    auto interface =
-        data.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
-    EXPECT_EQ(interface["macAddress"], "aa:bb:cc:dd:11:22:33:44");
-    EXPECT_EQ(interface["model"], "virtio");
-    EXPECT_EQ(interface["name"], "net0");
-}
-
-TEST_F(mock_app_test, domain_interfaces_not_found)
-{
-    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
-
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/interfaces/", json::stringify(data))
-        .run();
-
-    EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::not_found));
-}
-
 TEST_F(mock_app_test, domain_start)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
