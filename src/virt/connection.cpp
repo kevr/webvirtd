@@ -18,7 +18,6 @@
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>
-#include <iostream>
 #include <pugixml.hpp>
 #include <stdexcept>
 #include <thread>
@@ -92,6 +91,13 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
         int id = lv.virDomainGetID(domain);
         item["id"] = id;
 
+        auto desc = xml_desc(domain);
+        pugi::xml_document doc;
+        doc.load_buffer(desc.c_str(), desc.size());
+
+        auto domain_ = doc.child("domain");
+        item["title"] = domain_.child("title").text().as_string();
+
         output.emplace_back(std::move(item));
     }
 
@@ -108,26 +114,34 @@ Json::Value virt::connection::domain(const std::string &name)
     }
 
     auto desc = xml_desc(domain);
-
     pugi::xml_document doc;
     doc.load_buffer(desc.c_str(), desc.size());
     auto domain_ = doc.child("domain");
 
     output["name"] = name;
     output["id"] = domain_.attribute("id").as_int();
+    output["uuid"] = domain_.child("uuid").text().as_string();
+    output["title"] = domain_.child("title").text().as_string();
+    output["description"] = domain_.child("description").text().as_string();
+    output["type"] = domain_.attribute("type").as_string();
 
     Json::Value info(Json::objectValue);
     info["cpus"] = domain_.child("vcpu").text().as_uint();
     info["maxMemory"] = domain_.child("memory").text().as_uint();
     info["memory"] = domain_.child("currentMemory").text().as_uint();
-    info["os"] = domain_.child("metadata")
-                     .child("libosinfo:libosinfo")
-                     .child("libosinfo:os")
-                     .attribute("id")
-                     .as_string();
+    info["os"] = Json::Value(Json::objectValue);
+    info["os"]["type"] = Json::Value(Json::objectValue);
+    auto os = domain_.child("os");
+    info["os"]["type"]["arch"] =
+        os.child("type").attribute("arch").as_string();
+    info["os"]["type"]["machine"] =
+        os.child("type").attribute("machine").as_string();
+    info["os"]["boot"] = Json::Value(Json::objectValue);
+    info["os"]["boot"]["dev"] = os.child("boot").attribute("dev").as_string();
 
     info["devices"] = Json::Value(Json::objectValue);
-
+    info["devices"]["emulator"] =
+        domain_.child("devices").child("emulator").text().as_string();
     info["devices"]["disks"] = Json::Value(Json::arrayValue);
     auto disks = domain_.child("devices").children("disk");
     for (auto &disk : disks) {
