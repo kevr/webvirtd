@@ -15,7 +15,7 @@ jsoncpp_proj = subproject('jsoncpp')
 jsoncpp_dep = jsoncpp_proj.get_variable('jsoncpp_dep')
 
 fmt_proj = subproject('fmt')
-fmt_dep = fmt_proj.get_variable('fmt_dep')
+fmt_dep = fmt_proj.get_variable('fmt_header_only_dep')
 
 pugixml_proj = subproject('pugixml', default_options : [
   'tests=false',
