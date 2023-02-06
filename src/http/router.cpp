@@ -18,6 +18,7 @@
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "middleware.hpp"
+#include <fmt/format.h>
 #include <iostream>
 #include <regex>
 #include <vector>
@@ -25,13 +26,32 @@ using namespace webvirt;
 
 void http::router::run(const request_t &request, response_t &response)
 {
-    const std::string request_uri = request.target().to_string();
-
+    const auto request_uri = request.target().to_string();
+    const auto method = std::string(request.method_string());
     for (auto &route_ : routes_) {
         const std::regex re(route_.first);
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
-            return route_.second(match, request, response);
+            route_.second(match, request, response);
+            auto major = response.version() / 10;
+            auto minor = response.version() % 10;
+
+            std::function<void(const std::string &)> log([&](const auto &m) {
+                log_.info(m);
+            });
+            if (response.result_int() != 200 && response.result_int() != 201) {
+                log = [&](const auto &m) {
+                    log_.error(m);
+                };
+            }
+
+            return log(fmt::format("\"{} {} HTTP/{}.{}\" {} {}",
+                                   method,
+                                   request_uri,
+                                   major,
+                                   minor,
+                                   response.result_int(),
+                                   response.body().size()));
         }
     }
 

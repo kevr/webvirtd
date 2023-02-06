@@ -16,6 +16,7 @@
 #ifndef HTTP_ROUTER_HPP
 #define HTTP_ROUTER_HPP
 
+#include "../logging.hpp"
 #include "../virt/connection.hpp"
 #include "namespaces.hpp"
 #include <boost/beast.hpp>
@@ -29,6 +30,8 @@ namespace webvirt::http
 class router
 {
 private:
+    logger log_;
+
     using request_t = beast::http::request<beast::http::dynamic_body>;
     using response_t = beast::http::response<beast::http::string_body>;
 
