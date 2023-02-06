@@ -145,7 +145,8 @@ Json::Value virt::connection::domain(const std::string &name)
     auto disks = domain_.child("devices").children("disk");
     for (auto &disk : disks) {
         Json::Value object(Json::objectValue);
-        object["device"] = disk.attribute("device").as_string();
+        auto device_type = disk.attribute("device").as_string();
+        object["device"] = device_type;
         object["driver"] = Json::Value(Json::objectValue);
         object["driver"]["name"] =
             disk.child("driver").attribute("name").as_string();
@@ -155,10 +156,25 @@ Json::Value virt::connection::domain(const std::string &name)
         object["source"]["file"] =
             disk.child("source").attribute("file").as_string();
         object["target"] = Json::Value(Json::objectValue);
-        object["target"]["dev"] =
-            disk.child("target").attribute("dev").as_string();
+        auto device = disk.child("target").attribute("dev").as_string();
+        object["target"]["dev"] = device;
         object["target"]["bus"] =
             disk.child("target").attribute("bus").as_string();
+
+        static const std::string target_type = "disk";
+        if (device_type == target_type) {
+            auto block_info_ptr = get_block_info_ptr(domain, device);
+            object["block_info"] = Json::Value(Json::objectValue);
+
+            // Size values in Kilobytes
+            object["block_info"]["unit"] = "KiB";
+            object["block_info"]["capacity"] =
+                static_cast<unsigned long>(block_info_ptr->capacity / 1000);
+            object["block_info"]["allocation"] =
+                static_cast<unsigned long>(block_info_ptr->allocation / 1000);
+            object["block_info"]["physical"] =
+                static_cast<unsigned long>(block_info_ptr->physical / 1000);
+        }
 
         info["devices"]["disks"].append(std::move(object));
     }
@@ -207,6 +223,14 @@ std::string virt::connection::xml_desc(libvirt::domain_ptr domain)
 {
     auto &lv = libvirt::ref();
     return lv.virDomainGetXMLDesc(domain, 0);
+}
+
+libvirt::block_info_ptr
+virt::connection::get_block_info_ptr(libvirt::domain_ptr domain,
+                                     const std::string &device)
+{
+    auto &lv = libvirt::ref();
+    return lv.virDomainGetBlockInfo(domain, device.c_str(), 0);
 }
 
 bool virt::connection::start(libvirt::domain_ptr domain)

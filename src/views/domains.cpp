@@ -24,19 +24,8 @@ void domains::index(virt::connection &conn, const std::string &,
 {
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
-
-    Json::Value json(Json::arrayValue);
-    auto domains_ = conn.domains();
-    for (auto &domain : domains_) {
-        Json::Value map(Json::objectValue);
-        for (auto &kv : domain) {
-            map[kv.first] = kv.second;
-        }
-        json.append(map);
-    }
-
-    auto output = json::stringify(json);
-    response.body().append(output);
+    auto data = conn.domains();
+    response.body().append(json::stringify(std::move(data)));
     response.content_length(response.body().size());
 }
 

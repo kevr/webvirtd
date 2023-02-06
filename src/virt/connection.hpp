@@ -48,9 +48,13 @@ public:
 
     Json::Value domains();
     Json::Value domain(const std::string &);
+
     libvirt::domain_ptr get_domain_ptr(const std::string &name);
     std::string xml_desc(const std::string &domain);
     std::string xml_desc(libvirt::domain_ptr);
+
+    libvirt::block_info_ptr get_block_info_ptr(libvirt::domain_ptr,
+                                               const std::string &device);
 
     bool start(libvirt::domain_ptr);
     bool shutdown(libvirt::domain_ptr);

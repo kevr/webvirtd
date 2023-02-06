@@ -270,7 +270,7 @@ TEST_F(mock_app_test, domain)
             return 0;
         }));
 
-    auto disk = std::make_tuple("test_device"s,
+    auto disk = std::make_tuple("disk"s,
                                 "test_driver"s,
                                 "sata"s,
                                 "/path/to/source.qcow"s,
@@ -281,6 +281,10 @@ TEST_F(mock_app_test, domain)
     auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
+    auto block_info_ptr = std::make_shared<libvirt::block_info>();
+    EXPECT_CALL(lv, virDomainGetBlockInfo(_, _, _))
+        .WillOnce(Return(block_info_ptr));
+
     Json::Value data(Json::objectValue);
     data["user"] = username;
     client->async_post("/domains/test/", json::stringify(data)).run();
@@ -289,6 +293,13 @@ TEST_F(mock_app_test, domain)
               static_cast<int>(beast::http::status::ok));
     data = json::parse(response.body());
     EXPECT_EQ(data["id"], 1);
+
+    auto disk_json = data["info"]["devices"]["disks"][0];
+    auto block_info = disk_json["block_info"];
+    EXPECT_EQ(block_info["unit"], "KiB");
+    EXPECT_EQ(block_info["capacity"], 0);
+    EXPECT_EQ(block_info["allocation"], 0);
+    EXPECT_EQ(block_info["physical"], 0);
 }
 
 TEST_F(mock_app_test, domain_not_found)
