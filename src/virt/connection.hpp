@@ -17,6 +17,7 @@
 #define VIRT_CONNECTION_HPP
 
 #include "../libvirt.hpp"
+#include "domain.hpp"
 #include <cstring>
 #include <errno.h>
 #include <json/json.h>
@@ -46,18 +47,9 @@ public:
     bool operator!=(const connection &other) const;
     connection &connect(const std::string &str);
 
-    Json::Value domains();
-    Json::Value domain(const std::string &);
-
+    std::vector<virt::domain> domains();
+    virt::domain domain(const std::string &name);
     libvirt::domain_ptr get_domain_ptr(const std::string &name);
-    std::string xml_desc(const std::string &domain);
-    std::string xml_desc(libvirt::domain_ptr);
-
-    libvirt::block_info_ptr get_block_info_ptr(libvirt::domain_ptr,
-                                               const std::string &device);
-
-    bool start(libvirt::domain_ptr);
-    bool shutdown(libvirt::domain_ptr);
 
     int error();
     const char *strerror();

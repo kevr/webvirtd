@@ -16,6 +16,8 @@
 #include "domains.hpp"
 #include "../json.hpp"
 #include "../virt/util.hpp"
+#include <fstream>
+#include <pugixml.hpp>
 using namespace webvirt::views;
 
 void domains::index(virt::connection &conn, const std::string &,
@@ -24,7 +26,26 @@ void domains::index(virt::connection &conn, const std::string &,
 {
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
-    auto data = conn.domains();
+    auto domains = conn.domains();
+
+    Json::Value data(Json::arrayValue);
+    for (auto &domain : domains) {
+        Json::Value item(Json::objectValue);
+        item["id"] = domain.id();
+        item["name"] = domain.name();
+
+        int state = domain.state();
+        item["state"] = Json::Value(Json::objectValue);
+        item["state"]["id"] = state;
+        item["state"]["string"] = virt::state_string(state);
+
+        pugi::xml_document doc = domain.xml_document();
+        auto domain_ = doc.child("domain");
+        item["title"] = domain_.child("title").text().as_string();
+
+        data.append(std::move(item));
+    }
+
     response.body().append(json::stringify(std::move(data)));
     response.content_length(response.body().size());
 }
@@ -38,14 +59,106 @@ void domains::show(virt::connection &conn, const std::string &,
     // Any response we send is JSON-serialized
     response.set("Content-Type", "application/json");
 
-    auto domain = conn.domain(name);
-    if (domain.get("id", "") == "") {
-        domain["detail"] = "Unable to find domain";
+    virt::domain domain;
+    try {
+        domain = conn.domain(name);
+    } catch (const std::domain_error &exc) {
+        Json::Value data(Json::objectValue);
+        data["detail"] = "Domain not found";
         response.result(beast::http::status::not_found);
+        response.body().append(json::stringify(data));
+        response.content_length(response.body().size());
+        return;
     }
 
-    auto output = json::stringify(domain);
-    response.body().append(output);
+    pugi::xml_document doc = domain.xml_document();
+    auto domain_ = doc.child("domain");
+
+    Json::Value data(Json::objectValue);
+    data["name"] = name;
+    data["autostart"] = domain.autostart();
+    data["id"] = domain_.attribute("id").as_int();
+    data["uuid"] = domain_.child("uuid").text().as_string();
+    data["title"] = domain_.child("title").text().as_string();
+    data["description"] = domain_.child("description").text().as_string();
+    data["type"] = domain_.attribute("type").as_string();
+
+    Json::Value info(Json::objectValue);
+    info["cpus"] = domain_.child("vcpu").text().as_uint();
+    info["maxMemory"] = domain_.child("memory").text().as_uint();
+    info["memory"] = domain_.child("currentMemory").text().as_uint();
+    info["os"] = Json::Value(Json::objectValue);
+    info["os"]["type"] = Json::Value(Json::objectValue);
+    auto os = domain_.child("os");
+    info["os"]["type"]["arch"] =
+        os.child("type").attribute("arch").as_string();
+    info["os"]["type"]["machine"] =
+        os.child("type").attribute("machine").as_string();
+    info["os"]["boot"] = Json::Value(Json::objectValue);
+    info["os"]["boot"]["dev"] = os.child("boot").attribute("dev").as_string();
+
+    info["devices"] = Json::Value(Json::objectValue);
+    info["devices"]["emulator"] =
+        domain_.child("devices").child("emulator").text().as_string();
+    info["devices"]["disks"] = Json::Value(Json::arrayValue);
+    auto disks = domain_.child("devices").children("disk");
+    for (auto &disk : disks) {
+        Json::Value object(Json::objectValue);
+        auto device_type = disk.attribute("device").as_string();
+        object["device"] = device_type;
+        object["driver"] = Json::Value(Json::objectValue);
+        object["driver"]["name"] =
+            disk.child("driver").attribute("name").as_string();
+        object["driver"]["type"] =
+            disk.child("driver").attribute("type").as_string();
+        object["source"] = Json::Value(Json::objectValue);
+        object["source"]["file"] =
+            disk.child("source").attribute("file").as_string();
+        object["target"] = Json::Value(Json::objectValue);
+        auto device = disk.child("target").attribute("dev").as_string();
+        object["target"]["dev"] = device;
+        object["target"]["bus"] =
+            disk.child("target").attribute("bus").as_string();
+
+        static const std::string target_type = "disk";
+        if (device_type == target_type) {
+            auto block_info_ptr = domain.block_info(device);
+            object["block_info"] = Json::Value(Json::objectValue);
+
+            // Size values in Kilobytes
+            object["block_info"]["unit"] = "KiB";
+            object["block_info"]["capacity"] =
+                static_cast<unsigned long>(block_info_ptr->capacity / 1000);
+            object["block_info"]["allocation"] =
+                static_cast<unsigned long>(block_info_ptr->allocation / 1000);
+            object["block_info"]["physical"] =
+                static_cast<unsigned long>(block_info_ptr->physical / 1000);
+        }
+
+        info["devices"]["disks"].append(std::move(object));
+    }
+
+    info["devices"]["interfaces"] = Json::Value(Json::arrayValue);
+    auto interfaces = domain_.child("devices").children("interface");
+    for (auto &interface : interfaces) {
+        Json::Value object(Json::objectValue);
+        object["macAddress"] =
+            interface.child("mac").attribute("address").as_string();
+        object["model"] =
+            interface.child("model").attribute("type").as_string();
+        object["name"] =
+            interface.child("alias").attribute("name").as_string();
+        info["devices"]["interfaces"].append(std::move(object));
+    }
+
+    data["info"] = std::move(info);
+
+    int state = domain.state();
+    data["state"] = Json::Value(Json::objectValue);
+    data["state"]["id"] = state;
+    data["state"]["string"] = virt::state_string(state);
+
+    response.body().append(json::stringify(data));
     response.content_length(response.body().size());
 }
 
@@ -54,9 +167,10 @@ void domains::start(virt::connection &conn, const std::string &,
                     http::response &response)
 {
     const std::string name(location[1]);
-    auto domain = conn.get_domain_ptr(name);
-    Json::Value data(Json::objectValue);
-    if (!conn.start(domain)) {
+    auto domain = conn.domain(name);
+
+    if (!domain.start()) {
+        Json::Value data(Json::objectValue);
         data["detail"] = "Unable to start domain";
         response.result(beast::http::status::bad_request);
         response.body().append(json::stringify(data));
@@ -64,9 +178,8 @@ void domains::start(virt::connection &conn, const std::string &,
         return;
     }
 
-    data = simple_domain_json(domain);
     response.result(beast::http::status::created);
-    response.body().append(json::stringify(data));
+    response.body().append(json::stringify(domain.simple_json()));
     response.content_length(response.body().size());
 }
 
@@ -75,13 +188,13 @@ void domains::shutdown(virt::connection &conn, const std::string &,
                        http::response &response)
 {
     const std::string name(location[1]);
-    auto domain = conn.get_domain_ptr(name);
-    Json::Value data(Json::objectValue);
+    auto domain = conn.domain(name);
 
     bool ok = false;
     try {
-        ok = conn.shutdown(domain);
+        ok = domain.shutdown();
     } catch (const std::out_of_range &exc) {
+        Json::Value data(Json::objectValue);
         data["detail"] = "Shutdown operation timed out";
         response.result(beast::http::status::gateway_timeout);
         response.body().append(json::stringify(data));
@@ -90,6 +203,7 @@ void domains::shutdown(virt::connection &conn, const std::string &,
     }
 
     if (!ok) {
+        Json::Value data(Json::objectValue);
         data["detail"] = "Unable to shutdown domain";
         response.result(beast::http::status::bad_request);
         response.body().append(json::stringify(data));
@@ -97,26 +211,7 @@ void domains::shutdown(virt::connection &conn, const std::string &,
         return;
     }
 
-    data = simple_domain_json(domain);
     response.result(beast::http::status::ok);
-    response.body().append(json::stringify(data));
+    response.body().append(json::stringify(domain.simple_json()));
     response.content_length(response.body().size());
 }
-
-Json::Value domains::simple_domain_json(libvirt::domain_ptr domain)
-{
-    auto &lv = libvirt::ref();
-    int state, reason;
-    lv.virDomainGetState(domain, &state, &reason, 0);
-
-    Json::Value data(Json::objectValue);
-    int domain_id = lv.virDomainGetID(domain);
-    data["id"] = domain_id;
-    const char *name = lv.virDomainGetName(domain);
-    data["name"] = name;
-    data["state"] = Json::Value(Json::objectValue);
-    data["state"]["id"] = state;
-    data["state"]["string"] = virt::state_string(state);
-
-    return data;
-} // LCOV_EXCL_LINE

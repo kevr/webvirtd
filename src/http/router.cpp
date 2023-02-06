@@ -26,7 +26,7 @@ using namespace webvirt;
 
 void http::router::run(const request_t &request, response_t &response)
 {
-    const auto request_uri = request.target().to_string();
+    const auto request_uri = std::string(request.target());
     const auto method = std::string(request.method_string());
     for (auto &route_ : routes_) {
         const std::regex re(route_.first);

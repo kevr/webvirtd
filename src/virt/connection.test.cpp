@@ -63,24 +63,3 @@ TEST_F(connection_test, inequality)
     virt::connection v("/path/to/socket.sock");
     EXPECT_NE(v, virt::connection());
 }
-
-TEST_F(connection_test, xml_desc)
-{
-    virt::connection v("/path/to/socket.sock");
-
-    auto domain = std::make_shared<libvirt::domain>();
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
-
-    std::string desc("<domain></domain>");
-    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(desc));
-
-    EXPECT_EQ(v.xml_desc("test"), desc);
-}
-
-TEST_F(connection_test, xml_desc_error)
-{
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
-
-    virt::connection v("/path/to/socket.sock");
-    EXPECT_THROW(v.xml_desc("test"), std::domain_error);
-}

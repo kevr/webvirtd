@@ -36,9 +36,6 @@ public:
                const http::request &, http::response &);
     void shutdown(virt::connection &, const std::string &, const std::smatch &,
                   const http::request &, http::response &);
-
-private:
-    Json::Value simple_domain_json(libvirt::domain_ptr domain);
 };
 
 }; // namespace webvirt::views

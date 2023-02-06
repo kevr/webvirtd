@@ -10,6 +10,7 @@ libwebvirtd = static_library(
   'config.cpp',
   'libvirt.cpp',
   'logging.cpp',
+  'virt/domain.cpp',
   'virt/connection.cpp',
   'virt/util.cpp',
   'views/domains.cpp',

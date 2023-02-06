@@ -7,6 +7,14 @@ if not get_option('disable_tests')
   )
   test('virt connection test', virt_connection_test)
 
+  virt_domain_test = executable(
+    'domain.test',
+    'domain.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('virt domain test', virt_domain_test)
+
   virt_util_test = executable(
     'util.test',
     'util.test.cpp',
