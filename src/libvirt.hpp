@@ -32,9 +32,15 @@ public:
     };
     struct domain {
     };
+    struct block_info {
+        unsigned long capacity;
+        unsigned long allocation;
+        unsigned long physical;
+    };
 #else
     using connect = virConnect;
     using domain = virDomain;
+    using block_info = virDomainBlockInfo;
 #endif
 
 private:
@@ -58,12 +64,15 @@ private:
 public:
     using connect_ptr = std::shared_ptr<connect>;
     using domain_ptr = std::shared_ptr<domain>;
+    using block_info_ptr = std::shared_ptr<block_info>;
 
 public:
     virtual ~libvirt() = default;
     virtual connect_ptr virConnectOpen(const char *);
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
     virtual std::string virDomainGetXMLDesc(domain_ptr, int);
+    virtual block_info_ptr virDomainGetBlockInfo(domain_ptr, const char *,
+                                                 int);
     virtual int virDomainCreate(domain_ptr);
     virtual int virDomainShutdown(domain_ptr);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);

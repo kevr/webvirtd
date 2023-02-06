@@ -70,6 +70,14 @@ std::string libvirt::virDomainGetXMLDesc(domain_ptr domain, int flags)
     return s;
 }
 
+libvirt::block_info_ptr
+libvirt::virDomainGetBlockInfo(domain_ptr domain, const char *name, int flags)
+{
+    auto block_info_ptr = std::make_shared<libvirt::block_info>();
+    ::virDomainGetBlockInfo(domain.get(), name, block_info_ptr.get(), flags);
+    return block_info_ptr;
+}
+
 int libvirt::virDomainCreate(domain_ptr domain)
 {
     return ::virDomainCreate(domain.get());
