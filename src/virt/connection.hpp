@@ -46,7 +46,7 @@ public:
     bool operator!=(const connection &other) const;
     connection &connect(const std::string &str);
 
-    std::vector<std::map<std::string, Json::Value>> domains();
+    Json::Value domains();
     Json::Value domain(const std::string &);
     libvirt::domain_ptr get_domain_ptr(const std::string &name);
     std::string xml_desc(const std::string &domain);

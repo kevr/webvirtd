@@ -71,15 +71,14 @@ virt::connection &virt::connection::connect(const std::string &str)
     return *this;
 }
 
-std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
+Json::Value virt::connection::domains()
 {
     auto &lv = libvirt::ref();
     auto domains = lv.virConnectListAllDomains(conn_, 0);
 
-    std::vector<std::map<std::string, Json::Value>> output;
+    Json::Value output(Json::arrayValue);
     for (auto &domain : domains) {
-        std::map<std::string, Json::Value> item;
-
+        Json::Value item(Json::objectValue);
         item["name"] = lv.virDomainGetName(domain);
 
         int state = 0, reason = 0;
@@ -98,7 +97,7 @@ std::vector<std::map<std::string, Json::Value>> virt::connection::domains()
         auto domain_ = doc.child("domain");
         item["title"] = domain_.child("title").text().as_string();
 
-        output.emplace_back(std::move(item));
+        output.append(std::move(item));
     }
 
     return output;
