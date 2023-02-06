@@ -73,6 +73,7 @@ public:
     virtual std::string virDomainGetXMLDesc(domain_ptr, int);
     virtual block_info_ptr virDomainGetBlockInfo(domain_ptr, const char *,
                                                  int);
+    virtual int virDomainGetAutostart(domain_ptr, int *);
     virtual int virDomainCreate(domain_ptr);
     virtual int virDomainShutdown(domain_ptr);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);

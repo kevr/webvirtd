@@ -34,6 +34,7 @@ public:
                 (connect_ptr, const char *));
     MOCK_METHOD(block_info_ptr, virDomainGetBlockInfo,
                 (domain_ptr, const char *, int));
+    MOCK_METHOD(int, virDomainGetAutostart, (domain_ptr, int *));
     MOCK_METHOD(int, virDomainCreate, (domain_ptr));
     MOCK_METHOD(int, virDomainShutdown, (domain_ptr));
     MOCK_METHOD(std::string, virDomainGetXMLDesc, (domain_ptr, int));

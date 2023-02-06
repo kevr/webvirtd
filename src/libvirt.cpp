@@ -78,6 +78,11 @@ libvirt::virDomainGetBlockInfo(domain_ptr domain, const char *name, int flags)
     return block_info_ptr;
 }
 
+int libvirt::virDomainGetAutostart(domain_ptr domain, int *autostart)
+{
+    return ::virDomainGetAutostart(domain.get(), autostart);
+}
+
 int libvirt::virDomainCreate(domain_ptr domain)
 {
     return ::virDomainCreate(domain.get());
