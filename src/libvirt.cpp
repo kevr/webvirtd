@@ -83,6 +83,11 @@ int libvirt::virDomainGetAutostart(domain_ptr domain, int *autostart)
     return ::virDomainGetAutostart(domain.get(), autostart);
 }
 
+int libvirt::virDomainSetAutostart(domain_ptr domain, int autostart)
+{
+    return ::virDomainSetAutostart(domain.get(), autostart);
+}
+
 int libvirt::virDomainCreate(domain_ptr domain)
 {
     return ::virDomainCreate(domain.get());
