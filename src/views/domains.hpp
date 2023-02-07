@@ -32,6 +32,9 @@ public:
                const http::request &, http::response &);
     void show(virt::connection &, const std::string &, const std::smatch &,
               const http::request &, http::response &);
+    void autostart(virt::connection &, const std::string &,
+                   const std::smatch &, const http::request &,
+                   http::response &);
     void start(virt::connection &, const std::string &, const std::smatch &,
                const http::request &, http::response &);
     void shutdown(virt::connection &, const std::string &, const std::smatch &,

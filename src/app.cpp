@@ -26,20 +26,25 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
     , server_(io_, socket_path.string())
 {
     router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash));
-    router_.route(R"(^/domains/$)",
-                  with_methods({ beast::http::verb::post },
+    router_.route(R"(^/users/([^/]+)/domains/$)",
+                  with_methods({ beast::http::verb::get },
                                with_libvirt(bind_libvirt(
                                    &views::domains::index, &domains_view_))));
-    router_.route(R"(^/domains/([^/]+)/$)",
-                  with_methods({ beast::http::verb::post },
+    router_.route(R"(^/users/([^/]+)/domains/([^/]+)/$)",
+                  with_methods({ beast::http::verb::get },
                                with_libvirt(bind_libvirt(&views::domains::show,
                                                          &domains_view_))));
-    router_.route(R"(^/domains/([^/]+)/start/$)",
+    router_.route(
+        R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
+        with_methods({ beast::http::verb::post, beast::http::verb::delete_ },
+                     with_libvirt(bind_libvirt(&views::domains::autostart,
+                                               &domains_view_))));
+    router_.route(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
                   with_methods({ beast::http::verb::post },
                                with_libvirt(bind_libvirt(
                                    &views::domains::start, &domains_view_))));
     router_.route(
-        R"(^/domains/([^/]+)/shutdown/)",
+        R"(^/users/([^/]+)/domains/([^/]+)/shutdown/)",
         with_methods({ beast::http::verb::post },
                      with_libvirt(bind_libvirt(&views::domains::shutdown,
                                                &domains_view_))));

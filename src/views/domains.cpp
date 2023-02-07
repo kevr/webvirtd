@@ -16,16 +16,31 @@
 #include "domains.hpp"
 #include "../json.hpp"
 #include "../virt/util.hpp"
+#include <fmt/format.h>
 #include <fstream>
 #include <pugixml.hpp>
 using namespace webvirt::views;
+
+webvirt::virt::domain get_domain(webvirt::virt::connection &conn,
+                                 const std::string &name,
+                                 webvirt::http::response &response)
+{
+    try {
+        return conn.domain(name);
+    } catch (const std::domain_error &) {
+        Json::Value error(Json::objectValue);
+        error["detail"] = fmt::format("Domain '{}' not found", name);
+        response.body().append(webvirt::json::stringify(error));
+        response.content_length(response.body().size());
+        response.result(boost::beast::http::status::not_found);
+    }
+    return webvirt::virt::domain();
+}
 
 void domains::index(virt::connection &conn, const std::string &,
                     const std::smatch &, const http::request &,
                     http::response &response)
 {
-    // Any response we send is JSON-serialized
-    response.set("Content-Type", "application/json");
     auto domains = conn.domains();
 
     Json::Value data(Json::arrayValue);
@@ -54,22 +69,10 @@ void domains::show(virt::connection &conn, const std::string &,
                    const std::smatch &location, const http::request &,
                    http::response &response)
 {
-    const std::string name(location[1]);
-
-    // Any response we send is JSON-serialized
-    response.set("Content-Type", "application/json");
-
-    virt::domain domain;
-    try {
-        domain = conn.domain(name);
-    } catch (const std::domain_error &exc) {
-        Json::Value data(Json::objectValue);
-        data["detail"] = "Domain not found";
-        response.result(beast::http::status::not_found);
-        response.body().append(json::stringify(data));
-        response.content_length(response.body().size());
+    const std::string name(location[2]);
+    auto domain = get_domain(conn, name, response);
+    if (!domain)
         return;
-    }
 
     pugi::xml_document doc = domain.xml_document();
     auto domain_ = doc.child("domain");
@@ -162,12 +165,33 @@ void domains::show(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
+void domains::autostart(virt::connection &conn, const std::string &,
+                        const std::smatch &location,
+                        const http::request &request, http::response &response)
+{
+    const std::string name(location[2]);
+    auto domain = get_domain(conn, name, response);
+    if (!domain)
+        return;
+
+    bool enabled = request.method() == beast::http::verb::post;
+    domain.autostart(enabled);
+
+    Json::Value object(Json::objectValue);
+    object["autostart"] = enabled;
+
+    response.body().append(json::stringify(std::move(object)));
+    response.content_length(response.body().size());
+}
+
 void domains::start(virt::connection &conn, const std::string &,
                     const std::smatch &location, const http::request &,
                     http::response &response)
 {
-    const std::string name(location[1]);
-    auto domain = conn.domain(name);
+    const std::string name(location[2]);
+    auto domain = get_domain(conn, name, response);
+    if (!domain)
+        return;
 
     if (!domain.start()) {
         Json::Value data(Json::objectValue);
@@ -187,8 +211,10 @@ void domains::shutdown(virt::connection &conn, const std::string &,
                        const std::smatch &location, const http::request &,
                        http::response &response)
 {
-    const std::string name(location[1]);
-    auto domain = conn.domain(name);
+    const std::string name(location[2]);
+    auto domain = get_domain(conn, name, response);
+    if (!domain)
+        return;
 
     bool ok = false;
     try {
@@ -211,7 +237,6 @@ void domains::shutdown(virt::connection &conn, const std::string &,
         return;
     }
 
-    response.result(beast::http::status::ok);
     response.body().append(json::stringify(domain.simple_json()));
     response.content_length(response.body().size());
 }

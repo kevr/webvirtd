@@ -22,4 +22,5 @@ TEST(domain, constructors)
     domain d;
     domain d2(d);
     domain d3(std::move(d));
+    d = d3;
 }

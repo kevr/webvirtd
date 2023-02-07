@@ -182,7 +182,8 @@ public:
 
 TEST_F(app_test, method_not_allowed)
 {
-    client->async_options("/domains/").run();
+    auto endpoint = "/users/test/domains/"s;
+    client->async_options(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::method_not_allowed));
@@ -206,7 +207,6 @@ TEST_F(app_test, append_trailing_slash)
 
 TEST_F(mock_app_test, domains)
 {
-
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
     std::vector<libvirt::domain_ptr> domains;
@@ -224,10 +224,8 @@ TEST_F(mock_app_test, domains)
         }));
     EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-
-    client->async_post("/domains/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/", username);
+    client->async_get(endpoint.c_str()).run();
 
     auto array = json::parse(response.body());
     EXPECT_TRUE(array.isArray());
@@ -245,9 +243,8 @@ TEST_F(mock_app_test, domains_libvirt_error)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(nullptr));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/", username);
+    client->async_get(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::internal_server_error));
@@ -263,6 +260,11 @@ TEST_F(mock_app_test, domain)
 
     libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
+    EXPECT_CALL(lv, virDomainGetAutostart(_, _))
+        .WillOnce(Invoke([](auto, int *autostart) {
+            *autostart = 0;
+            return 0;
+        }));
 
     EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
         .WillOnce(Invoke([](auto, int *state, int *, int) {
@@ -285,13 +287,13 @@ TEST_F(mock_app_test, domain)
     EXPECT_CALL(lv, virDomainGetBlockInfo(_, _, _))
         .WillOnce(Return(block_info_ptr));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/", username);
+    client->async_get(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::ok));
-    data = json::parse(response.body());
+
+    auto data = json::parse(response.body());
     EXPECT_EQ(data["id"], 1);
 
     auto disk_json = data["info"]["devices"]["disks"][0];
@@ -307,9 +309,8 @@ TEST_F(mock_app_test, domain_not_found)
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/", username);
+    client->async_get(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
@@ -331,12 +332,23 @@ TEST_F(mock_app_test, domain_start)
     EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
     EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/start/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/start/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::created));
+}
+
+TEST_F(mock_app_test, domain_start_not_found)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
+
+    auto endpoint = fmt::format("/users/{}/domains/test/start/", username);
+    client->async_post(endpoint.c_str()).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::not_found));
 }
 
 TEST_F(mock_app_test, domain_start_error)
@@ -347,9 +359,8 @@ TEST_F(mock_app_test, domain_start_error)
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(-1));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/start/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/start/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::bad_request));
@@ -375,12 +386,23 @@ TEST_F(mock_app_test, domain_shutdown)
     EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
     EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/shutdown/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::ok));
+}
+
+TEST_F(mock_app_test, domain_shutdown_not_found)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
+
+    auto endpoint = fmt::format("/users/{}/domains/test/shutdown/", username);
+    client->async_post(endpoint.c_str()).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::not_found));
 }
 
 TEST_F(mock_app_test, domain_shutdown_timeout)
@@ -397,9 +419,8 @@ TEST_F(mock_app_test, domain_shutdown_timeout)
             return 0;
         }));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/shutdown/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::gateway_timeout));
@@ -419,9 +440,8 @@ TEST_F(mock_app_test, domain_shutoff_timeout)
             return 0;
         }));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/shutdown/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::gateway_timeout));
@@ -435,9 +455,8 @@ TEST_F(mock_app_test, domain_shutdown_bad_request)
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(-1));
 
-    Json::Value data(Json::objectValue);
-    data["user"] = username;
-    client->async_post("/domains/test/shutdown/", json::stringify(data)).run();
+    auto endpoint = fmt::format("/users/{}/domains/test/shutdown/", username);
+    client->async_post(endpoint.c_str()).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::bad_request));

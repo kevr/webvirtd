@@ -43,6 +43,11 @@ domain &domain::operator=(domain other)
     return *this;
 }
 
+domain::operator bool() const
+{
+    return domain_ != nullptr;
+}
+
 int domain::id() const
 {
     return libvirt::ref().virDomainGetID(domain_);
@@ -65,6 +70,11 @@ bool domain::autostart() const
     int autostart_;
     libvirt::ref().virDomainGetAutostart(domain_, &autostart_);
     return autostart_;
+}
+
+void domain::autostart(bool enabled)
+{
+    libvirt::ref().virDomainSetAutostart(domain_, enabled);
 }
 
 std::string domain::xml_desc()

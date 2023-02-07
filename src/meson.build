@@ -79,3 +79,4 @@ endif
 
 subdir('http')
 subdir('virt')
+subdir('views')

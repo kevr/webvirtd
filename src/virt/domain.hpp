@@ -35,10 +35,13 @@ public:
     domain(domain &&);
     domain &operator=(domain);
 
+    operator bool() const;
+
     int id() const;
     std::string name() const;
     int state() const;
     bool autostart() const;
+    void autostart(bool enabled);
 
     std::string xml_desc();
     pugi::xml_document xml_document();
