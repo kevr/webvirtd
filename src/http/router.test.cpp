@@ -41,20 +41,27 @@ TEST_F(router_test, noop)
     noop("", std::smatch(), http::request(), response);
 }
 
-TEST_F(router_test, with_user_invalid_json)
+TEST_F(router_test, with_user_invalid_user)
 {
-    router_.route("/test/", http::middleware::with_user(noop));
+    mocks::syscaller sys;
+    syscaller::change(&sys);
+    EXPECT_CALL(sys, getpwnam(_)).WillOnce(Return(nullptr));
+
+    // with_user depends on std::smatch index [1].
+    router_.route("^(.*)$", http::middleware::with_user(noop));
 
     http::request request;
-    request.target("/test/");
+    request.target("test");
 
     http::response response;
     router_.run(request, response);
 
     EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::bad_request));
+              static_cast<int>(beast::http::status::not_found));
     auto data = json::parse(response.body());
-    EXPECT_EQ(data["detail"], "Unable to parse request body JSON");
+    EXPECT_EQ(data["detail"], "Unable to locate user");
+
+    syscaller::reset();
 }
 
 TEST_F(router_test, with_user_unknown_user)

@@ -38,6 +38,7 @@ private:
     using route_function_t = std::function<void(
         const std::smatch &, const request_t &, response_t &)>;
     std::map<std::string, route_function_t> routes_;
+    std::map<std::string, std::regex> regex_;
 
 public:
     void run(const request_t &request, response_t &response);

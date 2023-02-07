@@ -70,6 +70,8 @@ middleware::with_libvirt(
             return;
         }
 
+        response.set("Content-Type", "application/json");
+        response.result(beast::http::status::ok);
         return route_fn(conn, user, m, request, response);
     });
 }
@@ -83,20 +85,12 @@ middleware::with_user(
 {
     return [route_fn](const auto &m, const auto &request, auto &response) {
         // Parse expected JSON from the request body.
-        Json::Value root;
-        Json::Value error(Json::objectValue);
-        try {
-            root = json::parse(request.body());
-        } catch (const std::invalid_argument &e) {
-            error["detail"] = "Unable to parse request body JSON";
-            response.body().append(json::stringify(error));
-            return response.result(beast::http::status::bad_request);
-        }
+        std::string user(m[1]);
 
         auto &sys = syscaller::instance();
-        auto user = root.get("user", "").asString();
         auto *passwd = sys.getpwnam(user.c_str());
         if (!passwd) {
+            Json::Value error(Json::objectValue);
             error["detail"] = "Unable to locate user";
             response.body().append(json::stringify(error));
             return response.result(beast::http::status::not_found);

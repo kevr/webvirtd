@@ -28,34 +28,49 @@ void http::router::run(const request_t &request, response_t &response)
 {
     const auto request_uri = std::string(request.target());
     const auto method = std::string(request.method_string());
+
+    std::function<void(const std::string &)> log([&](const auto &m) {
+        log_.info(m);
+    });
+
+    std::function<void()> next = [&response] {
+        Json::Value data(Json::objectValue);
+        data["detail"] = "Not Found";
+        response.body().append(json::stringify(data));
+        response.content_length(response.body().size());
+        response.result(beast::http::status::not_found);
+    };
+
     for (auto &route_ : routes_) {
-        const std::regex re(route_.first);
+        const auto &re = regex_[route_.first];
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
-            route_.second(match, request, response);
-            auto major = response.version() / 10;
-            auto minor = response.version() % 10;
-
-            std::function<void(const std::string &)> log([&](const auto &m) {
-                log_.info(m);
-            });
-            if (response.result_int() != 200 && response.result_int() != 201) {
-                log = [&](const auto &m) {
-                    log_.error(m);
-                };
-            }
-
-            return log(fmt::format("\"{} {} HTTP/{}.{}\" {} {}",
-                                   method,
-                                   request_uri,
-                                   major,
-                                   minor,
-                                   response.result_int(),
-                                   response.body().size()));
+            next = [&, match] {
+                route_.second(match, request, response);
+            };
+            break;
         }
     }
 
-    return response.result(beast::http::status::not_found);
+    next();
+
+    if (response.result() != boost::beast::http::status::ok &&
+        response.result() != boost::beast::http::status::created &&
+        response.result() != boost::beast::http::status::temporary_redirect) {
+        log = [&](const auto &message) {
+            log_.error(message);
+        };
+    }
+
+    auto major = response.version() / 10;
+    auto minor = response.version() % 10;
+    log(fmt::format("\"{} {} HTTP/{}.{}\" {} {}",
+                    method,
+                    request_uri,
+                    major,
+                    minor,
+                    response.result_int(),
+                    response.body().size()));
 }
 
 void http::router::route(
@@ -64,4 +79,5 @@ void http::router::route(
         fn)
 {
     routes_[request_uri] = fn;
+    regex_[request_uri] = request_uri;
 }
