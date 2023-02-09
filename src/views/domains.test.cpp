@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "domains.hpp"
+#include "../json.hpp"
 #include "../mocks/libvirt.hpp"
 #include "../virt/connection.hpp"
 #include <gtest/gtest.h>
@@ -116,4 +117,104 @@ TEST_F(domains_test, autostart_not_found)
     views_.autostart(conn_, "test", location, request_, response_);
 
     EXPECT_EQ(response_.result(), boost::beast::http::status::not_found);
+}
+
+TEST_F(domains_test, metadata_not_found)
+{
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(nullptr));
+
+    request_.method(boost::beast::http::verb::post);
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
+                      "/users/test/domains/test/metadata/");
+    views_.metadata(conn_, "test", location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::not_found);
+}
+
+TEST_F(domains_test, metadata_bad_request)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+
+    request_.method(boost::beast::http::verb::post);
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
+                      "/users/test/domains/test/metadata/");
+    views_.metadata(conn_, "test", location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::bad_request);
+}
+
+TEST_F(domains_test, metadata_title)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+
+    EXPECT_CALL(lv, virDomainSetMetadata(_, _, _, _, _, _))
+        .WillOnce(Return(0));
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _))
+        .WillOnce(Return(""))
+        .WillRepeatedly(Return("Test Title"));
+
+    request_.method(boost::beast::http::verb::post);
+
+    Json::Value data(Json::objectValue);
+    data["title"] = "Test Title";
+    boost::beast::ostream(request_.body()) << json::stringify(data);
+    request_.content_length(request_.body().size());
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
+                      "/users/test/domains/test/metadata/");
+    views_.metadata(conn_, "test", location, request_, response_);
+
+    auto domain = conn_.domain("test");
+    auto title = domain.metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
+    EXPECT_EQ(title, "Test Title");
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+
+    views_.metadata(conn_, "test", location, request_, response_);
+    EXPECT_EQ(response_.result(), beast::http::status::not_modified);
+}
+
+TEST_F(domains_test, metadata_description)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+
+    EXPECT_CALL(lv, virDomainSetMetadata(_, _, _, _, _, _))
+        .WillOnce(Return(0));
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _))
+        .WillOnce(Return(""))
+        .WillOnce(Return(""))
+        .WillRepeatedly(Return("Test description."));
+
+    request_.method(boost::beast::http::verb::post);
+
+    Json::Value data(Json::objectValue);
+    data["description"] = "Test description.";
+    boost::beast::ostream(request_.body()) << json::stringify(data);
+    request_.content_length(request_.body().size());
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
+                      "/users/test/domains/test/metadata/");
+    views_.metadata(conn_, "test", location, request_, response_);
+
+    auto domain = conn_.domain("test");
+    auto title = domain.metadata(VIR_DOMAIN_METADATA_DESCRIPTION, nullptr, 0);
+    EXPECT_EQ(title, "Test description.");
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+
+    views_.metadata(conn_, "test", location, request_, response_);
+    EXPECT_EQ(response_.result(), beast::http::status::not_modified);
 }

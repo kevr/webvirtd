@@ -77,6 +77,18 @@ void domain::autostart(bool enabled)
     libvirt::ref().virDomainSetAutostart(domain_, enabled);
 }
 
+std::string domain::metadata(int type, const char *uri, unsigned int flags)
+{
+    return libvirt::ref().virDomainGetMetadata(domain_, type, uri, flags);
+}
+
+bool domain::metadata(int type, const char *metadata, const char *key,
+                      const char *uri, unsigned int flags)
+{
+    return libvirt::ref().virDomainSetMetadata(
+               domain_, type, metadata, key, uri, flags) == 0;
+}
+
 std::string domain::xml_desc()
 {
     return libvirt::ref().virDomainGetXMLDesc(domain_, 0);

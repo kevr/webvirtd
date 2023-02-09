@@ -39,6 +39,11 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
         with_methods({ beast::http::verb::post, beast::http::verb::delete_ },
                      with_libvirt(bind_libvirt(&views::domains::autostart,
                                                &domains_view_))));
+    router_.route(
+        R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
+        with_methods({ beast::http::verb::post },
+                     with_libvirt(bind_libvirt(&views::domains::metadata,
+                                               &domains_view_))));
     router_.route(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
                   with_methods({ beast::http::verb::post },
                                with_libvirt(bind_libvirt(

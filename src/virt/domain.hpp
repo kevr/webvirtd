@@ -43,6 +43,9 @@ public:
     bool autostart() const;
     void autostart(bool enabled);
 
+    std::string metadata(int, const char *, unsigned int);
+    bool metadata(int, const char *, const char *, const char *, unsigned int);
+
     std::string xml_desc();
     pugi::xml_document xml_document();
 

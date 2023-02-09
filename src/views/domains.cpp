@@ -184,6 +184,57 @@ void domains::autostart(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
+void domains::metadata(virt::connection &conn, const std::string &,
+                       const std::smatch &location,
+                       const http::request &request, http::response &response)
+{
+    const std::string name(location[2]);
+
+    auto domain = get_domain(conn, name, response);
+    if (!domain)
+        return;
+
+    // JSON output from this function.
+    Json::Value output(Json::objectValue);
+
+    Json::Value data(Json::objectValue);
+    try {
+        data = json::parse(request.body());
+    } catch (const std::invalid_argument &) {
+        output["detail"] = "Invalid JSON input";
+        response.result(beast::http::status::bad_request);
+    }
+
+    auto current_title =
+        domain.metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
+    auto title = data.get("title", current_title).asString();
+    if (title != current_title) {
+        domain.metadata(
+            VIR_DOMAIN_METADATA_TITLE, title.c_str(), nullptr, nullptr, 0);
+        output["title"] = title;
+    }
+
+    auto current_desc =
+        domain.metadata(VIR_DOMAIN_METADATA_DESCRIPTION, nullptr, 0);
+    auto desc = data.get("description", current_desc).asString();
+    if (desc != current_desc) {
+        domain.metadata(VIR_DOMAIN_METADATA_DESCRIPTION,
+                        desc.c_str(),
+                        nullptr,
+                        nullptr,
+                        0);
+        output["description"] = desc;
+    }
+
+    if (!output.size()) {
+        response.result(beast::http::status::not_modified);
+    }
+
+    response.set(boost::beast::http::field::content_type, "application/json");
+    response.body().append(json::stringify(output));
+    response.content_length(response.body().size());
+}
+
 void domains::start(virt::connection &conn, const std::string &,
                     const std::smatch &location, const http::request &,
                     http::response &response)

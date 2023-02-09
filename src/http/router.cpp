@@ -56,7 +56,8 @@ void http::router::run(const request_t &request, response_t &response)
 
     if (response.result() != boost::beast::http::status::ok &&
         response.result() != boost::beast::http::status::created &&
-        response.result() != boost::beast::http::status::temporary_redirect) {
+        response.result() != boost::beast::http::status::temporary_redirect &&
+        response.result() != boost::beast::http::status::not_modified) {
         log = [&](const auto &message) {
             log_.error(message);
         };

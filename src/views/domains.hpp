@@ -35,6 +35,8 @@ public:
     void autostart(virt::connection &, const std::string &,
                    const std::smatch &, const http::request &,
                    http::response &);
+    void metadata(virt::connection &, const std::string &, const std::smatch &,
+                  const http::request &, http::response &);
     void start(virt::connection &, const std::string &, const std::smatch &,
                const http::request &, http::response &);
     void shutdown(virt::connection &, const std::string &, const std::smatch &,
