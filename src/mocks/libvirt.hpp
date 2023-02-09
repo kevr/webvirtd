@@ -36,6 +36,11 @@ public:
                 (domain_ptr, const char *, int));
     MOCK_METHOD(int, virDomainGetAutostart, (domain_ptr, int *));
     MOCK_METHOD(int, virDomainSetAutostart, (domain_ptr, int));
+    MOCK_METHOD(std::string, virDomainGetMetadata,
+                (domain_ptr, int, const char *, unsigned int));
+    MOCK_METHOD(int, virDomainSetMetadata,
+                (domain_ptr, int, const char *, const char *, const char *,
+                 unsigned int));
     MOCK_METHOD(int, virDomainCreate, (domain_ptr));
     MOCK_METHOD(int, virDomainShutdown, (domain_ptr));
     MOCK_METHOD(std::string, virDomainGetXMLDesc, (domain_ptr, int));

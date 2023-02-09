@@ -75,6 +75,11 @@ public:
                                                  int);
     virtual int virDomainGetAutostart(domain_ptr, int *);
     virtual int virDomainSetAutostart(domain_ptr, int);
+    virtual std::string virDomainGetMetadata(domain_ptr, int, const char *,
+                                             unsigned int);
+    virtual int virDomainSetMetadata(domain_ptr, int, const char *,
+                                     const char *, const char *, unsigned int);
+
     virtual int virDomainCreate(domain_ptr);
     virtual int virDomainShutdown(domain_ptr);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);

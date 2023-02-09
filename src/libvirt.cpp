@@ -88,6 +88,26 @@ int libvirt::virDomainSetAutostart(domain_ptr domain, int autostart)
     return ::virDomainSetAutostart(domain.get(), autostart);
 }
 
+std::string libvirt::virDomainGetMetadata(domain_ptr domain, int type,
+                                          const char *uri, unsigned int flags)
+{
+    std::string output;
+    char *value = ::virDomainGetMetadata(domain.get(), type, uri, flags);
+    if (value) {
+        output = std::string(value);
+    }
+    free(value);
+    return output;
+}
+
+int libvirt::virDomainSetMetadata(domain_ptr domain, int type,
+                                  const char *metadata, const char *key,
+                                  const char *uri, unsigned int flags)
+{
+    return ::virDomainSetMetadata(
+        domain.get(), type, metadata, key, uri, flags);
+}
+
 int libvirt::virDomainCreate(domain_ptr domain)
 {
     return ::virDomainCreate(domain.get());
