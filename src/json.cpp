@@ -40,7 +40,7 @@ Json::Value json::error(const std::string &detail)
     Json::Value data(Json::objectValue);
     data["detail"] = detail;
     return data;
-}
+} // LCOV_EXCL_LINE
 
 std::string json::stringify(const Json::Value &json)
 {
