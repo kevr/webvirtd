@@ -182,11 +182,28 @@ public:
 
 TEST_F(app_test, method_not_allowed)
 {
-    auto endpoint = "/users/test/domains/"s;
-    client->async_options(endpoint.c_str()).run();
+    const char *endpoint = "/users/test/domains/";
+    client->async_post(endpoint).run();
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::method_not_allowed));
+}
+
+TEST_F(app_test, options)
+{
+    const char *endpoint = "/users/test/domains/";
+    client->async_options(endpoint).run();
+
+    EXPECT_EQ(response.at(beast::http::field::allow), "GET, OPTIONS");
+}
+
+TEST_F(app_test, options_not_found)
+{
+    const char *endpoint = "/users/test/blahblah";
+    client->async_options(endpoint).run();
+
+    EXPECT_EQ(response.result(), beast::http::status::not_found);
+    EXPECT_EQ(response.at(beast::http::field::allow), "GET, OPTIONS");
 }
 
 TEST_F(app_test, not_found)
@@ -296,7 +313,7 @@ TEST_F(mock_app_test, domain)
     auto data = json::parse(response.body());
     EXPECT_EQ(data["id"], 1);
 
-    auto disk_json = data["info"]["devices"]["disks"][0];
+    auto disk_json = data["info"]["devices"]["disk"][0];
     auto block_info = disk_json["block_info"];
     EXPECT_EQ(block_info["unit"], "KiB");
     EXPECT_EQ(block_info["capacity"], 0);

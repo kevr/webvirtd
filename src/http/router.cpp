@@ -18,6 +18,7 @@
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "middleware.hpp"
+#include "util.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <regex>
@@ -29,16 +30,21 @@ void http::router::run(const request_t &request, response_t &response)
     const auto request_uri = std::string(request.target());
     const auto method = std::string(request.method_string());
 
+    response.set(beast::http::field::content_type, "application/json");
+    response.result(beast::http::status::ok);
+
     std::function<void(const std::string &)> log([&](const auto &m) {
         log_.info(m);
     });
 
-    std::function<void()> next = [&response] {
+    std::function<void()> next = [&request, &response] {
         Json::Value data(Json::objectValue);
         data["detail"] = "Not Found";
-        response.body().append(json::stringify(data));
-        response.content_length(response.body().size());
-        response.result(beast::http::status::not_found);
+        std::string res;
+        if (request.method() != beast::http::verb::options) {
+            res = json::stringify(json::error("Not Found"));
+        }
+        set_response(response, res, beast::http::status::not_found);
     };
 
     for (auto &route_ : routes_) {
@@ -54,10 +60,8 @@ void http::router::run(const request_t &request, response_t &response)
 
     next();
 
-    if (response.result() != boost::beast::http::status::ok &&
-        response.result() != boost::beast::http::status::created &&
-        response.result() != boost::beast::http::status::temporary_redirect &&
-        response.result() != boost::beast::http::status::not_modified) {
+    int status_code = response.result_int();
+    if (!(status_code >= 200 && status_code < 400)) {
         log = [&](const auto &message) {
             log_.error(message);
         };

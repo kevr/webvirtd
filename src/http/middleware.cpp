@@ -18,6 +18,7 @@
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "util.hpp"
+#include <sstream>
 using namespace webvirt;
 using namespace http;
 
@@ -32,9 +33,22 @@ http::route_function
 middleware::with_methods(const std::vector<boost::beast::http::verb> &methods,
                          http::route_function route_fn)
 {
-    return [methods,
-            route_fn](const auto &m, const auto &request, auto &response) {
-        // TODO: Check + response for OPTIONS here
+    return [methods, route_fn](
+               const auto &m, const http::request &request, auto &response) {
+        // Construt and add the Allow header.
+        std::string allow;
+        for (auto method : methods) {
+            std::stringstream ss;
+            ss << method;
+            allow.append(ss.str() + ", ");
+        }
+        allow.append("OPTIONS");
+        response.set(beast::http::field::allow, allow);
+
+        if (request.method() == beast::http::verb::options) {
+            // On OPTIONS, no-op and respond with an OK + headers.
+            return;
+        }
 
         if (!allowed_methods(methods, request.method())) {
             return response.result(beast::http::status::method_not_allowed);
@@ -88,8 +102,6 @@ http::route_function middleware::with_libvirt(
                                 beast::http::status::internal_server_error);
         }
 
-        response.set("Content-Type", "application/json");
-        response.result(beast::http::status::ok);
         return route_fn(conn, match, request, response);
     });
 }
