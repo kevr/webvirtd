@@ -98,6 +98,11 @@ libvirt::domain_ptr virt::connection::get_domain_ptr(const std::string &name)
     return domain;
 }
 
+libvirt::connect_ptr virt::connection::get_ptr()
+{
+    return conn_;
+}
+
 int virt::connection::error()
 {
     return errno_;

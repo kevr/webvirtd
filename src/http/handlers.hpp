@@ -24,7 +24,6 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/http/dynamic_body.hpp>
-#include <libvirt/libvirt.h>
 #include <sys/wait.h>
 #include <thread>
 

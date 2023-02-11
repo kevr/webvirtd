@@ -13,24 +13,16 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef JSON_HPP
-#define JSON_HPP
+#ifndef HTTP_UTIL_HPP
+#define HTTP_UTIL_HPP
 
-#include <boost/beast.hpp>
-#include <json/json.h>
-#include <stdexcept>
-#include <string>
+#include "namespaces.hpp"
 
-namespace webvirt::json
+namespace webvirt::http
 {
 
-Json::Value parse(const std::string &str);
-Json::Value parse(const boost::beast::multi_buffer &);
+void set_response(http::response &, const std::string &, beast::http::status);
 
-Json::Value error(const std::string &detail);
+};
 
-std::string stringify(const Json::Value &json);
-
-}; // namespace webvirt::json
-
-#endif /* JSON_HPP */
+#endif /* HTTP_UTIL_HPP */

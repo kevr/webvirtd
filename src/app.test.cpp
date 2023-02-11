@@ -86,7 +86,7 @@ public:
         app_test::SetUp();
         libvirt::change(lv);
 
-        conn = std::make_shared<libvirt::connect>();
+        conn = std::make_shared<webvirt::connect>();
 
         auto &sys = syscaller::instance();
         uid = sys.getuid();
@@ -210,7 +210,7 @@ TEST_F(mock_app_test, domains)
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
     std::vector<libvirt::domain_ptr> domains;
-    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
+    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
     domains.emplace_back(dom);
     EXPECT_CALL(lv, virConnectListAllDomains(_, _)).WillOnce(Return(domains));
 
@@ -258,7 +258,7 @@ TEST_F(mock_app_test, domain)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    libvirt::domain_ptr dom = std::make_shared<libvirt::domain>();
+    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
     EXPECT_CALL(lv, virDomainGetAutostart(_, _))
         .WillOnce(Invoke([](auto, int *autostart) {
@@ -283,7 +283,7 @@ TEST_F(mock_app_test, domain)
     auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
-    auto block_info_ptr = std::make_shared<libvirt::block_info>();
+    auto block_info_ptr = std::make_shared<webvirt::block_info>();
     EXPECT_CALL(lv, virDomainGetBlockInfo(_, _, _))
         .WillOnce(Return(block_info_ptr));
 
@@ -320,7 +320,7 @@ TEST_F(mock_app_test, domain_start)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(0));
 
@@ -355,7 +355,7 @@ TEST_F(mock_app_test, domain_start_error)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(-1));
 
@@ -370,7 +370,7 @@ TEST_F(mock_app_test, domain_shutdown)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
 
@@ -409,7 +409,7 @@ TEST_F(mock_app_test, domain_shutdown_timeout)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
 
@@ -430,7 +430,7 @@ TEST_F(mock_app_test, domain_shutoff_timeout)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
 
@@ -451,7 +451,7 @@ TEST_F(mock_app_test, domain_shutdown_bad_request)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
 
-    auto domain = std::make_shared<libvirt::domain>();
+    auto domain = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
     EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(-1));
 

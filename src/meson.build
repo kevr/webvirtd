@@ -1,31 +1,67 @@
 flags = ['-pthread']
 test_flags = ['-DTEST_BUILD']
 
-libwebvirtd = static_library(
-  'webvirtd',
-  'app.cpp',
-  'syscaller.cpp',
-  'util.cpp',
-  'json.cpp',
-  'config.cpp',
-  'libvirt.cpp',
-  'logging.cpp',
-  'virt/domain.cpp',
-  'virt/connection.cpp',
-  'virt/util.cpp',
-  'views/domains.cpp',
-  'http/router.cpp',
-  'http/middleware.cpp',
-  'http/handlers.cpp',
-  'http/io_service.cpp',
-  'stubs/io_service.cpp',
-  dependencies : deps,
-)
-webvirtd_dep = declare_dependency(
-  link_with : [libwebvirtd],
-)
-deps = [webvirtd_dep] + deps
-test_deps = [webvirtd_dep] + test_deps
+if not get_option('disable_tests')
+  libwebvirtd_test = static_library(
+    'webvirtd_test',
+    'app.cpp',
+    'syscaller.cpp',
+    'util.cpp',
+    'json.cpp',
+    'config.cpp',
+    'stubs/libvirt.cpp',
+    'libvirt.cpp',
+    'logging.cpp',
+    'views/domains.cpp',
+    'virt/domain.cpp',
+    'virt/connection.cpp',
+    'virt/util.cpp',
+    'http/router.cpp',
+    'http/middleware.cpp',
+    'http/handlers.cpp',
+    'http/io_service.cpp',
+    'http/util.cpp',
+    'stubs/io_service.cpp',
+    dependencies : deps,
+    cpp_args : flags + test_flags,
+  )
+
+  webvirtd_test_dep = declare_dependency(
+    link_with : [libwebvirtd_test],
+  )
+
+  test_deps = [webvirtd_test_dep] + test_deps
+endif
+
+if not get_option('disable_bin')
+  libwebvirtd = static_library(
+    'webvirtd',
+    'app.cpp',
+    'syscaller.cpp',
+    'util.cpp',
+    'json.cpp',
+    'config.cpp',
+    'libvirt.cpp',
+    'logging.cpp',
+    'views/domains.cpp',
+    'virt/domain.cpp',
+    'virt/connection.cpp',
+    'virt/util.cpp',
+    'http/router.cpp',
+    'http/middleware.cpp',
+    'http/handlers.cpp',
+    'http/io_service.cpp',
+    'http/util.cpp',
+    'stubs/io_service.cpp',
+    dependencies : deps,
+  )
+
+  webvirtd_dep = declare_dependency(
+    link_with : [libwebvirtd],
+  )
+
+  deps = [webvirtd_dep] + deps
+endif
 
 if not get_option('disable_bin')
   executable('webvirtd',

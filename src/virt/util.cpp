@@ -14,8 +14,8 @@
  * permissions and limitations under the License.
  */
 #include "util.hpp"
+#include "../libvirt.hpp"
 #include <fmt/format.h>
-#include <libvirt/libvirt.h>
 #include <map>
 #include <string>
 using namespace webvirt;

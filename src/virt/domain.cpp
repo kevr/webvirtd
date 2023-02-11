@@ -22,97 +22,104 @@
 using namespace webvirt;
 using namespace virt;
 
-domain::domain(libvirt::domain_ptr ptr)
+virt::domain::domain(libvirt::domain_ptr ptr)
     : domain_(std::move(ptr))
 {
 }
 
-domain::domain(const domain &other)
+virt::domain::domain(const domain &other)
     : domain_(other.domain_)
 {
 }
 
-domain::domain(domain &&other)
+virt::domain::domain(domain &&other)
     : domain_(std::move(other.domain_))
 {
 }
 
-domain &domain::operator=(domain other)
+virt::domain &virt::domain::operator=(domain other)
 {
     domain_ = std::move(other.domain_);
     return *this;
 }
 
-domain::operator bool() const
+virt::domain::operator bool() const
 {
     return domain_ != nullptr;
 }
 
-int domain::id() const
+int virt::domain::id() const
 {
     return libvirt::ref().virDomainGetID(domain_);
 }
 
-std::string domain::name() const
+std::string virt::domain::name() const
 {
     return libvirt::ref().virDomainGetName(domain_);
 }
 
-int domain::state() const
+int virt::domain::state() const
 {
     int state, reason;
     libvirt::ref().virDomainGetState(domain_, &state, &reason, 0);
     return state;
 }
 
-bool domain::autostart() const
+bool virt::domain::autostart() const
 {
     int autostart_;
     libvirt::ref().virDomainGetAutostart(domain_, &autostart_);
     return autostart_;
 }
 
-void domain::autostart(bool enabled)
+void virt::domain::autostart(bool enabled)
 {
     libvirt::ref().virDomainSetAutostart(domain_, enabled);
 }
 
-std::string domain::metadata(int type, const char *uri, unsigned int flags)
+std::string virt::domain::metadata(int type, const char *uri,
+                                   unsigned int flags)
 {
     return libvirt::ref().virDomainGetMetadata(domain_, type, uri, flags);
 }
 
-bool domain::metadata(int type, const char *metadata, const char *key,
-                      const char *uri, unsigned int flags)
+bool virt::domain::metadata(int type, const char *metadata, const char *key,
+                            const char *uri, unsigned int flags)
 {
     return libvirt::ref().virDomainSetMetadata(
                domain_, type, metadata, key, uri, flags) == 0;
 }
 
-std::string domain::xml_desc()
+std::string virt::domain::xml_desc()
 {
     return libvirt::ref().virDomainGetXMLDesc(domain_, 0);
 }
 
-pugi::xml_document domain::xml_document()
+pugi::xml_document virt::domain::xml_document()
 {
-    pugi::xml_document doc;
     auto desc = xml_desc();
-    doc.load_buffer(desc.c_str(), desc.size());
+    pugi::xml_document doc;
+
+    // By not checking load results, we return a blank xml_document on failure.
+    // A blank xml_document will produce empty string values for
+    // children/attributes read, allowing XML routes to fall through
+    // gracefully.
+    doc.load_string(desc.c_str());
+
     return doc;
 }
 
-libvirt::block_info_ptr domain::block_info(const std::string &device)
+libvirt::block_info_ptr virt::domain::block_info(const std::string &device)
 {
     return libvirt::ref().virDomainGetBlockInfo(domain_, device.c_str(), 0);
 }
 
-bool domain::start()
+bool virt::domain::start()
 {
     return libvirt::ref().virDomainCreate(domain_) == 0;
 }
 
-bool domain::shutdown()
+bool virt::domain::shutdown()
 {
     // If we don't get to the 'Shutdown' state within some tries...
     // then we sent a shutdown when the guest wasn't ready to be
@@ -155,7 +162,7 @@ bool domain::shutdown()
     return true;
 }
 
-Json::Value domain::simple_json() const
+Json::Value virt::domain::simple_json() const
 {
     auto &lv = libvirt::ref();
     int state, reason;

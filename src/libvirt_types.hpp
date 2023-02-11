@@ -13,24 +13,32 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef JSON_HPP
-#define JSON_HPP
+#ifndef LIBVIRT_TYPES_HPP
+#define LIBVIRT_TYPES_HPP
 
-#include <boost/beast.hpp>
-#include <json/json.h>
-#include <stdexcept>
-#include <string>
+#ifndef TEST_BUILD
+#include <libvirt/libvirt.h>
+#endif
 
-namespace webvirt::json
+#include <memory>
+
+namespace webvirt
 {
+#ifdef TEST_BUILD
+struct connect {
+};
+struct domain {
+};
+struct block_info {
+    unsigned long capacity;
+    unsigned long allocation;
+    unsigned long physical;
+};
+#else
+using connect = virConnect;
+using domain = virDomain;
+using block_info = virDomainBlockInfo;
+#endif
+}; // namespace webvirt
 
-Json::Value parse(const std::string &str);
-Json::Value parse(const boost::beast::multi_buffer &);
-
-Json::Value error(const std::string &detail);
-
-std::string stringify(const Json::Value &json);
-
-}; // namespace webvirt::json
-
-#endif /* JSON_HPP */
+#endif /* LIBVIRT_TYPES_HPP */

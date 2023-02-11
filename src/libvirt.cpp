@@ -36,17 +36,17 @@ libvirt &libvirt::reset()
     return ref();
 }
 
-void libvirt::free_connect_ptr::operator()(virConnectPtr ptr)
+void libvirt::free_connect_ptr::operator()(connect *ptr)
 {
     if (ptr) {
-        virConnectClose(ptr);
+        ::virConnectClose(ptr);
     }
 }
 
-void libvirt::free_domain_ptr::operator()(virDomainPtr ptr)
+void libvirt::free_domain_ptr::operator()(domain *ptr)
 {
     if (ptr) {
-        virDomainFree(ptr);
+        ::virDomainFree(ptr);
     }
 }
 
@@ -73,7 +73,7 @@ std::string libvirt::virDomainGetXMLDesc(domain_ptr domain, int flags)
 libvirt::block_info_ptr
 libvirt::virDomainGetBlockInfo(domain_ptr domain, const char *name, int flags)
 {
-    auto block_info_ptr = std::make_shared<libvirt::block_info>();
+    auto block_info_ptr = std::make_shared<block_info>();
     ::virDomainGetBlockInfo(domain.get(), name, block_info_ptr.get(), flags);
     return block_info_ptr;
 }
@@ -139,7 +139,7 @@ libvirt::virConnectListAllDomains(connect_ptr conn, int flags)
 {
     std::vector<libvirt::domain_ptr> output;
 
-    virDomainPtr *domains = nullptr;
+    domain **domains = nullptr;
     int count = ::virConnectListAllDomains(conn.get(), &domains, flags);
     for (int i = 0; i < count; ++i) {
         output.emplace_back(domains[i], free_domain_ptr());

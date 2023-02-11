@@ -16,7 +16,10 @@
 #ifndef LIBVIRT_HPP
 #define LIBVIRT_HPP
 
-#include <libvirt/libvirt.h>
+#include "libvirt_types.hpp"
+#ifdef TEST_BUILD
+#include "stubs/libvirt.hpp"
+#endif
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,23 +29,6 @@ namespace webvirt
 
 class libvirt
 {
-public:
-#ifdef TEST_BUILD
-    struct connect {
-    };
-    struct domain {
-    };
-    struct block_info {
-        unsigned long capacity;
-        unsigned long allocation;
-        unsigned long physical;
-    };
-#else
-    using connect = virConnect;
-    using domain = virDomain;
-    using block_info = virDomainBlockInfo;
-#endif
-
 private:
     static libvirt instance_;
     static libvirt *ptr_;
@@ -54,11 +40,11 @@ public:
 
 private:
     struct free_connect_ptr {
-        void operator()(virConnectPtr);
+        void operator()(connect *);
     };
 
     struct free_domain_ptr {
-        void operator()(virDomainPtr);
+        void operator()(domain *);
     };
 
 public:

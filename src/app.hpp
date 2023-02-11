@@ -57,6 +57,17 @@ private:
                          std::placeholders::_1,
                          std::placeholders::_2,
                          std::placeholders::_3,
+                         std::placeholders::_4);
+    }
+
+    template <typename Func, typename Pointer>
+    auto bind_libvirt_domain(Func fn, Pointer ptr)
+    {
+        return std::bind(fn,
+                         ptr,
+                         std::placeholders::_1,
+                         std::placeholders::_2,
+                         std::placeholders::_3,
                          std::placeholders::_4,
                          std::placeholders::_5);
     }

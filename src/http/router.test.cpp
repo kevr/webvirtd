@@ -27,8 +27,8 @@ using testing::Test;
 class router_test : public Test
 {
 protected:
-    static void noop(const std::string &, const std::smatch &,
-                     const http::request &, http::response &)
+    static void noop(const std::smatch &, const http::request &,
+                     http::response &)
     {
     }
 
@@ -38,7 +38,7 @@ protected:
 TEST_F(router_test, noop)
 {
     http::response response;
-    noop("", std::smatch(), http::request(), response);
+    noop(std::smatch(), http::request(), response);
 }
 
 TEST_F(router_test, with_user_invalid_user)

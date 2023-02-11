@@ -17,6 +17,7 @@
 #include "../json.hpp"
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
+#include "util.hpp"
 using namespace webvirt;
 using namespace http;
 
@@ -27,16 +28,14 @@ static bool allowed_methods(const std::vector<beast::http::verb> &methods,
     return it != methods.end();
 }
 
-std::function<void(const std::smatch &, const http::request &,
-                   http::response &)>
-middleware::with_methods(
-    const std::vector<boost::beast::http::verb> &methods,
-    std::function<void(const std::smatch &, const http::request &,
-                       http::response &)>
-        route_fn)
+http::route_function
+middleware::with_methods(const std::vector<boost::beast::http::verb> &methods,
+                         http::route_function route_fn)
 {
     return [methods,
             route_fn](const auto &m, const auto &request, auto &response) {
+        // TODO: Check + response for OPTIONS here
+
         if (!allowed_methods(methods, request.method())) {
             return response.result(beast::http::status::method_not_allowed);
         }
@@ -45,57 +44,71 @@ middleware::with_methods(
     };
 }
 
-std::function<void(const std::smatch &, const http::request &,
-                   http::response &)>
-middleware::with_libvirt(
-    std::function<void(virt::connection &, const std::string &,
+http::route_function middleware::with_libvirt_domain(
+    std::function<void(virt::connection &, virt::domain domain,
                        const std::smatch &, const http::request &,
                        http::response &)>
         route_fn)
 {
-    return with_user([route_fn](const auto &user,
-                                const auto &m,
+    return with_libvirt([route_fn](virt::connection &conn,
+                                   const std::smatch &match,
+                                   const http::request &request,
+                                   http::response &response) {
+        const std::string name(match[2]);
+        virt::domain domain;
+        try {
+            domain = conn.domain(name);
+        } catch (const std::domain_error &) {
+            auto error = json::error("Domain not found");
+            return http::set_response(response,
+                                      json::stringify(error),
+                                      beast::http::status::not_found);
+        }
+
+        return route_fn(conn, domain, match, request, response);
+    });
+}
+
+http::route_function middleware::with_libvirt(
+    std::function<void(virt::connection &, const std::smatch &,
+                       const http::request &, http::response &)>
+        route_fn)
+{
+    return with_user([route_fn](const auto &match,
                                 const auto &request,
                                 auto &response) {
+        const std::string user = match[1];
         virt::connection conn;
-        Json::Value json(Json::objectValue);
         try {
             conn.connect(virt::uri(user));
         } catch (const std::runtime_error &e) {
-            json["detail"] = "Unable to connect to libvirt";
-            response.result(beast::http::status::internal_server_error);
-            auto output = json::stringify(json);
-            response.body().append(output);
-            response.content_length(response.body().size());
-            return;
+            auto error = json::error("Unable to connect to libvirt");
+            return set_response(response,
+                                json::stringify(error),
+                                beast::http::status::internal_server_error);
         }
 
         response.set("Content-Type", "application/json");
         response.result(beast::http::status::ok);
-        return route_fn(conn, user, m, request, response);
+        return route_fn(conn, match, request, response);
     });
 }
 
-std::function<void(const std::smatch &, const http::request &,
-                   http::response &)>
-middleware::with_user(
-    std::function<void(const std::string &, const std::smatch &,
-                       const http::request &, http::response &)>
-        route_fn)
+http::route_function middleware::with_user(route_function route_fn)
 {
-    return [route_fn](const auto &m, const auto &request, auto &response) {
+    return [route_fn](const auto &match, const auto &request, auto &response) {
         // Parse expected JSON from the request body.
-        std::string user(m[1]);
+        std::string user(match[1]);
 
         auto &sys = syscaller::instance();
         auto *passwd = sys.getpwnam(user.c_str());
         if (!passwd) {
-            Json::Value error(Json::objectValue);
-            error["detail"] = "Unable to locate user";
-            response.body().append(json::stringify(error));
-            return response.result(beast::http::status::not_found);
+            auto error = json::error("Unable to locate user");
+            return set_response(response,
+                                json::stringify(error),
+                                beast::http::status::not_found);
         }
 
-        return route_fn(user, m, request, response);
+        return route_fn(match, request, response);
     };
 }

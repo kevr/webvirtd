@@ -13,24 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef JSON_HPP
-#define JSON_HPP
+#include "util.hpp"
+using namespace webvirt;
 
-#include <boost/beast.hpp>
-#include <json/json.h>
-#include <stdexcept>
-#include <string>
-
-namespace webvirt::json
+void http::set_response(http::response &response, const std::string &data,
+                        beast::http::status status_code)
 {
-
-Json::Value parse(const std::string &str);
-Json::Value parse(const boost::beast::multi_buffer &);
-
-Json::Value error(const std::string &detail);
-
-std::string stringify(const Json::Value &json);
-
-}; // namespace webvirt::json
-
-#endif /* JSON_HPP */
+    response.result(status_code);
+    response.body().append(data);
+    response.content_length(response.body().size());
+}

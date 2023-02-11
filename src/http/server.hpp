@@ -135,25 +135,23 @@ public:
 private:
     void async_accept()
     {
-        const auto func = __func__;
-        acceptor_.async_accept(
-            socket_, [this, &func](boost::beast::error_code) {
-                // Here, we don't handle beast::error_code; we let that
-                // job fall through to the connection we make. If there's
-                // a problem with the socket, operations will fails within
-                // the connection immediately, which calls on_error_.
+        acceptor_.async_accept(socket_, [this](boost::beast::error_code) {
+            // Here, we don't handle beast::error_code; we let that
+            // job fall through to the connection we make. If there's
+            // a problem with the socket, operations will fails within
+            // the connection immediately, which calls on_error_.
 
-                auto conn = std::make_shared<
-                    connection<net::unix::acceptor, net::unix::socket>>(
-                    std::move(socket_), timeout_);
-                on_accept_(*conn);
-                conn->on_error(on_error_);
-                conn->on_close(on_close_);
-                conn->on_request(on_request_);
-                conn->start();
+            auto conn = std::make_shared<
+                connection<net::unix::acceptor, net::unix::socket>>(
+                std::move(socket_), timeout_);
+            on_accept_(*conn);
+            conn->on_error(on_error_);
+            conn->on_close(on_close_);
+            conn->on_request(on_request_);
+            conn->start();
 
-                async_accept();
-            });
+            async_accept();
+        });
     }
 };
 

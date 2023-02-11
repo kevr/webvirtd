@@ -19,6 +19,7 @@
 using namespace webvirt;
 
 using http::middleware::with_libvirt;
+using http::middleware::with_libvirt_domain;
 using http::middleware::with_methods;
 
 app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
@@ -32,27 +33,27 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
                                    &views::domains::index, &domains_view_))));
     router_.route(R"(^/users/([^/]+)/domains/([^/]+)/$)",
                   with_methods({ beast::http::verb::get },
-                               with_libvirt(bind_libvirt(&views::domains::show,
-                                                         &domains_view_))));
+                               with_libvirt_domain(bind_libvirt_domain(
+                                   &views::domains::show, &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
         with_methods({ beast::http::verb::post, beast::http::verb::delete_ },
-                     with_libvirt(bind_libvirt(&views::domains::autostart,
-                                               &domains_view_))));
+                     with_libvirt_domain(bind_libvirt_domain(
+                         &views::domains::autostart, &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
         with_methods({ beast::http::verb::post },
-                     with_libvirt(bind_libvirt(&views::domains::metadata,
-                                               &domains_view_))));
+                     with_libvirt_domain(bind_libvirt_domain(
+                         &views::domains::metadata, &domains_view_))));
     router_.route(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
                   with_methods({ beast::http::verb::post },
-                               with_libvirt(bind_libvirt(
+                               with_libvirt_domain(bind_libvirt_domain(
                                    &views::domains::start, &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/shutdown/)",
         with_methods({ beast::http::verb::post },
-                     with_libvirt(bind_libvirt(&views::domains::shutdown,
-                                               &domains_view_))));
+                     with_libvirt_domain(bind_libvirt_domain(
+                         &views::domains::shutdown, &domains_view_))));
 
     server_.on_request([this](auto &, const auto &request, auto &response) {
         return router_.run(request, response);

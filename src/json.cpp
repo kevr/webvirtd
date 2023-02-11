@@ -35,6 +35,13 @@ Json::Value json::parse(const boost::beast::multi_buffer &buffer)
     return parse(content);
 }
 
+Json::Value json::error(const std::string &detail)
+{
+    Json::Value data(Json::objectValue);
+    data["detail"] = detail;
+    return data;
+}
+
 std::string json::stringify(const Json::Value &json)
 {
     Json::FastWriter writer;

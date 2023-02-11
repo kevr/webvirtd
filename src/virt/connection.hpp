@@ -21,7 +21,6 @@
 #include <cstring>
 #include <errno.h>
 #include <json/json.h>
-#include <libvirt/libvirt.h>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -34,7 +33,7 @@ namespace webvirt::virt
 class connection
 {
 private:
-    std::shared_ptr<virConnect> conn_ = nullptr;
+    libvirt::connect_ptr conn_ = nullptr;
     int errno_ = 0;
 
 public:
@@ -50,6 +49,7 @@ public:
     std::vector<virt::domain> domains();
     virt::domain domain(const std::string &name);
     libvirt::domain_ptr get_domain_ptr(const std::string &name);
+    libvirt::connect_ptr get_ptr();
 
     int error();
     const char *strerror();

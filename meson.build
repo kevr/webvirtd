@@ -33,19 +33,19 @@ libvirt_dep = dependency(
   required : true
 )
 
-deps = [
+base_deps = [
   boost_dep,
-  libvirt_dep,
   jsoncpp_dep,
   fmt_dep,
   pugixml_dep,
 ]
+deps = base_deps + [libvirt_dep]
 
 test_deps = [
   gtest_dep,
   gtest_main_dep,
   gmock_dep,
-] + deps
+] + base_deps
 
 subdir('src')
 
@@ -58,6 +58,7 @@ run_target('filter-coverage',
   command : [
     bash, filtered_lcov, build_dir,
     '**/src/libvirt.cpp',
+    '**/src/stubs/libvirt.cpp',
     '**/src/syscaller.cpp',
   ],
 )
