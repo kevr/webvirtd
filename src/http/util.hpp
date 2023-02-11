@@ -17,12 +17,14 @@
 #define HTTP_UTIL_HPP
 
 #include "namespaces.hpp"
+#include <json/json.h>
 
 namespace webvirt::http
 {
 
 void set_response(http::response &, const std::string &, beast::http::status);
+void set_response(http::response &, const Json::Value &, beast::http::status);
 
-};
+}; // namespace webvirt::http
 
 #endif /* HTTP_UTIL_HPP */

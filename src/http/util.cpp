@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "util.hpp"
+#include "../json.hpp"
 using namespace webvirt;
 
 void http::set_response(http::response &response, const std::string &data,
@@ -22,4 +23,10 @@ void http::set_response(http::response &response, const std::string &data,
     response.result(status_code);
     response.body().append(data);
     response.content_length(response.body().size());
+}
+
+void http::set_response(http::response &response, const Json::Value &data,
+                        beast::http::status status_code)
+{
+    return set_response(response, json::stringify(data), status_code);
 }

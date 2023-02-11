@@ -47,8 +47,7 @@ void domains::index(virt::connection &conn, const std::smatch &,
         data.append(std::move(item));
     }
 
-    response.body().append(json::stringify(std::move(data)));
-    response.content_length(response.body().size());
+    return http::set_response(response, data, beast::http::status::ok);
 }
 
 void domains::show(virt::connection &, virt::domain domain,
@@ -57,11 +56,7 @@ void domains::show(virt::connection &, virt::domain domain,
 {
     const std::string name(location[2]);
 
-    auto desc = domain.xml_desc();
-    std::cout << desc;
-    pugi::xml_document doc;
-    doc.load_buffer(desc.c_str(), desc.size());
-
+    auto doc = domain.xml_document();
     auto domain_ = doc.child("domain");
 
     Json::Value data(Json::objectValue);
@@ -151,8 +146,7 @@ void domains::show(virt::connection &, virt::domain domain,
     data["state"]["id"] = state;
     data["state"]["string"] = virt::state_string(state);
 
-    response.body().append(json::stringify(data));
-    response.content_length(response.body().size());
+    return http::set_response(response, data, beast::http::status::ok);
 }
 
 void domains::autostart(virt::connection &, virt::domain domain,
@@ -167,8 +161,7 @@ void domains::autostart(virt::connection &, virt::domain domain,
     Json::Value object(Json::objectValue);
     object["autostart"] = enabled;
 
-    response.body().append(json::stringify(std::move(object)));
-    response.content_length(response.body().size());
+    return http::set_response(response, object, beast::http::status::ok);
 }
 
 void domains::bootmenu(virt::connection &conn, virt::domain domain,
@@ -190,15 +183,13 @@ void domains::bootmenu(virt::connection &conn, virt::domain domain,
     doc.save(ss);
     auto xml = ss.str();
 
-    Json::Value data(Json::objectValue);
     if (!domain.define_xml(conn.get_ptr(), xml.c_str())) {
-        data["detail"] = "Unable to replace domain XML";
         return http::set_response(response,
-                                  json::stringify(data),
+                                  json::error("Unable to replace domain XML"),
                                   beast::http::status::internal_server_error);
     }
 
-    Json::Value object(Json::objectValue);
+    Json::Value data(Json::objectValue), object(Json::objectValue);
     data["type"] = object;
     auto type = os.child("type");
     data["type"]["arch"] = type.attribute("arch").as_string();
@@ -211,8 +202,7 @@ void domains::bootmenu(virt::connection &conn, virt::domain domain,
     data["bootmenu"]["enable"] =
         bootmenu.attribute("enable").as_string() == "yes"s;
 
-    http::set_response(
-        response, json::stringify(data), beast::http::status::ok);
+    return http::set_response(response, data, beast::http::status::ok);
 }
 
 void domains::metadata(virt::connection &, virt::domain domain,
@@ -221,18 +211,17 @@ void domains::metadata(virt::connection &, virt::domain domain,
 {
     const std::string name(location[2]);
 
-    // JSON output from this function.
-    Json::Value output(Json::objectValue);
-
     Json::Value data(Json::objectValue);
     try {
         data = json::parse(request.body());
     } catch (const std::invalid_argument &) {
-        output["detail"] = "Invalid JSON input";
         return http::set_response(response,
-                                  json::stringify(output),
+                                  json::error("Invalid JSON input"),
                                   beast::http::status::bad_request);
     }
+
+    // JSON output from this function.
+    Json::Value output(Json::objectValue);
 
     auto current_title =
         domain.metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
@@ -259,9 +248,7 @@ void domains::metadata(virt::connection &, virt::domain domain,
         response.result(beast::http::status::not_modified);
     }
 
-    response.set(boost::beast::http::field::content_type, "application/json");
-    response.body().append(json::stringify(output));
-    response.content_length(response.body().size());
+    return http::set_response(response, output, response.result());
 }
 
 void domains::start(virt::connection &, virt::domain domain,
@@ -271,17 +258,13 @@ void domains::start(virt::connection &, virt::domain domain,
     const std::string name(location[2]);
 
     if (!domain.start()) {
-        Json::Value data(Json::objectValue);
-        data["detail"] = "Unable to start domain";
-        response.result(beast::http::status::bad_request);
-        response.body().append(json::stringify(data));
-        response.content_length(response.body().size());
-        return;
+        return http::set_response(response,
+                                  json::error("Unable to start domain"),
+                                  beast::http::status::bad_request);
     }
 
-    response.result(beast::http::status::created);
-    response.body().append(json::stringify(domain.simple_json()));
-    response.content_length(response.body().size());
+    return http::set_response(
+        response, domain.simple_json(), beast::http::status::created);
 }
 
 void domains::shutdown(virt::connection &, virt::domain domain,
@@ -294,23 +277,17 @@ void domains::shutdown(virt::connection &, virt::domain domain,
     try {
         ok = domain.shutdown();
     } catch (const std::out_of_range &exc) {
-        Json::Value data(Json::objectValue);
-        data["detail"] = "Shutdown operation timed out";
-        response.result(beast::http::status::gateway_timeout);
-        response.body().append(json::stringify(data));
-        response.content_length(response.body().size());
-        return;
+        return http::set_response(response,
+                                  json::error("Shutdown operation timed out"),
+                                  beast::http::status::gateway_timeout);
     }
 
     if (!ok) {
-        Json::Value data(Json::objectValue);
-        data["detail"] = "Unable to shutdown domain";
-        response.result(beast::http::status::bad_request);
-        response.body().append(json::stringify(data));
-        response.content_length(response.body().size());
-        return;
+        return http::set_response(response,
+                                  json::error("Unable to shutdown domain"),
+                                  beast::http::status::bad_request);
     }
 
-    response.body().append(json::stringify(domain.simple_json()));
-    response.content_length(response.body().size());
+    return http::set_response(
+        response, domain.simple_json(), beast::http::status::ok);
 }
