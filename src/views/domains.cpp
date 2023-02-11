@@ -17,6 +17,7 @@
 #include "../http/util.hpp"
 #include "../json.hpp"
 #include "../virt/util.hpp"
+#include <boost/cast.hpp>
 #include <fmt/format.h>
 #include <fstream>
 #include <iostream>
@@ -72,73 +73,46 @@ void domains::show(virt::connection &, virt::domain domain,
     info["cpus"] = domain_.child("vcpu").text().as_uint();
     info["maxMemory"] = domain_.child("memory").text().as_uint();
     info["memory"] = domain_.child("currentMemory").text().as_uint();
-    info["os"] = Json::Value(Json::objectValue);
-    info["os"]["type"] = Json::Value(Json::objectValue);
+
     auto os = domain_.child("os");
-    info["os"]["type"]["arch"] =
-        os.child("type").attribute("arch").as_string();
-    info["os"]["type"]["machine"] =
-        os.child("type").attribute("machine").as_string();
-    info["os"]["boot"] = Json::Value(Json::objectValue);
-    info["os"]["boot"]["dev"] = os.child("boot").attribute("dev").as_string();
-    info["os"]["bootmenu"] = Json::Value(Json::objectValue);
-    info["os"]["bootmenu"]["enable"] =
-        os.child("bootmenu").attribute("enable").as_string() == "yes"s;
+    info["os"] = Json::Value(Json::objectValue);
+    info["os"]["type"] = json::xml_to_json(os.child("type"));
+    info["os"]["boot"] = json::xml_to_json(os.child("boot"));
+    info["os"]["bootmenu"] = json::xml_to_json(os.child("bootmenu"));
 
-    info["devices"] = Json::Value(Json::objectValue);
-    info["devices"]["emulator"] =
-        domain_.child("devices").child("emulator").text().as_string();
-    info["devices"]["disks"] = Json::Value(Json::arrayValue);
-    auto disks = domain_.child("devices").children("disk");
-    for (auto &disk : disks) {
-        Json::Value object(Json::objectValue);
-        auto device_type = disk.attribute("device").as_string();
-        object["device"] = device_type;
-        object["driver"] = Json::Value(Json::objectValue);
-        object["driver"]["name"] =
-            disk.child("driver").attribute("name").as_string();
-        object["driver"]["type"] =
-            disk.child("driver").attribute("type").as_string();
-        object["source"] = Json::Value(Json::objectValue);
-        object["source"]["file"] =
-            disk.child("source").attribute("file").as_string();
-        object["target"] = Json::Value(Json::objectValue);
-        auto device = disk.child("target").attribute("dev").as_string();
-        object["target"]["dev"] = device;
-        object["target"]["bus"] =
-            disk.child("target").attribute("bus").as_string();
+    info["devices"] = json::xml_to_json(domain_.child("devices"));
+    if (info["devices"]["disk"].type() != Json::arrayValue) {
+        auto disk = info["devices"]["disk"];
+        info["devices"]["disk"] = Json::Value(Json::arrayValue);
+        info["devices"]["disk"].append(std::move(disk));
+    }
 
-        static const std::string target_type = "disk";
-        if (device_type == target_type) {
-            auto block_info_ptr = domain.block_info(device);
-            object["block_info"] = Json::Value(Json::objectValue);
+    if (info["devices"]["interface"].type() != Json::arrayValue) {
+        auto iface = info["devices"]["interface"];
+        info["devices"]["interface"] = Json::Value(Json::arrayValue);
+        info["devices"]["interface"].append(std::move(iface));
+    }
 
-            // Size values in Kilobytes
-            object["block_info"]["unit"] = "KiB";
-            object["block_info"]["capacity"] =
-                static_cast<unsigned long>(block_info_ptr->capacity / 1000);
-            object["block_info"]["allocation"] =
-                static_cast<unsigned long>(block_info_ptr->allocation / 1000);
-            object["block_info"]["physical"] =
-                static_cast<unsigned long>(block_info_ptr->physical / 1000);
+    if (info["devices"]["disk"]) {
+        for (auto &disk : info["devices"]["disk"]) {
+            // If this is not a storage disk, continue on.
+            if (disk["attrib"]["device"].asString() != "disk"s)
+                continue;
+
+            // Collect block_info sizing for the disk.
+            auto dev = disk["target"]["attrib"]["dev"].asString();
+            auto block_info_ptr = domain.block_info(dev);
+            auto block_info = Json::Value(Json::objectValue);
+            block_info["unit"] = "KiB";
+            block_info["capacity"] = boost::numeric_cast<unsigned long>(
+                block_info_ptr->capacity / 1000);
+            block_info["allocation"] = boost::numeric_cast<unsigned long>(
+                block_info_ptr->allocation / 1000);
+            block_info["physical"] = boost::numeric_cast<unsigned long>(
+                block_info_ptr->physical / 1000);
+            disk["block_info"] = std::move(block_info);
         }
-
-        info["devices"]["disks"].append(std::move(object));
     }
-
-    info["devices"]["interfaces"] = Json::Value(Json::arrayValue);
-    auto interfaces = domain_.child("devices").children("interface");
-    for (auto &interface : interfaces) {
-        Json::Value object(Json::objectValue);
-        object["macAddress"] =
-            interface.child("mac").attribute("address").as_string();
-        object["model"] =
-            interface.child("model").attribute("type").as_string();
-        object["name"] =
-            interface.child("alias").attribute("name").as_string();
-        info["devices"]["interfaces"].append(std::move(object));
-    }
-
     data["info"] = std::move(info);
 
     int state = domain.state();
@@ -189,18 +163,10 @@ void domains::bootmenu(virt::connection &conn, virt::domain domain,
                                   beast::http::status::internal_server_error);
     }
 
-    Json::Value data(Json::objectValue), object(Json::objectValue);
-    data["type"] = object;
-    auto type = os.child("type");
-    data["type"]["arch"] = type.attribute("arch").as_string();
-    data["type"]["machine"] = type.attribute("machine").as_string();
-    data["boot"] = object;
-    auto boot = os.child("boot");
-    data["boot"]["dev"] = boot.attribute("dev").as_string();
-    data["bootmenu"] = object;
-    auto bootmenu = os.child("bootmenu");
-    data["bootmenu"]["enable"] =
-        bootmenu.attribute("enable").as_string() == "yes"s;
+    Json::Value data(Json::objectValue);
+    data["type"] = json::xml_to_json(os.child("type"));
+    data["boot"] = json::xml_to_json(os.child("boot"));
+    data["bootmenu"] = json::xml_to_json(os.child("bootmenu"));
 
     return http::set_response(response, data, beast::http::status::ok);
 }

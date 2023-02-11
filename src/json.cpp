@@ -15,6 +15,7 @@
  */
 #include "json.hpp"
 using namespace webvirt;
+using namespace std::string_literals;
 
 Json::Value json::parse(const std::string &str)
 {
@@ -46,4 +47,40 @@ std::string json::stringify(const Json::Value &json)
 {
     Json::FastWriter writer;
     return writer.write(json);
+}
+
+Json::Value json::xml_to_json(const pugi::xml_node &node)
+{
+    Json::Value data(Json::objectValue);
+
+    Json::Value attributes(Json::objectValue);
+    for (auto attr : node.attributes()) {
+        attributes[attr.name()] = attr.value();
+    }
+    data["attrib"] = std::move(attributes);
+
+    auto text = std::string(node.text().as_string());
+    if (text.size()) {
+        data["text"] = text;
+    }
+
+    for (auto child : node.children()) {
+        auto name = child.name();
+
+        if (name == ""s)
+            continue;
+
+        if (data.isMember(name)) {
+            if (data[name].type() != Json::arrayValue) {
+                auto current = data[name];
+                data[name] = Json::Value(Json::arrayValue);
+                data[name].append(current);
+            }
+            data[name].append(xml_to_json(child));
+        } else {
+            data[name] = xml_to_json(child);
+        }
+    }
+
+    return data;
 }

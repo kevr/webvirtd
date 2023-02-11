@@ -224,7 +224,7 @@ TEST_F(domains_test, bootmenu_post)
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
     auto data = json::parse(response_.body());
-    EXPECT_EQ(data["bootmenu"]["enable"].asBool(), true);
+    EXPECT_EQ(data["bootmenu"]["attrib"]["enable"].asString(), "yes");
 }
 
 TEST_F(domains_test, bootmenu_delete)

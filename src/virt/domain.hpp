@@ -17,25 +17,17 @@
 #define VIRT_DOMAIN_HPP
 
 #include "../libvirt.hpp"
+#include "ptr_type.hpp"
 #include <json/json.h>
 #include <pugixml.hpp>
 
 namespace webvirt::virt
 {
 
-class domain
+class domain : public ptr_type<libvirt::domain_ptr>
 {
-private:
-    libvirt::domain_ptr domain_;
-
 public:
-    domain() = default;
-    domain(libvirt::domain_ptr);
-    domain(const domain &);
-    domain(domain &&);
-    domain &operator=(domain);
-
-    operator bool() const;
+    using ptr_type::ptr_type;
 
     int id() const;
     std::string name() const;
@@ -59,7 +51,7 @@ public:
     template <typename connection_ptr>
     virt::domain &define_xml(connection_ptr conn, const char *xml)
     {
-        domain_ = libvirt::ref().virDomainDefineXML(conn, xml);
+        ptr_ = libvirt::ref().virDomainDefineXML(conn, xml);
         return *this;
     }
 };

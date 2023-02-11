@@ -165,9 +165,18 @@ public:
     <vcpu>{}</vcpu>
     <currentMemory>{}</currentMemory>
     <memory>{}</memory>
+    <os>
+        <type arch="x86_64" machine="pc-q35-7.2">hvm</type>
+    </os>
     <devices>
         {}
         {}
+        <controller index="0" model="qemu-xhci" ports="15" type="usb">
+            <address bus="0x02" domain="0x0000" function="0x0" slot="0x00" type="pci" />
+        </controller>
+        <controller index="1" model="qemu-xhci" ports="15" type="usb">
+            <address bus="0x03" domain="0x0000" function="0x0" slot="0x00" type="pci" />
+        </controller>
     </devices>
 </domain>
 )",
@@ -199,11 +208,10 @@ TEST_F(app_test, options)
 
 TEST_F(app_test, options_not_found)
 {
-    const char *endpoint = "/users/test/blahblah";
+    const char *endpoint = "/users/test/blahblah/";
     client->async_options(endpoint).run();
 
     EXPECT_EQ(response.result(), beast::http::status::not_found);
-    EXPECT_EQ(response.at(beast::http::field::allow), "GET, OPTIONS");
 }
 
 TEST_F(app_test, not_found)
@@ -271,6 +279,38 @@ TEST_F(mock_app_test, domains_libvirt_error)
     EXPECT_EQ(object["detail"], "Unable to connect to libvirt");
 }
 
+TEST_F(mock_app_test, domain_cdrom)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+
+    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(dom));
+    EXPECT_CALL(lv, virDomainGetAutostart(_, _))
+        .WillOnce(Invoke([](auto, int *autostart) {
+            *autostart = 0;
+            return 0;
+        }));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    auto disk = std::make_tuple(
+        "cdrom"s, "qemu"s, "raw"s, "/path/to/source.iso"s, "sda"s, "sata"s);
+    auto iface =
+        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
+    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk });
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
+
+    auto endpoint = fmt::format("/users/{}/domains/test/", username);
+    client->async_get(endpoint.c_str()).run();
+
+    EXPECT_EQ(response.result_int(),
+              static_cast<int>(beast::http::status::ok));
+}
+
 TEST_F(mock_app_test, domain)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
@@ -302,7 +342,7 @@ TEST_F(mock_app_test, domain)
 
     auto block_info_ptr = std::make_shared<webvirt::block_info>();
     EXPECT_CALL(lv, virDomainGetBlockInfo(_, _, _))
-        .WillOnce(Return(block_info_ptr));
+        .WillRepeatedly(Return(block_info_ptr));
 
     auto endpoint = fmt::format("/users/{}/domains/test/", username);
     client->async_get(endpoint.c_str()).run();
@@ -329,8 +369,11 @@ TEST_F(mock_app_test, domain_not_found)
     auto endpoint = fmt::format("/users/{}/domains/test/", username);
     client->async_get(endpoint.c_str()).run();
 
-    EXPECT_EQ(response.result_int(),
-              static_cast<int>(beast::http::status::not_found));
+    EXPECT_EQ(response.result(), beast::http::status::not_found);
+
+    // When routes are matched but not_found is returned, there should
+    // be an Allow header present with configured methods.
+    EXPECT_EQ(response.at(beast::http::field::allow), "GET, OPTIONS");
 }
 
 TEST_F(mock_app_test, domain_start)

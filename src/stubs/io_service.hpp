@@ -31,8 +31,6 @@ private:
 
 public:
     io_service(std::size_t iterations = 0);
-    virtual ~io_service() = default;
-
     std::size_t process() override;
 };
 

@@ -2,6 +2,8 @@ flags = ['-pthread']
 test_flags = ['-DTEST_BUILD']
 
 if not get_option('disable_tests')
+  flags += ['-g']
+
   libwebvirtd_test = static_library(
     'webvirtd_test',
     'app.cpp',

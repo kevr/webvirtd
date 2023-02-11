@@ -18,6 +18,7 @@
 
 #include <boost/beast.hpp>
 #include <json/json.h>
+#include <pugixml.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -30,6 +31,8 @@ Json::Value parse(const boost::beast::multi_buffer &);
 Json::Value error(const std::string &detail);
 
 std::string stringify(const Json::Value &json);
+
+Json::Value xml_to_json(const pugi::xml_node &node);
 
 }; // namespace webvirt::json
 
