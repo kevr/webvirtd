@@ -17,6 +17,7 @@
 #include "../json.hpp"
 #include "../mocks/libvirt.hpp"
 #include "../virt/connection.hpp"
+#include "../virt/domain.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
 
@@ -40,7 +41,7 @@ public:
     void SetUp() override
     {
         libvirt::change(lv);
-        libvirt::connect_ptr ptr = std::make_shared<libvirt::connect>();
+        libvirt::connect_ptr ptr = std::make_shared<webvirt::connect>();
         EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
         conn_.connect("socket.sock");
 
@@ -65,9 +66,6 @@ protected:
 
 TEST_F(domains_test, autostart_post)
 {
-    libvirt::domain_ptr domain = std::make_shared<libvirt::domain>();
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
-
     int autostart = 0;
     EXPECT_CALL(lv, virDomainSetAutostart(_, _))
         .WillOnce(Invoke([&](auto, int autostart_) {
@@ -79,7 +77,10 @@ TEST_F(domains_test, autostart_post)
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
                       "/users/test/domains/test/autostart/");
     request_.method(boost::beast::http::verb::post);
-    views_.autostart(conn_, "test", location, request_, response_);
+
+    libvirt::domain_ptr domain = std::make_shared<webvirt::domain>();
+    views_.autostart(
+        conn_, virt::domain(domain), location, request_, response_);
 
     EXPECT_EQ(response_.result(), boost::beast::http::status::ok);
     EXPECT_EQ(autostart, 1);
@@ -87,9 +88,6 @@ TEST_F(domains_test, autostart_post)
 
 TEST_F(domains_test, autostart_delete)
 {
-    libvirt::domain_ptr domain = std::make_shared<libvirt::domain>();
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(domain));
-
     int autostart = 1;
     EXPECT_CALL(lv, virDomainSetAutostart(_, _))
         .WillOnce(Invoke([&](auto, int autostart_) {
@@ -101,42 +99,18 @@ TEST_F(domains_test, autostart_delete)
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
                       "/users/test/domains/test/autostart/");
     request_.method(boost::beast::http::verb::delete_);
-    views_.autostart(conn_, "test", location, request_, response_);
+
+    libvirt::domain_ptr domain = std::make_shared<webvirt::domain>();
+    views_.autostart(
+        conn_, virt::domain(domain), location, request_, response_);
 
     EXPECT_EQ(response_.result(), boost::beast::http::status::ok);
     EXPECT_EQ(autostart, 0);
 }
 
-TEST_F(domains_test, autostart_not_found)
-{
-    EXPECT_CALL(lv, virDomainLookupByName(_, _)).WillOnce(Return(nullptr));
-
-    auto location =
-        make_location(R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
-                      "/users/test/domains/test/autostart/");
-    views_.autostart(conn_, "test", location, request_, response_);
-
-    EXPECT_EQ(response_.result(), boost::beast::http::status::not_found);
-}
-
-TEST_F(domains_test, metadata_not_found)
-{
-    EXPECT_CALL(lv, virDomainLookupByName(_, _))
-        .WillRepeatedly(Return(nullptr));
-
-    request_.method(boost::beast::http::verb::post);
-
-    auto location =
-        make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
-                      "/users/test/domains/test/metadata/");
-    views_.metadata(conn_, "test", location, request_, response_);
-
-    EXPECT_EQ(response_.result(), beast::http::status::not_found);
-}
-
 TEST_F(domains_test, metadata_bad_request)
 {
-    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _))
         .WillRepeatedly(Return(domain_ptr));
 
@@ -145,14 +119,15 @@ TEST_F(domains_test, metadata_bad_request)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(conn_, "test", location, request_, response_);
+    views_.metadata(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::bad_request);
 }
 
 TEST_F(domains_test, metadata_title)
 {
-    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _))
         .WillRepeatedly(Return(domain_ptr));
 
@@ -172,7 +147,8 @@ TEST_F(domains_test, metadata_title)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(conn_, "test", location, request_, response_);
+    views_.metadata(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
 
     auto domain = conn_.domain("test");
     auto title = domain.metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
@@ -180,13 +156,14 @@ TEST_F(domains_test, metadata_title)
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
-    views_.metadata(conn_, "test", location, request_, response_);
+    views_.metadata(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
     EXPECT_EQ(response_.result(), beast::http::status::not_modified);
 }
 
 TEST_F(domains_test, metadata_description)
 {
-    libvirt::domain_ptr domain_ptr = std::make_shared<libvirt::domain>();
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _))
         .WillRepeatedly(Return(domain_ptr));
 
@@ -207,7 +184,8 @@ TEST_F(domains_test, metadata_description)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(conn_, "test", location, request_, response_);
+    views_.metadata(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
 
     auto domain = conn_.domain("test");
     auto title = domain.metadata(VIR_DOMAIN_METADATA_DESCRIPTION, nullptr, 0);
@@ -215,6 +193,87 @@ TEST_F(domains_test, metadata_description)
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
-    views_.metadata(conn_, "test", location, request_, response_);
+    views_.metadata(conn_, domain, location, request_, response_);
     EXPECT_EQ(response_.result(), beast::http::status::not_modified);
+}
+
+TEST_F(domains_test, bootmenu_post)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+
+    auto xml = R"(
+<domain>
+    <os>
+        <type arch="x86_64" machine="pc-q35-7.2" />
+        <boot dev="hd" />
+    </os>
+</domain>
+)";
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(xml));
+    EXPECT_CALL(lv, virDomainDefineXML(_, _)).WillOnce(Return(domain_ptr));
+
+    request_.method(boost::beast::http::verb::post);
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
+                      "/users/test/domains/test/bootmenu/");
+    views_.bootmenu(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+
+    auto data = json::parse(response_.body());
+    EXPECT_EQ(data["bootmenu"]["enable"].asBool(), true);
+}
+
+TEST_F(domains_test, bootmenu_delete)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+
+    auto xml = R"(
+<domain>
+    <os>
+        <type arch="x86_64" machine="pc-q35-7.2" />
+        <boot dev="hd" />
+    </os>
+</domain>
+)";
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(xml));
+    EXPECT_CALL(lv, virDomainDefineXML(_, _)).WillOnce(Return(domain_ptr));
+
+    request_.method(boost::beast::http::verb::delete_);
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
+                      "/users/test/domains/test/bootmenu/");
+    views_.bootmenu(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+
+    auto data = json::parse(response_.body());
+    EXPECT_EQ(data["bootmenu"]["enable"].asBool(), false);
+}
+
+TEST_F(domains_test, bootmenu_define_xml_error)
+{
+    libvirt::domain_ptr domain_ptr = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .WillRepeatedly(Return(domain_ptr));
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(""));
+    EXPECT_CALL(lv, virDomainDefineXML(_, _)).WillOnce(Return(nullptr));
+
+    request_.method(boost::beast::http::verb::post);
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
+                      "/users/test/domains/test/bootmenu/");
+    views_.bootmenu(
+        conn_, virt::domain(domain_ptr), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::internal_server_error);
+
+    auto data = json::parse(response_.body());
+    EXPECT_EQ(data["detail"].asString(), "Unable to replace domain XML");
 }

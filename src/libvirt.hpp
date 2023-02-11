@@ -72,6 +72,8 @@ public:
     virtual int virDomainGetID(domain_ptr);
     virtual const char *virDomainGetName(domain_ptr);
     virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
+
+    virtual domain_ptr virDomainDefineXML(connect_ptr, const char *);
 };
 
 }; // namespace webvirt

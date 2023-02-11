@@ -14,32 +14,18 @@
  * permissions and limitations under the License.
  */
 #include "domains.hpp"
+#include "../http/util.hpp"
 #include "../json.hpp"
 #include "../virt/util.hpp"
 #include <fmt/format.h>
 #include <fstream>
+#include <iostream>
 #include <pugixml.hpp>
 using namespace webvirt::views;
+using namespace std::string_literals;
 
-webvirt::virt::domain get_domain(webvirt::virt::connection &conn,
-                                 const std::string &name,
-                                 webvirt::http::response &response)
-{
-    try {
-        return conn.domain(name);
-    } catch (const std::domain_error &) {
-        Json::Value error(Json::objectValue);
-        error["detail"] = fmt::format("Domain '{}' not found", name);
-        response.body().append(webvirt::json::stringify(error));
-        response.content_length(response.body().size());
-        response.result(boost::beast::http::status::not_found);
-    }
-    return webvirt::virt::domain();
-}
-
-void domains::index(virt::connection &conn, const std::string &,
-                    const std::smatch &, const http::request &,
-                    http::response &response)
+void domains::index(virt::connection &conn, const std::smatch &,
+                    const http::request &, http::response &response)
 {
     auto domains = conn.domains();
 
@@ -65,16 +51,17 @@ void domains::index(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void domains::show(virt::connection &conn, const std::string &,
+void domains::show(virt::connection &, virt::domain domain,
                    const std::smatch &location, const http::request &,
                    http::response &response)
 {
     const std::string name(location[2]);
-    auto domain = get_domain(conn, name, response);
-    if (!domain)
-        return;
 
-    pugi::xml_document doc = domain.xml_document();
+    auto desc = domain.xml_desc();
+    std::cout << desc;
+    pugi::xml_document doc;
+    doc.load_buffer(desc.c_str(), desc.size());
+
     auto domain_ = doc.child("domain");
 
     Json::Value data(Json::objectValue);
@@ -99,6 +86,9 @@ void domains::show(virt::connection &conn, const std::string &,
         os.child("type").attribute("machine").as_string();
     info["os"]["boot"] = Json::Value(Json::objectValue);
     info["os"]["boot"]["dev"] = os.child("boot").attribute("dev").as_string();
+    info["os"]["bootmenu"] = Json::Value(Json::objectValue);
+    info["os"]["bootmenu"]["enable"] =
+        os.child("bootmenu").attribute("enable").as_string() == "yes"s;
 
     info["devices"] = Json::Value(Json::objectValue);
     info["devices"]["emulator"] =
@@ -165,14 +155,11 @@ void domains::show(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void domains::autostart(virt::connection &conn, const std::string &,
+void domains::autostart(virt::connection &, virt::domain domain,
                         const std::smatch &location,
                         const http::request &request, http::response &response)
 {
     const std::string name(location[2]);
-    auto domain = get_domain(conn, name, response);
-    if (!domain)
-        return;
 
     bool enabled = request.method() == beast::http::verb::post;
     domain.autostart(enabled);
@@ -184,15 +171,55 @@ void domains::autostart(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void domains::metadata(virt::connection &conn, const std::string &,
+void domains::bootmenu(virt::connection &conn, virt::domain domain,
                        const std::smatch &location,
                        const http::request &request, http::response &response)
 {
     const std::string name(location[2]);
 
-    auto domain = get_domain(conn, name, response);
-    if (!domain)
-        return;
+    auto doc = domain.xml_document();
+    auto os = doc.child("domain").child("os");
+    std::string enabled =
+        request.method() == beast::http::verb::post ? "yes" : "no";
+    os.remove_child("bootmenu");
+    os.append_child("bootmenu");
+    os.last_child().append_attribute("enable");
+    os.last_child().last_attribute().set_value(enabled.c_str());
+
+    std::stringstream ss;
+    doc.save(ss);
+    auto xml = ss.str();
+
+    Json::Value data(Json::objectValue);
+    if (!domain.define_xml(conn.get_ptr(), xml.c_str())) {
+        data["detail"] = "Unable to replace domain XML";
+        return http::set_response(response,
+                                  json::stringify(data),
+                                  beast::http::status::internal_server_error);
+    }
+
+    Json::Value object(Json::objectValue);
+    data["type"] = object;
+    auto type = os.child("type");
+    data["type"]["arch"] = type.attribute("arch").as_string();
+    data["type"]["machine"] = type.attribute("machine").as_string();
+    data["boot"] = object;
+    auto boot = os.child("boot");
+    data["boot"]["dev"] = boot.attribute("dev").as_string();
+    data["bootmenu"] = object;
+    auto bootmenu = os.child("bootmenu");
+    data["bootmenu"]["enable"] =
+        bootmenu.attribute("enable").as_string() == "yes"s;
+
+    http::set_response(
+        response, json::stringify(data), beast::http::status::ok);
+}
+
+void domains::metadata(virt::connection &, virt::domain domain,
+                       const std::smatch &location,
+                       const http::request &request, http::response &response)
+{
+    const std::string name(location[2]);
 
     // JSON output from this function.
     Json::Value output(Json::objectValue);
@@ -202,7 +229,9 @@ void domains::metadata(virt::connection &conn, const std::string &,
         data = json::parse(request.body());
     } catch (const std::invalid_argument &) {
         output["detail"] = "Invalid JSON input";
-        response.result(beast::http::status::bad_request);
+        return http::set_response(response,
+                                  json::stringify(output),
+                                  beast::http::status::bad_request);
     }
 
     auto current_title =
@@ -235,14 +264,11 @@ void domains::metadata(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void domains::start(virt::connection &conn, const std::string &,
+void domains::start(virt::connection &, virt::domain domain,
                     const std::smatch &location, const http::request &,
                     http::response &response)
 {
     const std::string name(location[2]);
-    auto domain = get_domain(conn, name, response);
-    if (!domain)
-        return;
 
     if (!domain.start()) {
         Json::Value data(Json::objectValue);
@@ -258,14 +284,11 @@ void domains::start(virt::connection &conn, const std::string &,
     response.content_length(response.body().size());
 }
 
-void domains::shutdown(virt::connection &conn, const std::string &,
+void domains::shutdown(virt::connection &, virt::domain domain,
                        const std::smatch &location, const http::request &,
                        http::response &response)
 {
     const std::string name(location[2]);
-    auto domain = get_domain(conn, name, response);
-    if (!domain)
-        return;
 
     bool ok = false;
     try {

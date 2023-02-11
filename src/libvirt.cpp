@@ -147,3 +147,10 @@ libvirt::virConnectListAllDomains(connect_ptr conn, int flags)
 
     return output;
 }
+
+libvirt::domain_ptr libvirt::virDomainDefineXML(connect_ptr conn,
+                                                const char *xml)
+{
+    auto ptr = ::virDomainDefineXML(conn.get(), xml);
+    return std::shared_ptr<domain>(ptr, free_domain_ptr());
+}

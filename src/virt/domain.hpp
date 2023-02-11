@@ -57,7 +57,7 @@ public:
     Json::Value simple_json() const;
 
     template <typename connection_ptr>
-    virt::domain define_xml(connection_ptr conn, const char *xml)
+    virt::domain &define_xml(connection_ptr conn, const char *xml)
     {
         domain_ = libvirt::ref().virDomainDefineXML(conn, xml);
         return *this;

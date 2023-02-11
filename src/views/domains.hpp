@@ -28,18 +28,19 @@ namespace webvirt::views
 class domains
 {
 public:
-    void index(virt::connection &, const std::string &, const std::smatch &,
-               const http::request &, http::response &);
-    void show(virt::connection &, const std::string &, const std::smatch &,
+    void index(virt::connection &, const std::smatch &, const http::request &,
+               http::response &);
+    void show(virt::connection &, virt::domain, const std::smatch &,
               const http::request &, http::response &);
-    void autostart(virt::connection &, const std::string &,
-                   const std::smatch &, const http::request &,
-                   http::response &);
-    void metadata(virt::connection &, const std::string &, const std::smatch &,
+    void autostart(virt::connection &, virt::domain, const std::smatch &,
+                   const http::request &, http::response &);
+    void metadata(virt::connection &, virt::domain, const std::smatch &,
                   const http::request &, http::response &);
-    void start(virt::connection &, const std::string &, const std::smatch &,
+    void bootmenu(virt::connection &, virt::domain, const std::smatch &,
+                  const http::request &, http::response &);
+    void start(virt::connection &, virt::domain, const std::smatch &,
                const http::request &, http::response &);
-    void shutdown(virt::connection &, const std::string &, const std::smatch &,
+    void shutdown(virt::connection &, virt::domain, const std::smatch &,
                   const http::request &, http::response &);
 };
 
