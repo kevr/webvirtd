@@ -36,7 +36,7 @@ std::string logger::timestamp()
     std::strftime(std::data(format),
                   std::size(format),
                   "%d/%b/%Y %H:%M:%S",
-                  std::gmtime(&now));
+                  std::localtime(&now));
     return format;
 }
 
