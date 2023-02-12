@@ -1,10 +1,12 @@
 [Unit]
 Description=webvirtd
-Wants=webvirtd-dirs.service
 
 [Service]
+PermissionsStartOnly=true
 User=webvirt
 Group=webvirt
+ExecStartPre=/usr/bin/mkdir -p /var/run/webvirtd
+ExecStartPre=/usr/bin/chown webvirt:webvirt /var/run/webvirtd
 ExecStart=@prefix@/bin/webvirtd --socket=/var/run/webvirtd/webvirtd.sock --disable-timestamp
 
 [Install]
