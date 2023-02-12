@@ -57,7 +57,10 @@ Json::Value json::xml_to_json(const pugi::xml_node &node)
     for (auto attr : node.attributes()) {
         attributes[attr.name()] = attr.value();
     }
-    data["attrib"] = std::move(attributes);
+
+    if (attributes.size()) {
+        data["attrib"] = std::move(attributes);
+    }
 
     auto text = std::string(node.text().as_string());
     if (text.size()) {
