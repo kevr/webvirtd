@@ -26,6 +26,7 @@
 #include <grp.h>
 #include <iostream>
 #include <unistd.h>
+
 using webvirt::errorln;
 using webvirt::print;
 
@@ -69,6 +70,11 @@ int webvirt_main(webvirt::io_service &io, const std::string &socket_path)
 
 int main(int argc, const char *argv[])
 {
+    FILE *files_[2] = { stdout, stderr };
+    for (auto &file : files_) {
+        setvbuf(file, nullptr, _IOLBF, 0);
+    }
+
     auto &sys = webvirt::syscaller::instance();
 
     webvirt::config conf;
