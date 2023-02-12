@@ -11,31 +11,48 @@ System libvirt control daemon for the webvirt project
 Installation
 ------------
 
-`webvirtd` accesses libvirt using the `qemu+ssh` protocol. To give
-webvirtd access to a particular user, the webvirt user's public key
-must allow access to that user via SSH.
+To install the project, configure and run install:
 
-In this example, we will use the `webvirt` user:
+    $ meson setup --buildtype release -Ddisable_tests=true release
+    $ cd release
 
-    # useradd -m webvirt
-    # sudo -u webvirt ssh-keygen
-    # install -m644 /home/webvirt/.ssh/id_rsa.pub /etc/ssh/authorized_keys
+    ## Build the project
+    release$ ninja
 
-To allow access to all users on the system, `/etc/ssh/sshd_config` can
-contain a custom AuthorizedKeysFile option:
+    ## Install it without subprojects
+    release$ sudo meson install --skip-subprojects
 
-    ...
-    AuthorizedKeysFile /etc/ssh/authorized_keys .ssh/authorized_keys
-    ...
+The meson install target:
+
+1. Installs systemd services to `{prefix}/lib/systemd/system`
+2. Creates the `webvirt` user utilized by the systemd service
+
+Before continuing, you should [configure libvirt user access](doc/libvirt.md).
 
 Running
 -------
 
-`webvirtd` should be run as the user who owns the key used to
-authenticate users locally over SSH:
+webvirtd should be run using the systemd services provided by install:
 
-    ## As `webvirt` user
-    $ webvirtd --socket=/home/webvirt/webvirtd.sock
+    ## Enable at boot
+    # systemctl enable webvirtd.service
+
+    ## Start the service
+    # systemctl start webvirtd.service
+
+The unix socket deployed by webvirtd.service resides at
+`/var/run/webvirtd/webvirtd.sock`. To access the unix socket as other
+users, add them to the `webvirt` group:
+
+    # gpasswd -a some_user webvirt
+    # sudo -u some_user curl \
+        --unix-socket /var/run/webvirtd/webvirtd.sock \
+        http://localhost/users/test/domains/
+
+API Documentation
+-----------------
+
+Read the API documentation at SwaggerHub: [https://app.swaggerhub.com/apis/kevr/webvirtd](https://app.swaggerhub.com/apis/kevr/webvirtd)
 
 Licensing
 ---------
