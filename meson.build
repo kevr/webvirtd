@@ -12,14 +12,19 @@ gtest_main_dep = gtest_proj.get_variable('gtest_main_dep')
 gmock_dep = gtest_proj.get_variable('gmock_dep')
 gmock_main_dep = gtest_proj.get_variable('gmock_main_dep')
 
-jsoncpp_proj = subproject('jsoncpp')
+jsoncpp_proj = subproject('jsoncpp', default_options : [
+  'default_library=static',
+])
 jsoncpp_dep = jsoncpp_proj.get_variable('jsoncpp_dep')
 
-fmt_proj = subproject('fmt')
+fmt_proj = subproject('fmt', default_options : [
+  'default_library=static',
+])
 fmt_dep = fmt_proj.get_variable('fmt_header_only_dep')
 
 pugixml_proj = subproject('pugixml', default_options : [
   'tests=false',
+  'default_library=static',
 ])
 pugixml_dep = pugixml_proj.get_variable('pugixml_dep')
 
