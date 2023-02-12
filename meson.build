@@ -3,7 +3,8 @@ project('webvirtd', 'cpp',
   default_options : [
     'warning_level=3',
     'cpp_std=c++17',
-])
+  ]
+)
 
 gtest_proj = subproject('gtest')
 gtest_dep = gtest_proj.get_variable('gtest_dep')
