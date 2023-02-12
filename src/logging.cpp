@@ -14,8 +14,15 @@
  * permissions and limitations under the License.
  */
 #include "logging.hpp"
+#include "config.hpp"
 #include <fmt/format.h>
 using namespace webvirt;
+
+logger::logger()
+{
+    auto &conf = config::instance();
+    time_ = !conf.has("disable-timestamp");
+}
 
 void logger::info(const std::string &message)
 {
@@ -24,7 +31,7 @@ void logger::info(const std::string &message)
 
 void logger::error(const std::string &message)
 {
-    return print(std::cerr, "[ERR ]", message);
+    return print(std::cerr, "[ERROR]", message);
 }
 
 std::string logger::timestamp()
@@ -43,5 +50,9 @@ std::string logger::timestamp()
 void logger::print(std::ostream &os, const std::string &prefix,
                    const std::string &message)
 {
-    os << fmt::format("[{}] {} {}\n", timestamp(), prefix, message);
+    std::string ts;
+    if (time_) {
+        ts = "[" + timestamp() + "] ";
+    }
+    os << fmt::format("{}{} {}\n", ts, prefix, message);
 }

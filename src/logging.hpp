@@ -26,9 +26,10 @@ namespace webvirt
 class logger
 {
 private:
-    std::chrono::system_clock clock_;
+    bool time_ = true;
 
 public:
+    logger();
     void info(const std::string &);
     void error(const std::string &);
 

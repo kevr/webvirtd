@@ -5,7 +5,7 @@ Wants=webvirtd-dirs.service
 [Service]
 User=webvirt
 Group=webvirt
-ExecStart=@prefix@/bin/webvirtd --socket=/var/run/webvirtd/webvirtd.sock
+ExecStart=@prefix@/bin/webvirtd --socket=/var/run/webvirtd/webvirtd.sock --disable-timestamp
 
 [Install]
 WantedBy=multi-user.target

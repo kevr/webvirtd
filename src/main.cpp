@@ -78,6 +78,8 @@ int main(int argc, const char *argv[])
     auto &sys = webvirt::syscaller::instance();
 
     webvirt::config conf;
+    conf.add_option("disable-timestamp", "disable logging timestamps");
+
     conf.add_option("socket,s",
                     boost::program_options::value<std::string>()
                         ->default_value("/var/run/webvirtd.sock")
