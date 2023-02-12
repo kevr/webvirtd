@@ -18,18 +18,19 @@
 #include <string>
 using namespace webvirt;
 
-int virConnectClose(connect *)
-{
-    return 0;
-}
-
 connect *virConnectOpen(const char *)
 {
     return nullptr;
 }
 
-int virDomainFree(domain *)
+int virConnectListAllDomains(connect *, domain ***, int)
 {
+    return 0;
+}
+
+int virConnectClose(connect *ptr)
+{
+    delete ptr;
     return 0;
 }
 
@@ -38,16 +39,27 @@ domain *virDomainLookupByName(connect *, const char *)
     return nullptr;
 }
 
-char *virDomainGetXMLDesc(domain *, int)
-{
-    char *buf = static_cast<char *>(std::malloc(1));
-    buf[0] = '\0';
-    return buf;
-}
-
-int virDomainGetBlockInfo(domain *, const char *, block_info *, int)
+int virDomainCreate(domain *)
 {
     return 0;
+}
+
+int virDomainGetState(domain *, int *state, int *, int)
+{
+    *state = 1;
+    return 0;
+}
+
+int virDomainGetID(domain *)
+{
+    return 1;
+}
+
+char *virDomainGetName(domain *)
+{
+    char *buf = static_cast<char *>(std::malloc(5));
+    strncpy(buf, "test", 5);
+    return buf;
 }
 
 int virDomainGetAutostart(domain *, int *)
@@ -73,40 +85,30 @@ int virDomainSetMetadata(domain *, int, const char *, const char *,
     return 0;
 }
 
-int virDomainCreate(domain *)
+char *virDomainGetXMLDesc(domain *, int)
 {
+    char *buf = static_cast<char *>(std::malloc(1));
+    buf[0] = '\0';
+    return buf;
+}
+
+domain *virDomainDefineXML(connect *, const char *)
+{
+    return new domain;
+}
+
+int virDomainGetBlockInfo(domain *, const char *, block_info *, int)
+{
+    return 0;
+}
+
+int virDomainFree(domain *ptr)
+{
+    delete ptr;
     return 0;
 }
 
 int virDomainShutdown(domain *)
 {
     return 0;
-}
-
-int virDomainGetState(domain *, int *state, int *, int)
-{
-    *state = 1;
-    return 0;
-}
-
-int virDomainGetID(domain *)
-{
-    return 1;
-}
-
-char *virDomainGetName(domain *)
-{
-    char *buf = static_cast<char *>(std::malloc(5));
-    strncpy(buf, "test", 5);
-    return buf;
-}
-
-int virConnectListAllDomains(connect *, domain ***, int)
-{
-    return 0;
-}
-
-domain *virDomainDefineXML(connect *, const char *)
-{
-    return new domain;
 }

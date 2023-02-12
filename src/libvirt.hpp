@@ -54,26 +54,28 @@ public:
 
 public:
     virtual ~libvirt() = default;
+
+    // virConnect
     virtual connect_ptr virConnectOpen(const char *);
+    virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
+
+    // virDomain
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
-    virtual std::string virDomainGetXMLDesc(domain_ptr, int);
-    virtual block_info_ptr virDomainGetBlockInfo(domain_ptr, const char *,
-                                                 int);
+    virtual int virDomainCreate(domain_ptr);
+    virtual int virDomainGetState(domain_ptr, int *, int *, int);
+    virtual int virDomainGetID(domain_ptr);
+    virtual const char *virDomainGetName(domain_ptr);
     virtual int virDomainGetAutostart(domain_ptr, int *);
     virtual int virDomainSetAutostart(domain_ptr, int);
     virtual std::string virDomainGetMetadata(domain_ptr, int, const char *,
                                              unsigned int);
     virtual int virDomainSetMetadata(domain_ptr, int, const char *,
                                      const char *, const char *, unsigned int);
-
-    virtual int virDomainCreate(domain_ptr);
-    virtual int virDomainShutdown(domain_ptr);
-    virtual int virDomainGetState(domain_ptr, int *, int *, int);
-    virtual int virDomainGetID(domain_ptr);
-    virtual const char *virDomainGetName(domain_ptr);
-    virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
-
+    virtual std::string virDomainGetXMLDesc(domain_ptr, int);
     virtual domain_ptr virDomainDefineXML(connect_ptr, const char *);
+    virtual block_info_ptr virDomainGetBlockInfo(domain_ptr, const char *,
+                                                 int);
+    virtual int virDomainShutdown(domain_ptr);
 };
 
 }; // namespace webvirt

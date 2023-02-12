@@ -36,31 +36,27 @@ enum metadataType : int {
     VIR_DOMAIN_METADATA_LAST,
 };
 
-int virConnectClose(webvirt::connect *);
+// virConnect
 webvirt::connect *virConnectOpen(const char *);
-int virDomainFree(webvirt::domain *);
+int virConnectListAllDomains(webvirt::connect *, webvirt::domain ***, int);
+int virConnectClose(webvirt::connect *);
 
+// virDomain
 webvirt::domain *virDomainLookupByName(webvirt::connect *, const char *);
-char *virDomainGetXMLDesc(webvirt::domain *, int);
-
-int virDomainGetBlockInfo(webvirt::domain *, const char *,
-                          webvirt::block_info *, int);
-
-int virDomainGetAutostart(webvirt::domain *, int *);
-int virDomainSetAutostart(webvirt::domain *, int);
-
-char *virDomainGetMetadata(webvirt::domain *, int, const char *, unsigned int);
-int virDomainSetMetadata(webvirt::domain *, int, const char *, const char *,
-                         const char *, unsigned int);
-
 int virDomainCreate(webvirt::domain *);
-int virDomainShutdown(webvirt::domain *);
-
 int virDomainGetState(webvirt::domain *, int *, int *, int);
 int virDomainGetID(webvirt::domain *);
 char *virDomainGetName(webvirt::domain *);
-
-int virConnectListAllDomains(webvirt::connect *, webvirt::domain ***, int);
+int virDomainGetAutostart(webvirt::domain *, int *);
+int virDomainSetAutostart(webvirt::domain *, int);
+char *virDomainGetMetadata(webvirt::domain *, int, const char *, unsigned int);
+int virDomainSetMetadata(webvirt::domain *, int, const char *, const char *,
+                         const char *, unsigned int);
+char *virDomainGetXMLDesc(webvirt::domain *, int);
 webvirt::domain *virDomainDefineXML(webvirt::connect *, const char *);
+int virDomainGetBlockInfo(webvirt::domain *, const char *,
+                          webvirt::block_info *, int);
+int virDomainShutdown(webvirt::domain *);
+int virDomainFree(webvirt::domain *);
 
 #endif /* STUBS_LIBVIRT_HPP */
