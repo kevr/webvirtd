@@ -1,0 +1,11 @@
+[Unit]
+Description=webvirtd directory setup
+Before=webvirtd.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mkdir -p /var/run/webvirtd
+ExecStart=/usr/bin/chown webvirt:webvirt /var/run/webvirtd
+
+[Install]
+WantedBy=multi-user.target

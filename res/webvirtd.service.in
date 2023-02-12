@@ -1,0 +1,11 @@
+[Unit]
+Description=webvirtd
+Wants=webvirtd-dirs.service
+
+[Service]
+User=webvirt
+Group=webvirt
+ExecStart=@prefix@/bin/webvirtd --socket=/var/run/webvirtd/webvirtd.sock
+
+[Install]
+WantedBy=multi-user.target

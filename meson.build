@@ -55,6 +55,20 @@ root = meson.source_root()
 filtered_lcov = root + '/scripts/filtered-lcov.sh'
 build_dir = meson.current_build_dir()
 
+install_data(
+  'res/webvirtd-dirs.service',
+  install_dir : 'lib/systemd/system'
+)
+
+service_data = configuration_data()
+service_data.set('prefix', get_option('prefix'))
+configure_file(input : 'res/webvirtd.service.in',
+               output : 'webvirtd.service',
+               configuration : service_data,
+               install_dir : 'lib/systemd/system')
+
+meson.add_install_script('scripts/install-user.sh')
+
 run_target('filter-coverage',
   command : [
     bash, filtered_lcov, build_dir,
