@@ -47,9 +47,14 @@ private:
         void operator()(domain *);
     };
 
+    struct free_network_ptr {
+        void operator()(network *);
+    };
+
 public:
     using connect_ptr = std::shared_ptr<connect>;
     using domain_ptr = std::shared_ptr<domain>;
+    using network_ptr = std::shared_ptr<network>;
     using block_info_ptr = std::shared_ptr<block_info>;
 
 public:
@@ -58,6 +63,8 @@ public:
     // virConnect
     virtual connect_ptr virConnectOpen(const char *);
     virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
+    virtual std::vector<network_ptr> virConnectListAllNetworks(connect_ptr,
+                                                               int);
 
     // virDomain
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
@@ -76,6 +83,9 @@ public:
     virtual block_info_ptr virDomainGetBlockInfo(domain_ptr, const char *,
                                                  int);
     virtual int virDomainShutdown(domain_ptr);
+
+    // virNetwork
+    virtual std::string virNetworkGetXMLDesc(network_ptr, unsigned int);
 };
 
 }; // namespace webvirt

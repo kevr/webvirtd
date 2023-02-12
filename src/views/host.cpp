@@ -13,33 +13,22 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef LIBVIRT_TYPES_HPP
-#define LIBVIRT_TYPES_HPP
+#include "host.hpp"
+#include "../http/util.hpp"
+#include "../json.hpp"
+#include <iostream>
+using namespace webvirt::views;
 
-#ifndef TEST_BUILD
-#include <libvirt/libvirt.h>
-#endif
-
-namespace webvirt
+void host::networks(virt::connection &conn, const std::smatch &,
+                    const http::request &, http::response &response)
 {
-#ifdef TEST_BUILD
-struct connect {
-};
-struct domain {
-};
-struct network {
-};
-struct block_info {
-    unsigned long capacity;
-    unsigned long allocation;
-    unsigned long physical;
-};
-#else
-using connect = virConnect;
-using domain = virDomain;
-using network = virNetwork;
-using block_info = virDomainBlockInfo;
-#endif
-}; // namespace webvirt
+    Json::Value output(Json::arrayValue);
 
-#endif /* LIBVIRT_TYPES_HPP */
+    auto networks = conn.networks();
+    for (auto &network : networks) {
+        pugi::xml_document xml = network.xml_document();
+        output.append(json::xml_to_json(xml.child("network")));
+    }
+
+    return http::set_response(response, output, beast::http::status::ok);
+}

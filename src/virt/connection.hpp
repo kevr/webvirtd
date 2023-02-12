@@ -18,6 +18,7 @@
 
 #include "../libvirt.hpp"
 #include "domain.hpp"
+#include "network.hpp"
 #include <cstring>
 #include <errno.h>
 #include <json/json.h>
@@ -49,6 +50,9 @@ public:
     std::vector<virt::domain> domains();
     virt::domain domain(const std::string &name);
     libvirt::domain_ptr get_domain_ptr(const std::string &name);
+
+    std::vector<virt::network> networks();
+
     libvirt::connect_ptr get_ptr();
 
     int error();

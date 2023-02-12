@@ -13,33 +13,25 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef LIBVIRT_TYPES_HPP
-#define LIBVIRT_TYPES_HPP
+#ifndef VIEWS_HOST_HPP
+#define VIEWS_HOST_HPP
 
-#ifndef TEST_BUILD
-#include <libvirt/libvirt.h>
-#endif
+#include "../http/namespaces.hpp"
+#include "../virt/connection.hpp"
+#include <boost/asio/ip/host_name.hpp>
+#include <boost/beast.hpp>
+#include <regex>
 
-namespace webvirt
+namespace webvirt::views
 {
-#ifdef TEST_BUILD
-struct connect {
-};
-struct domain {
-};
-struct network {
-};
-struct block_info {
-    unsigned long capacity;
-    unsigned long allocation;
-    unsigned long physical;
-};
-#else
-using connect = virConnect;
-using domain = virDomain;
-using network = virNetwork;
-using block_info = virDomainBlockInfo;
-#endif
-}; // namespace webvirt
 
-#endif /* LIBVIRT_TYPES_HPP */
+class host
+{
+public:
+    void networks(virt::connection &, const std::smatch &,
+                  const http::request &, http::response &);
+};
+
+}; // namespace webvirt::views
+
+#endif /* VIEWS_HOST_HPP */

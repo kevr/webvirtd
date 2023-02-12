@@ -1,29 +1,35 @@
 flags = ['-pthread']
 test_flags = ['-DTEST_BUILD']
 
+sources = [
+  'app.cpp',
+  'syscaller.cpp',
+  'util.cpp',
+  'json.cpp',
+  'config.cpp',
+  'libvirt.cpp',
+  'logging.cpp',
+  'views/domains.cpp',
+  'views/host.cpp',
+  'virt/network.cpp',
+  'virt/domain.cpp',
+  'virt/connection.cpp',
+  'virt/util.cpp',
+  'http/router.cpp',
+  'http/middleware.cpp',
+  'http/handlers.cpp',
+  'http/io_service.cpp',
+  'http/util.cpp',
+  'stubs/io_service.cpp',
+]
+
 if not get_option('disable_tests')
   flags += ['-g']
 
   libwebvirtd_test = static_library(
     'webvirtd_test',
-    'app.cpp',
-    'syscaller.cpp',
-    'util.cpp',
-    'json.cpp',
-    'config.cpp',
     'stubs/libvirt.cpp',
-    'libvirt.cpp',
-    'logging.cpp',
-    'views/domains.cpp',
-    'virt/domain.cpp',
-    'virt/connection.cpp',
-    'virt/util.cpp',
-    'http/router.cpp',
-    'http/middleware.cpp',
-    'http/handlers.cpp',
-    'http/io_service.cpp',
-    'http/util.cpp',
-    'stubs/io_service.cpp',
+    sources,
     dependencies : deps,
     cpp_args : flags + test_flags,
   )
@@ -38,24 +44,9 @@ endif
 if not get_option('disable_bin')
   libwebvirtd = static_library(
     'webvirtd',
-    'app.cpp',
-    'syscaller.cpp',
-    'util.cpp',
-    'json.cpp',
-    'config.cpp',
-    'libvirt.cpp',
-    'logging.cpp',
-    'views/domains.cpp',
-    'virt/domain.cpp',
-    'virt/connection.cpp',
-    'virt/util.cpp',
-    'http/router.cpp',
-    'http/middleware.cpp',
-    'http/handlers.cpp',
-    'http/io_service.cpp',
-    'http/util.cpp',
-    'stubs/io_service.cpp',
+    sources,
     dependencies : deps,
+    cpp_args : flags,
   )
 
   webvirtd_dep = declare_dependency(

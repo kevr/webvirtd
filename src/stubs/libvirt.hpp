@@ -39,6 +39,8 @@ enum metadataType : int {
 // virConnect
 webvirt::connect *virConnectOpen(const char *);
 int virConnectListAllDomains(webvirt::connect *, webvirt::domain ***, int);
+int virConnectListAllNetworks(webvirt::connect *, webvirt::network ***,
+                              unsigned int);
 int virConnectClose(webvirt::connect *);
 
 // virDomain
@@ -58,5 +60,9 @@ int virDomainGetBlockInfo(webvirt::domain *, const char *,
                           webvirt::block_info *, int);
 int virDomainShutdown(webvirt::domain *);
 int virDomainFree(webvirt::domain *);
+
+// virNetwork
+char *virNetworkGetXMLDesc(webvirt::network *, unsigned int);
+int virNetworkFree(webvirt::network *);
 
 #endif /* STUBS_LIBVIRT_HPP */

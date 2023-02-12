@@ -19,6 +19,7 @@
 #include "http/router.hpp"
 #include "http/server.hpp"
 #include "views/domains.hpp"
+#include "views/host.hpp"
 #include <regex>
 
 namespace webvirt
@@ -32,6 +33,7 @@ private:
     webvirt::io_service &io_;
     http::server<net::unix> server_;
 
+    views::host host_view_;
     views::domains domains_view_;
 
 public:

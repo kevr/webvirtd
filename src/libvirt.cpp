@@ -50,6 +50,13 @@ void libvirt::free_domain_ptr::operator()(domain *ptr)
     }
 }
 
+void libvirt::free_network_ptr::operator()(network *ptr)
+{
+    if (ptr) {
+        ::virNetworkFree(ptr);
+    }
+}
+
 /* virConnect definitions */
 libvirt::connect_ptr libvirt::virConnectOpen(const char *uri)
 {
@@ -65,6 +72,20 @@ libvirt::virConnectListAllDomains(connect_ptr conn, int flags)
     int count = ::virConnectListAllDomains(conn.get(), &domains, flags);
     for (int i = 0; i < count; ++i) {
         output.emplace_back(domains[i], free_domain_ptr());
+    }
+
+    return output;
+}
+
+std::vector<libvirt::network_ptr>
+libvirt::virConnectListAllNetworks(connect_ptr conn, int flags)
+{
+    std::vector<libvirt::network_ptr> output;
+
+    network **networks = nullptr;
+    int count = ::virConnectListAllNetworks(conn.get(), &networks, flags);
+    for (int i = 0; i < count; ++i) {
+        output.emplace_back(networks[i], free_network_ptr());
     }
 
     return output;
@@ -155,4 +176,13 @@ libvirt::virDomainGetBlockInfo(domain_ptr domain, const char *name, int flags)
 int libvirt::virDomainShutdown(domain_ptr domain)
 {
     return ::virDomainShutdown(domain.get());
+}
+
+std::string libvirt::virNetworkGetXMLDesc(network_ptr network,
+                                          unsigned int flags)
+{
+    char *buffer = ::virNetworkGetXMLDesc(network.get(), flags);
+    std::string s(buffer);
+    free(buffer);
+    return s;
 }

@@ -30,6 +30,8 @@ public:
     MOCK_METHOD(connect_ptr, virConnectOpen, (const char *));
     MOCK_METHOD(std::vector<domain_ptr>, virConnectListAllDomains,
                 (connect_ptr, int));
+    MOCK_METHOD(std::vector<network_ptr>, virConnectListAllNetworks,
+                (connect_ptr, int));
     MOCK_METHOD(domain_ptr, virDomainLookupByName,
                 (connect_ptr, const char *));
     MOCK_METHOD(block_info_ptr, virDomainGetBlockInfo,
@@ -48,6 +50,9 @@ public:
     MOCK_METHOD(int, virDomainGetID, (domain_ptr));
     MOCK_METHOD(const char *, virDomainGetName, (domain_ptr));
     MOCK_METHOD(domain_ptr, virDomainDefineXML, (connect_ptr, const char *));
+
+    MOCK_METHOD(std::string, virNetworkGetXMLDesc,
+                (network_ptr, unsigned int));
 };
 
 }; // namespace webvirt::mocks

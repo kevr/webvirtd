@@ -28,6 +28,11 @@ int virConnectListAllDomains(connect *, domain ***, int)
     return 0;
 }
 
+int virConnectListAllNetworks(connect *, network ***, unsigned int)
+{
+    return 0;
+}
+
 int virConnectClose(connect *ptr)
 {
     delete ptr;
@@ -110,5 +115,18 @@ int virDomainFree(domain *ptr)
 
 int virDomainShutdown(domain *)
 {
+    return 0;
+}
+
+char *virNetworkGetXMLDesc(webvirt::network *, unsigned int)
+{
+    char *buf = static_cast<char *>(std::malloc(1));
+    buf[0] = '\0';
+    return buf;
+}
+
+int virNetworkFree(network *ptr)
+{
+    delete ptr;
     return 0;
 }

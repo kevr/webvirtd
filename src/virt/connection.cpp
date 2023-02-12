@@ -83,6 +83,16 @@ std::vector<virt::domain> virt::connection::domains()
     return domains_;
 }
 
+std::vector<virt::network> virt::connection::networks()
+{
+    std::vector<virt::network> networks_;
+    auto network_ptrs = libvirt::ref().virConnectListAllNetworks(conn_, 0);
+    for (auto &network_ptr : network_ptrs) {
+        networks_.emplace_back(network_ptr);
+    }
+    return networks_;
+}
+
 virt::domain virt::connection::domain(const std::string &name)
 {
     return virt::domain(get_domain_ptr(name));

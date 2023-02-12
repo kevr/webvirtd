@@ -19,7 +19,6 @@
 #include "../http/namespaces.hpp"
 #include "../virt/connection.hpp"
 #include <boost/beast.hpp>
-
 #include <regex>
 
 namespace webvirt::views

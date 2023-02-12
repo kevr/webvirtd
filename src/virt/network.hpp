@@ -13,33 +13,25 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef LIBVIRT_TYPES_HPP
-#define LIBVIRT_TYPES_HPP
+#ifndef VIRT_NETWORK_HPP
+#define VIRT_NETWORK_HPP
 
-#ifndef TEST_BUILD
-#include <libvirt/libvirt.h>
-#endif
+#include "../libvirt.hpp"
+#include "ptr_type.hpp"
+#include <pugixml.hpp>
 
-namespace webvirt
+namespace webvirt::virt
 {
-#ifdef TEST_BUILD
-struct connect {
-};
-struct domain {
-};
-struct network {
-};
-struct block_info {
-    unsigned long capacity;
-    unsigned long allocation;
-    unsigned long physical;
-};
-#else
-using connect = virConnect;
-using domain = virDomain;
-using network = virNetwork;
-using block_info = virDomainBlockInfo;
-#endif
-}; // namespace webvirt
 
-#endif /* LIBVIRT_TYPES_HPP */
+class network : public ptr_type<libvirt::network_ptr>
+{
+public:
+    using ptr_type::ptr_type;
+
+    std::string xml_desc();
+    pugi::xml_document xml_document();
+};
+
+}; // namespace webvirt::virt
+
+#endif /* VIRT_NETWORK_HPP */

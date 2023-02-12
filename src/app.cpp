@@ -27,6 +27,14 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
     , server_(io_, socket_path.string())
 {
     router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash));
+
+    // Host-bound routes
+    router_.route(R"(^/users/([^/]+)/networks/)",
+                  with_methods({ beast::http::verb::get },
+                               with_libvirt(bind_libvirt(
+                                   &views::host::networks, &host_view_))));
+
+    // Domain-bound routes
     router_.route(R"(^/users/([^/]+)/domains/$)",
                   with_methods({ beast::http::verb::get },
                                with_libvirt(bind_libvirt(

@@ -6,4 +6,12 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('views domains test', views_domains_test)
+
+  views_host_test = executable(
+    'host.test',
+    'host.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('views host test', views_host_test)
 endif
