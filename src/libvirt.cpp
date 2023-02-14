@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "libvirt.hpp"
+#include "logging.hpp"
 using namespace webvirt;
 
 libvirt libvirt::instance_;
@@ -57,10 +58,52 @@ void libvirt::free_network_ptr::operator()(network *ptr)
     }
 }
 
+static std::string from_c_string(char *c_str)
+{
+    std::string s(c_str);
+    free(c_str);
+    return s;
+}
+
 /* virConnect definitions */
 libvirt::connect_ptr libvirt::virConnectOpen(const char *uri)
 {
     return connect_ptr(::virConnectOpen(uri), free_connect_ptr());
+}
+
+std::string libvirt::virConnectGetHostname(connect_ptr conn)
+{
+    return from_c_string(::virConnectGetHostname(conn.get()));
+}
+
+int libvirt::virConnectGetLibVersion(connect_ptr conn, unsigned long *version)
+{
+    return ::virConnectGetLibVersion(conn.get(), version);
+}
+
+std::string libvirt::virConnectGetSysinfo(connect_ptr conn, unsigned int flags)
+{
+    return from_c_string(::virConnectGetSysinfo(conn.get(), flags));
+}
+
+std::string libvirt::virConnectGetURI(connect_ptr conn)
+{
+    return from_c_string(::virConnectGetURI(conn.get()));
+}
+
+int libvirt::virConnectGetVersion(connect_ptr conn, unsigned long *version)
+{
+    return ::virConnectGetVersion(conn.get(), version);
+}
+
+int libvirt::virConnectIsEncrypted(connect_ptr conn)
+{
+    return ::virConnectIsEncrypted(conn.get());
+}
+
+int libvirt::virConnectIsSecure(connect_ptr conn)
+{
+    return ::virConnectIsSecure(conn.get());
 }
 
 std::vector<libvirt::domain_ptr>

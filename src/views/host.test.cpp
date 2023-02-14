@@ -14,8 +14,12 @@
  * permissions and limitations under the License.
  */
 #include "host.hpp"
+#include "../json.hpp"
 #include "../mocks/libvirt.hpp"
+#include "json/forwards.h"
 #include <gtest/gtest.h>
+#include <regex>
+using namespace std::string_literals;
 using namespace webvirt;
 
 using testing::_;
@@ -50,15 +54,60 @@ public:
     }
 
 protected:
-    std::smatch make_location(const std::string &pattern,
-                              const std::string &uri)
+    std::smatch make_location(const std::string &expr, const std::string &uri)
     {
-        std::regex re(pattern);
-        std::smatch m;
-        std::regex_match(uri, m, re);
-        return m;
+        std::regex re(expr);
+        std::smatch match;
+        EXPECT_TRUE(std::regex_match(uri, match, re));
+        return match;
     }
 };
+
+TEST_F(host_test, show)
+{
+    EXPECT_CALL(lv, virConnectGetHostname(_)).WillRepeatedly(Return("test"));
+    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).WillRepeatedly(Return(0));
+    EXPECT_CALL(lv, virConnectGetURI(_))
+        .WillOnce(Return("qemu://test@localhost/session"))
+        .WillOnce(Return("qemu:///system"));
+    EXPECT_CALL(lv, virConnectGetVersion(_, _)).WillRepeatedly(Return(0));
+    EXPECT_CALL(lv, virConnectIsEncrypted(_)).WillRepeatedly(Return(0));
+    EXPECT_CALL(lv, virConnectIsSecure(_)).WillRepeatedly(Return(1));
+
+    // Make a request as test user.
+    std::string endpoint("/users/test/info/");
+    auto location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
+    views_.show(conn_, location, request_, response_);
+
+    auto data = json::parse(response_.body());
+    EXPECT_EQ(data["hostname"].asString(), "test");
+    EXPECT_EQ(data["libVersion"].asUInt(), 0);
+    EXPECT_EQ(data["uri"].asString(), "qemu://test@localhost/session");
+    EXPECT_EQ(data["version"].asUInt(), 0);
+    EXPECT_EQ(data["encrypted"].asBool(), false);
+    EXPECT_EQ(data["secure"].asBool(), true);
+
+    // Make a request as root user, which includes sysinfo.
+    auto xml = R"(
+<sysinfo>
+</sysinfo>
+)";
+    EXPECT_CALL(lv, virConnectGetSysinfo(_, _)).WillOnce(Return(xml));
+
+    endpoint = "/users/root/info/";
+    location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
+    response_ = http::response();
+    views_.show(conn_, location, request_, response_);
+
+    data = json::parse(response_.body());
+    EXPECT_EQ(data["hostname"].asString(), "test");
+    EXPECT_EQ(data["libVersion"].asUInt(), 0);
+    EXPECT_EQ(data["uri"].asString(), "qemu:///system");
+    EXPECT_EQ(data["sysinfo"].type(), Json::objectValue);
+    EXPECT_EQ(data["version"].asUInt(), 0);
+    EXPECT_EQ(data["encrypted"].asBool(), false);
+    EXPECT_EQ(data["secure"].asBool(), true);
+}
 
 TEST_F(host_test, networks)
 {
@@ -88,8 +137,18 @@ TEST_F(host_test, networks)
 )";
     EXPECT_CALL(lv, virNetworkGetXMLDesc(_, _)).WillOnce(Return(xml));
 
-    auto location = make_location(R"(^/users/([^/]+)/networks/$)",
-                                  "/users/test/networks/");
-    request_.method(beast::http::verb::get);
+    std::string endpoint("/users/test/networks/");
+    auto location = make_location(R"(^/users/([^/]+)/networks/)", endpoint);
     views_.networks(conn_, location, request_, response_);
+
+    auto data = json::parse(response_.body());
+    auto network =
+        data.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
+    EXPECT_EQ(network["name"]["text"].asString(), "default");
+    EXPECT_EQ(network["uuid"]["text"].asString(), "1234-5678");
+    EXPECT_EQ(network["bridge"]["attrib"]["name"], "virbr0");
+    EXPECT_EQ(network["ip"]["attrib"]["address"].asString(), "192.168.2.1");
+    EXPECT_EQ(network["ip"]["attrib"]["netmask"].asString(), "255.255.255.0");
+    EXPECT_EQ(network["mac"]["attrib"]["address"].asString(),
+              "aa:bb:cc:dd:11:22:33:44");
 }

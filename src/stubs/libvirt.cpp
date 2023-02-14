@@ -18,9 +18,53 @@
 #include <string>
 using namespace webvirt;
 
+static char *make_cstring(const std::string &str)
+{
+    char *c_str = reinterpret_cast<char *>(malloc(str.size() + 1));
+    strncpy(c_str, str.c_str(), str.size() + 1);
+    return c_str;
+}
+
 connect *virConnectOpen(const char *)
 {
     return nullptr;
+}
+
+char *virConnectGetHostname(webvirt::connect *)
+{
+    return make_cstring("test");
+}
+
+int virConnectGetLibVersion(webvirt::connect *, unsigned long *version)
+{
+    *version = 0;
+    return 0;
+}
+
+char *virConnectGetSysinfo(webvirt::connect *, unsigned int)
+{
+    return make_cstring("");
+}
+
+char *virConnectGetURI(webvirt::connect *)
+{
+    return make_cstring("qemu+ssh://test@localhost/session");
+}
+
+int virConnectGetVersion(webvirt::connect *, unsigned long *version)
+{
+    *version = 0;
+    return 0;
+}
+
+int virConnectIsEncrypted(webvirt::connect *)
+{
+    return 1;
+}
+
+int virConnectIsSecure(webvirt::connect *)
+{
+    return 1;
 }
 
 int virConnectListAllDomains(connect *, domain ***, int)
@@ -62,9 +106,7 @@ int virDomainGetID(domain *)
 
 char *virDomainGetName(domain *)
 {
-    char *buf = static_cast<char *>(std::malloc(5));
-    strncpy(buf, "test", 5);
-    return buf;
+    return make_cstring("test");
 }
 
 int virDomainGetAutostart(domain *, int *)
@@ -79,9 +121,7 @@ int virDomainSetAutostart(domain *, int)
 
 char *virDomainGetMetadata(domain *, int, const char *, unsigned int)
 {
-    char *buf = static_cast<char *>(std::malloc(1));
-    buf[0] = '\0';
-    return buf;
+    return make_cstring("");
 }
 
 int virDomainSetMetadata(domain *, int, const char *, const char *,
@@ -92,9 +132,7 @@ int virDomainSetMetadata(domain *, int, const char *, const char *,
 
 char *virDomainGetXMLDesc(domain *, int)
 {
-    char *buf = static_cast<char *>(std::malloc(1));
-    buf[0] = '\0';
-    return buf;
+    return make_cstring("");
 }
 
 domain *virDomainDefineXML(connect *, const char *)
@@ -120,9 +158,7 @@ int virDomainShutdown(domain *)
 
 char *virNetworkGetXMLDesc(webvirt::network *, unsigned int)
 {
-    char *buf = static_cast<char *>(std::malloc(1));
-    buf[0] = '\0';
-    return buf;
+    return make_cstring("");
 }
 
 int virNetworkFree(network *ptr)

@@ -38,6 +38,15 @@ enum metadataType : int {
 
 // virConnect
 webvirt::connect *virConnectOpen(const char *);
+
+char *virConnectGetHostname(webvirt::connect *);
+int virConnectGetLibVersion(webvirt::connect *, unsigned long *);
+char *virConnectGetSysinfo(webvirt::connect *, unsigned int);
+char *virConnectGetURI(webvirt::connect *);
+int virConnectGetVersion(webvirt::connect *, unsigned long *);
+int virConnectIsEncrypted(webvirt::connect *);
+int virConnectIsSecure(webvirt::connect *);
+
 int virConnectListAllDomains(webvirt::connect *, webvirt::domain ***, int);
 int virConnectListAllNetworks(webvirt::connect *, webvirt::network ***,
                               unsigned int);

@@ -62,6 +62,15 @@ public:
 
     // virConnect
     virtual connect_ptr virConnectOpen(const char *);
+
+    virtual std::string virConnectGetHostname(connect_ptr);
+    virtual int virConnectGetLibVersion(connect_ptr, unsigned long *);
+    virtual std::string virConnectGetSysinfo(connect_ptr, unsigned int);
+    virtual std::string virConnectGetURI(connect_ptr);
+    virtual int virConnectGetVersion(connect_ptr, unsigned long *);
+    virtual int virConnectIsEncrypted(connect_ptr);
+    virtual int virConnectIsSecure(connect_ptr);
+
     virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
     virtual std::vector<network_ptr> virConnectListAllNetworks(connect_ptr,
                                                                int);

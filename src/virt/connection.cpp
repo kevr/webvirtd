@@ -72,6 +72,45 @@ virt::connection &virt::connection::connect(const std::string &str)
     return *this;
 }
 
+std::string virt::connection::hostname() const
+{
+    return libvirt::ref().virConnectGetHostname(conn_);
+}
+
+unsigned long virt::connection::library_version() const
+{
+    unsigned long version = 0;
+    return libvirt::ref().virConnectGetLibVersion(conn_, &version);
+    return version;
+}
+
+std::string virt::connection::sysinfo() const
+{
+    return libvirt::ref().virConnectGetSysinfo(conn_, 0);
+}
+
+std::string virt::connection::uri() const
+{
+    return libvirt::ref().virConnectGetURI(conn_);
+}
+
+unsigned long virt::connection::version() const
+{
+    unsigned long version = 0;
+    return libvirt::ref().virConnectGetVersion(conn_, &version);
+    return version;
+}
+
+bool virt::connection::encrypted() const
+{
+    return libvirt::ref().virConnectIsEncrypted(conn_);
+}
+
+bool virt::connection::secure() const
+{
+    return libvirt::ref().virConnectIsSecure(conn_);
+}
+
 std::vector<virt::domain> virt::connection::domains()
 {
     auto &lv = libvirt::ref();

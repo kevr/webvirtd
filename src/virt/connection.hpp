@@ -47,6 +47,14 @@ public:
     bool operator!=(const connection &other) const;
     connection &connect(const std::string &str);
 
+    std::string hostname() const;
+    unsigned long library_version() const;
+    std::string sysinfo() const;
+    std::string uri() const;
+    unsigned long version() const;
+    bool encrypted() const;
+    bool secure() const;
+
     std::vector<virt::domain> domains();
     virt::domain domain(const std::string &name);
     libvirt::domain_ptr get_domain_ptr(const std::string &name);

@@ -16,8 +16,33 @@
 #include "host.hpp"
 #include "../http/util.hpp"
 #include "../json.hpp"
+#include "../logging.hpp"
 #include <iostream>
 using namespace webvirt::views;
+
+void host::show(virt::connection &conn, const std::smatch &location,
+                const http::request &, http::response &response)
+{
+    Json::Value output(Json::objectValue);
+
+    output["hostname"] = conn.hostname();
+    output["libVersion"] = conn.library_version();
+    output["uri"] = conn.uri();
+
+    const std::string user(location[1]);
+    if (user == "root") {
+        auto sysinfo = conn.sysinfo();
+        pugi::xml_document doc;
+        doc.load_string(sysinfo.c_str());
+        output["sysinfo"] = json::xml_to_json(doc.child("sysinfo"));
+    }
+
+    output["version"] = conn.version();
+    output["encrypted"] = conn.encrypted();
+    output["secure"] = conn.secure();
+
+    return http::set_response(response, output, beast::http::status::ok);
+}
 
 void host::networks(virt::connection &conn, const std::smatch &,
                     const http::request &, http::response &response)

@@ -28,6 +28,8 @@ namespace webvirt::views
 class host
 {
 public:
+    void show(virt::connection &, const std::smatch &, const http::request &,
+              http::response &);
     void networks(virt::connection &, const std::smatch &,
                   const http::request &, http::response &);
 };
