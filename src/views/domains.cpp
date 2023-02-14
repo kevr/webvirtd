@@ -58,43 +58,12 @@ void domains::show(virt::connection &, virt::domain domain,
     const std::string name(location[2]);
 
     auto doc = domain.xml_document();
-    auto domain_ = doc.child("domain");
-
-    Json::Value data(Json::objectValue);
+    auto data = json::xml_to_json(doc.child("domain"));
     data["name"] = name;
     data["autostart"] = domain.autostart();
-    data["id"] = domain_.attribute("id").as_int();
-    data["uuid"] = domain_.child("uuid").text().as_string();
-    data["title"] = domain_.child("title").text().as_string();
-    data["description"] = domain_.child("description").text().as_string();
-    data["type"] = domain_.attribute("type").as_string();
 
-    Json::Value info(Json::objectValue);
-    info["cpus"] = domain_.child("vcpu").text().as_uint();
-    info["maxMemory"] = domain_.child("memory").text().as_uint();
-    info["memory"] = domain_.child("currentMemory").text().as_uint();
-
-    auto os = domain_.child("os");
-    info["os"] = Json::Value(Json::objectValue);
-    info["os"]["type"] = json::xml_to_json(os.child("type"));
-    info["os"]["boot"] = json::xml_to_json(os.child("boot"));
-    info["os"]["bootmenu"] = json::xml_to_json(os.child("bootmenu"));
-
-    info["devices"] = json::xml_to_json(domain_.child("devices"));
-    if (info["devices"]["disk"].type() != Json::arrayValue) {
-        auto disk = info["devices"]["disk"];
-        info["devices"]["disk"] = Json::Value(Json::arrayValue);
-        info["devices"]["disk"].append(std::move(disk));
-    }
-
-    if (info["devices"]["interface"].type() != Json::arrayValue) {
-        auto iface = info["devices"]["interface"];
-        info["devices"]["interface"] = Json::Value(Json::arrayValue);
-        info["devices"]["interface"].append(std::move(iface));
-    }
-
-    if (info["devices"]["disk"]) {
-        for (auto &disk : info["devices"]["disk"]) {
+    if (data["devices"]["disk"]) {
+        for (auto &disk : data["devices"]["disk"]) {
             // If this is not a storage disk, continue on.
             if (disk["attrib"]["device"].asString() != "disk"s)
                 continue;
@@ -113,12 +82,21 @@ void domains::show(virt::connection &, virt::domain domain,
             disk["block_info"] = std::move(block_info);
         }
     }
-    data["info"] = std::move(info);
 
     int state = domain.state();
     data["state"] = Json::Value(Json::objectValue);
     data["state"]["id"] = state;
     data["state"]["string"] = virt::state_string(state);
+
+    std::vector<std::string> keys = { "interface", "disk" };
+    for (const auto &key : keys) {
+        if (data["devices"][key] &&
+            data["devices"][key].type() == Json::objectValue) {
+            auto current = data["devices"][key];
+            data["devices"][key] = Json::Value(Json::arrayValue);
+            data["devices"][key].append(std::move(current));
+        }
+    }
 
     return http::set_response(response, data, beast::http::status::ok);
 }
