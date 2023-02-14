@@ -16,16 +16,15 @@
 #include "util.hpp"
 #include "../libvirt.hpp"
 #include <fmt/format.h>
+#include <iostream>
 #include <map>
 #include <string>
 using namespace webvirt;
 
 std::string virt::uri(const std::string &user)
 {
-    if (user == "root") {
-        return "qemu:///system";
-    }
-    return fmt::format("qemu+ssh://{}@localhost/session", user);
+    std::string endpoint = user == "root" ? "/system" : "/session";
+    return fmt::format("qemu+ssh://{}@localhost{}", user, endpoint);
 }
 
 const std::map<int, std::string> STATE_STRINGS {
