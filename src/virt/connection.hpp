@@ -47,9 +47,12 @@ public:
     bool operator!=(const connection &other) const;
     connection &connect(const std::string &str);
 
+    std::string capabilities() const;
     std::string hostname() const;
     unsigned long library_version() const;
+    int max_vcpus(const char *) const;
     std::string sysinfo() const;
+    const char *type() const;
     std::string uri() const;
     unsigned long version() const;
     bool encrypted() const;

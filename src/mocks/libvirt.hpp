@@ -29,10 +29,14 @@ public:
 
     MOCK_METHOD(connect_ptr, virConnectOpen, (const char *));
 
+    MOCK_METHOD(std::string, virConnectGetCapabilities, (connect_ptr));
     MOCK_METHOD(std::string, virConnectGetHostname, (connect_ptr));
     MOCK_METHOD(int, virConnectGetLibVersion, (connect_ptr, unsigned long *));
+    MOCK_METHOD(int, virConnectGetMaxVcpus, (connect_ptr, const char *));
     MOCK_METHOD(std::string, virConnectGetSysinfo,
                 (connect_ptr, unsigned int));
+    MOCK_METHOD(const char *, virConnectGetType, (connect_ptr));
+
     MOCK_METHOD(std::string, virConnectGetURI, (connect_ptr));
     MOCK_METHOD(int, virConnectGetVersion, (connect_ptr, unsigned long *));
     MOCK_METHOD(int, virConnectIsEncrypted, (connect_ptr));

@@ -72,6 +72,11 @@ virt::connection &virt::connection::connect(const std::string &str)
     return *this;
 }
 
+std::string virt::connection::capabilities() const
+{
+    return libvirt::ref().virConnectGetCapabilities(conn_);
+}
+
 std::string virt::connection::hostname() const
 {
     return libvirt::ref().virConnectGetHostname(conn_);
@@ -80,13 +85,23 @@ std::string virt::connection::hostname() const
 unsigned long virt::connection::library_version() const
 {
     unsigned long version = 0;
-    return libvirt::ref().virConnectGetLibVersion(conn_, &version);
+    libvirt::ref().virConnectGetLibVersion(conn_, &version);
     return version;
+}
+
+int virt::connection::max_vcpus(const char *type) const
+{
+    return libvirt::ref().virConnectGetMaxVcpus(conn_, type);
 }
 
 std::string virt::connection::sysinfo() const
 {
     return libvirt::ref().virConnectGetSysinfo(conn_, 0);
+}
+
+const char *virt::connection::type() const
+{
+    return libvirt::ref().virConnectGetType(conn_);
 }
 
 std::string virt::connection::uri() const
@@ -97,7 +112,7 @@ std::string virt::connection::uri() const
 unsigned long virt::connection::version() const
 {
     unsigned long version = 0;
-    return libvirt::ref().virConnectGetVersion(conn_, &version);
+    libvirt::ref().virConnectGetVersion(conn_, &version);
     return version;
 }
 

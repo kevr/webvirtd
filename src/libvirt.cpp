@@ -71,6 +71,11 @@ libvirt::connect_ptr libvirt::virConnectOpen(const char *uri)
     return connect_ptr(::virConnectOpen(uri), free_connect_ptr());
 }
 
+std::string libvirt::virConnectGetCapabilities(connect_ptr conn)
+{
+    return from_c_string(::virConnectGetCapabilities(conn.get()));
+}
+
 std::string libvirt::virConnectGetHostname(connect_ptr conn)
 {
     return from_c_string(::virConnectGetHostname(conn.get()));
@@ -81,9 +86,19 @@ int libvirt::virConnectGetLibVersion(connect_ptr conn, unsigned long *version)
     return ::virConnectGetLibVersion(conn.get(), version);
 }
 
+int libvirt::virConnectGetMaxVcpus(connect_ptr conn, const char *type)
+{
+    return ::virConnectGetMaxVcpus(conn.get(), type);
+}
+
 std::string libvirt::virConnectGetSysinfo(connect_ptr conn, unsigned int flags)
 {
     return from_c_string(::virConnectGetSysinfo(conn.get(), flags));
+}
+
+const char *libvirt::virConnectGetType(connect_ptr conn)
+{
+    return ::virConnectGetType(conn.get());
 }
 
 std::string libvirt::virConnectGetURI(connect_ptr conn)

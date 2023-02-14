@@ -19,7 +19,7 @@ using namespace webvirt;
 
 TEST(util, root_uri)
 {
-    EXPECT_EQ(virt::uri("root"), "qemu:///system");
+    EXPECT_EQ(virt::uri("root"), "qemu+ssh://root@localhost/system");
 }
 
 TEST(util, user_uri)

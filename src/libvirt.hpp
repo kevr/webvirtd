@@ -63,9 +63,12 @@ public:
     // virConnect
     virtual connect_ptr virConnectOpen(const char *);
 
+    virtual std::string virConnectGetCapabilities(connect_ptr);
     virtual std::string virConnectGetHostname(connect_ptr);
     virtual int virConnectGetLibVersion(connect_ptr, unsigned long *);
+    virtual int virConnectGetMaxVcpus(connect_ptr, const char *);
     virtual std::string virConnectGetSysinfo(connect_ptr, unsigned int);
+    virtual const char *virConnectGetType(connect_ptr);
     virtual std::string virConnectGetURI(connect_ptr);
     virtual int virConnectGetVersion(connect_ptr, unsigned long *);
     virtual int virConnectIsEncrypted(connect_ptr);

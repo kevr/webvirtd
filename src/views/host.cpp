@@ -41,6 +41,16 @@ void host::show(virt::connection &conn, const std::smatch &location,
     output["encrypted"] = conn.encrypted();
     output["secure"] = conn.secure();
 
+    const char *type = conn.type();
+    output["type"] = type;
+    output["max_vcpus"] = conn.max_vcpus(type);
+
+    auto capabilities = conn.capabilities();
+    pugi::xml_document doc;
+    doc.load_string(capabilities.c_str());
+    output["caps"] =
+        json::xml_to_json(doc.child("capabilities").child("host"));
+
     return http::set_response(response, output, beast::http::status::ok);
 }
 

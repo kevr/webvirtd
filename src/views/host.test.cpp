@@ -65,13 +65,16 @@ protected:
 
 TEST_F(host_test, show)
 {
+    EXPECT_CALL(lv, virConnectGetCapabilities(_)).Times(2);
     EXPECT_CALL(lv, virConnectGetHostname(_)).WillRepeatedly(Return("test"));
-    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).WillRepeatedly(Return(0));
+    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).Times(2);
+    EXPECT_CALL(lv, virConnectGetMaxVcpus(_, _)).WillRepeatedly(Return(2));
+    EXPECT_CALL(lv, virConnectGetType(_)).WillRepeatedly(Return("QEMU"));
     EXPECT_CALL(lv, virConnectGetURI(_))
-        .WillOnce(Return("qemu://test@localhost/session"))
-        .WillOnce(Return("qemu:///system"));
-    EXPECT_CALL(lv, virConnectGetVersion(_, _)).WillRepeatedly(Return(0));
-    EXPECT_CALL(lv, virConnectIsEncrypted(_)).WillRepeatedly(Return(0));
+        .WillOnce(Return("qemu+ssh://test@localhost/session"))
+        .WillOnce(Return("qemu+ssh://root@localhost/system"));
+    EXPECT_CALL(lv, virConnectGetVersion(_, _)).Times(2);
+    EXPECT_CALL(lv, virConnectIsEncrypted(_)).Times(2);
     EXPECT_CALL(lv, virConnectIsSecure(_)).WillRepeatedly(Return(1));
 
     // Make a request as test user.
@@ -82,7 +85,7 @@ TEST_F(host_test, show)
     auto data = json::parse(response_.body());
     EXPECT_EQ(data["hostname"].asString(), "test");
     EXPECT_EQ(data["libVersion"].asUInt(), 0);
-    EXPECT_EQ(data["uri"].asString(), "qemu://test@localhost/session");
+    EXPECT_EQ(data["uri"].asString(), "qemu+ssh://test@localhost/session");
     EXPECT_EQ(data["version"].asUInt(), 0);
     EXPECT_EQ(data["encrypted"].asBool(), false);
     EXPECT_EQ(data["secure"].asBool(), true);
@@ -102,11 +105,13 @@ TEST_F(host_test, show)
     data = json::parse(response_.body());
     EXPECT_EQ(data["hostname"].asString(), "test");
     EXPECT_EQ(data["libVersion"].asUInt(), 0);
-    EXPECT_EQ(data["uri"].asString(), "qemu:///system");
+    EXPECT_EQ(data["type"].asString(), "QEMU");
+    EXPECT_EQ(data["uri"].asString(), "qemu+ssh://root@localhost/system");
     EXPECT_EQ(data["sysinfo"].type(), Json::objectValue);
     EXPECT_EQ(data["version"].asUInt(), 0);
     EXPECT_EQ(data["encrypted"].asBool(), false);
     EXPECT_EQ(data["secure"].asBool(), true);
+    EXPECT_EQ(data["max_vcpus"].asUInt(), 2);
 }
 
 TEST_F(host_test, networks)

@@ -30,6 +30,11 @@ connect *virConnectOpen(const char *)
     return nullptr;
 }
 
+char *virConnectGetCapabilities(webvirt::connect *)
+{
+    return make_cstring("");
+}
+
 char *virConnectGetHostname(webvirt::connect *)
 {
     return make_cstring("test");
@@ -41,9 +46,19 @@ int virConnectGetLibVersion(webvirt::connect *, unsigned long *version)
     return 0;
 }
 
+int virConnectGetMaxVcpus(webvirt::connect *, const char *)
+{
+    return 2;
+}
+
 char *virConnectGetSysinfo(webvirt::connect *, unsigned int)
 {
     return make_cstring("");
+}
+
+const char *virConnectGetType(webvirt::connect *)
+{
+    return "qemu";
 }
 
 char *virConnectGetURI(webvirt::connect *)
