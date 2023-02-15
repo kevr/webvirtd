@@ -259,7 +259,7 @@ TEST_F(mock_app_test, domains)
     auto object =
         array.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
     EXPECT_EQ(object["id"], 1);
-    EXPECT_EQ(object["name"], "test-domain");
+    EXPECT_EQ(object["name"]["text"], "test-domain");
     EXPECT_EQ(object["state"]["attrib"]["id"], VIR_DOMAIN_RUNNING);
     EXPECT_EQ(object["state"]["attrib"]["string"], "Running");
 }
@@ -291,6 +291,8 @@ TEST_F(mock_app_test, domain_cdrom)
             return 0;
         }));
 
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
     EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
         .WillOnce(Invoke([](auto, int *state, int *, int) {
             *state = VIR_DOMAIN_RUNNING;
@@ -323,6 +325,8 @@ TEST_F(mock_app_test, domain)
             return 0;
         }));
 
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
     EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
         .WillOnce(Invoke([](auto, int *state, int *, int) {
             *state = VIR_DOMAIN_RUNNING;
@@ -338,7 +342,6 @@ TEST_F(mock_app_test, domain)
     auto iface =
         std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
     auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
-    std::cout << buffer << std::endl;
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     auto block_info_ptr = std::make_shared<webvirt::block_info>();

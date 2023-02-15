@@ -148,9 +148,6 @@ bool virt::domain::shutdown()
 
 Json::Value virt::domain::simple_json() const
 {
-    auto &lv = libvirt::ref();
-    int state, reason;
-
     Json::Value data(Json::objectValue);
     data["id"] = id();
 
@@ -166,11 +163,11 @@ Json::Value virt::domain::simple_json() const
     desc["text"] = description();
     data["description"] = std::move(desc);
 
-    lv.virDomainGetState(ptr_, &state, &reason, 0);
+    int state_ = state();
     data["state"] = Json::Value(Json::objectValue);
     Json::Value state_json(Json::objectValue);
-    state_json["id"] = state;
-    state_json["string"] = virt::state_string(state);
+    state_json["id"] = state_;
+    state_json["string"] = virt::state_string(state_);
     data["state"]["attrib"] = std::move(state_json);
 
     return data;
