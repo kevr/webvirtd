@@ -52,7 +52,7 @@ void virt::domain::autostart(bool enabled)
 }
 
 std::string virt::domain::metadata(int type, const char *uri,
-                                   unsigned int flags)
+                                   unsigned int flags) const
 {
     return libvirt::ref().virDomainGetMetadata(ptr_, type, uri, flags);
 }
@@ -62,6 +62,16 @@ bool virt::domain::metadata(int type, const char *metadata, const char *key,
 {
     return libvirt::ref().virDomainSetMetadata(
                ptr_, type, metadata, key, uri, flags) == 0;
+}
+
+std::string virt::domain::title() const
+{
+    return metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
+}
+
+std::string virt::domain::description() const
+{
+    return metadata(VIR_DOMAIN_METADATA_DESCRIPTION, nullptr, 0);
 }
 
 std::string virt::domain::xml_desc()
@@ -140,16 +150,28 @@ Json::Value virt::domain::simple_json() const
 {
     auto &lv = libvirt::ref();
     int state, reason;
-    lv.virDomainGetState(ptr_, &state, &reason, 0);
 
     Json::Value data(Json::objectValue);
-    int ptr_id = lv.virDomainGetID(ptr_);
-    data["id"] = ptr_id;
-    const char *name = lv.virDomainGetName(ptr_);
-    data["name"] = name;
+    data["id"] = id();
+
+    Json::Value name_(Json::objectValue);
+    name_["text"] = name();
+    data["name"] = std::move(name_);
+
+    Json::Value title_(Json::objectValue);
+    title_["text"] = title();
+    data["title"] = std::move(title_);
+
+    Json::Value desc(Json::objectValue);
+    desc["text"] = description();
+    data["description"] = std::move(desc);
+
+    lv.virDomainGetState(ptr_, &state, &reason, 0);
     data["state"] = Json::Value(Json::objectValue);
-    data["state"]["id"] = state;
-    data["state"]["string"] = virt::state_string(state);
+    Json::Value state_json(Json::objectValue);
+    state_json["id"] = state;
+    state_json["string"] = virt::state_string(state);
+    data["state"]["attrib"] = std::move(state_json);
 
     return data;
 } // LCOV_EXCL_LINE

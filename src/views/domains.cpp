@@ -32,20 +32,7 @@ void domains::index(virt::connection &conn, const std::smatch &,
 
     Json::Value data(Json::arrayValue);
     for (auto &domain : domains) {
-        Json::Value item(Json::objectValue);
-        item["id"] = domain.id();
-        item["name"] = domain.name();
-
-        int state = domain.state();
-        item["state"] = Json::Value(Json::objectValue);
-        item["state"]["id"] = state;
-        item["state"]["string"] = virt::state_string(state);
-
-        pugi::xml_document doc = domain.xml_document();
-        auto domain_ = doc.child("domain");
-        item["title"] = domain_.child("title").text().as_string();
-
-        data.append(std::move(item));
+        data.append(domain.simple_json());
     }
 
     return http::set_response(response, data, beast::http::status::ok);
@@ -57,10 +44,25 @@ void domains::show(virt::connection &, virt::domain domain,
 {
     const std::string name(location[2]);
 
+    auto data = domain.simple_json();
     auto doc = domain.xml_document();
-    auto data = json::xml_to_json(doc.child("domain"));
-    data["name"] = name;
+
+    auto xml_data = json::xml_to_json(doc.child("domain"));
+    for (const auto &key : xml_data.getMemberNames()) {
+        data[key] = xml_data[key];
+    }
+
     data["autostart"] = domain.autostart();
+
+    std::vector<std::string> keys = { "interface", "disk" };
+    for (const auto &key : keys) {
+        if (data["devices"][key] &&
+            data["devices"][key].type() == Json::objectValue) {
+            auto current = data["devices"][key];
+            data["devices"][key] = Json::Value(Json::arrayValue);
+            data["devices"][key].append(std::move(current));
+        }
+    }
 
     if (data["devices"]["disk"]) {
         for (auto &disk : data["devices"]["disk"]) {
@@ -83,20 +85,7 @@ void domains::show(virt::connection &, virt::domain domain,
         }
     }
 
-    int state = domain.state();
-    data["state"] = Json::Value(Json::objectValue);
-    data["state"]["id"] = state;
-    data["state"]["string"] = virt::state_string(state);
-
-    std::vector<std::string> keys = { "interface", "disk" };
-    for (const auto &key : keys) {
-        if (data["devices"][key] &&
-            data["devices"][key].type() == Json::objectValue) {
-            auto current = data["devices"][key];
-            data["devices"][key] = Json::Value(Json::arrayValue);
-            data["devices"][key].append(std::move(current));
-        }
-    }
+    std::cout << json::stringify(data) << std::endl;
 
     return http::set_response(response, data, beast::http::status::ok);
 }

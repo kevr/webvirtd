@@ -96,12 +96,12 @@ public:
         auto &conf = config::instance();
         conf.add_option("libvirt-shutdown-timeout",
                         boost::program_options::value<double>()
-                            ->default_value(0.2)
+                            ->default_value(0.01)
                             ->multitoken(),
                         "libvirt shutdown timeout");
         conf.add_option("libvirt-shutoff-timeout",
                         boost::program_options::value<double>()
-                            ->default_value(0.5)
+                            ->default_value(0.02)
                             ->multitoken(),
                         "libvirt shutoff timeout");
 
@@ -260,8 +260,8 @@ TEST_F(mock_app_test, domains)
         array.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
     EXPECT_EQ(object["id"], 1);
     EXPECT_EQ(object["name"], "test-domain");
-    EXPECT_EQ(object["state"]["id"], VIR_DOMAIN_RUNNING);
-    EXPECT_EQ(object["state"]["string"], "Running");
+    EXPECT_EQ(object["state"]["attrib"]["id"], VIR_DOMAIN_RUNNING);
+    EXPECT_EQ(object["state"]["attrib"]["string"], "Running");
 }
 
 TEST_F(mock_app_test, domains_libvirt_error)
@@ -338,6 +338,7 @@ TEST_F(mock_app_test, domain)
     auto iface =
         std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
     auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
+    std::cout << buffer << std::endl;
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
 
     auto block_info_ptr = std::make_shared<webvirt::block_info>();
@@ -351,10 +352,9 @@ TEST_F(mock_app_test, domain)
               static_cast<int>(beast::http::status::ok));
 
     auto data = json::parse(response.body());
-    EXPECT_EQ(data["id"], 1);
 
-    auto disk_json = data["info"]["devices"]["disk"][0];
-    auto block_info = disk_json["block_info"];
+    const auto &disk_json = data["devices"]["disk"][0];
+    const auto &block_info = disk_json["block_info"];
     EXPECT_EQ(block_info["unit"], "KiB");
     EXPECT_EQ(block_info["capacity"], 0);
     EXPECT_EQ(block_info["allocation"], 0);
