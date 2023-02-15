@@ -85,8 +85,6 @@ void domains::show(virt::connection &, virt::domain domain,
         }
     }
 
-    std::cout << json::stringify(data) << std::endl;
-
     return http::set_response(response, data, beast::http::status::ok);
 }
 

@@ -244,3 +244,9 @@ std::string libvirt::virNetworkGetXMLDesc(network_ptr network,
     free(buffer);
     return s;
 }
+
+void libvirt::virConnSetErrorFunc(connect_ptr conn, void *data,
+                                  error_function fn)
+{
+    return ::virConnSetErrorFunc(conn.get(), data, fn);
+}

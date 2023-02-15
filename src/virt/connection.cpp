@@ -15,10 +15,13 @@
  */
 #include "connection.hpp"
 #include "../config.hpp"
+#include "../logging.hpp"
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>
 #include <fstream>
+#include <iostream>
+#include <list>
 #include <pugixml.hpp>
 #include <stdexcept>
 #include <thread>
@@ -69,6 +72,7 @@ virt::connection &virt::connection::connect(const std::string &str)
         throw std::runtime_error(message);
     }
 
+    libvirt::ref().virConnSetErrorFunc(conn_, &log_, virt::on_libvirt_error);
     return *this;
 }
 
@@ -175,4 +179,19 @@ int virt::connection::error()
 const char *virt::connection::strerror()
 {
     return ::strerror(error());
+}
+
+void virt::on_libvirt_error(void *data, webvirt::error_ err)
+{
+    static const std::list<std::string> whitelist {
+        "Requested metadata element is not present",
+    };
+    for (auto &whitelisted : whitelist) {
+        if (strstr(err->message, whitelisted.c_str()) != nullptr) {
+            return;
+        }
+    }
+
+    logger &log = *reinterpret_cast<logger *>(data);
+    log.error(err->message);
 }

@@ -77,4 +77,6 @@ int virDomainFree(webvirt::domain *);
 char *virNetworkGetXMLDesc(webvirt::network *, unsigned int);
 int virNetworkFree(webvirt::network *);
 
+void virConnSetErrorFunc(webvirt::connect *, void *, webvirt::error_function);
+
 #endif /* STUBS_LIBVIRT_HPP */

@@ -18,6 +18,7 @@
 
 #ifndef TEST_BUILD
 #include <libvirt/libvirt.h>
+#include <libvirt/virterror.h>
 #endif
 
 namespace webvirt
@@ -34,12 +35,20 @@ struct block_info {
     unsigned long allocation;
     unsigned long physical;
 };
+
+struct error__ {
+    char *message;
+};
+using error_ = error__ *;
+
 #else
 using connect = virConnect;
 using domain = virDomain;
 using network = virNetwork;
 using block_info = virDomainBlockInfo;
+using error_ = virErrorPtr;
 #endif
+using error_function = void (*)(void *, error_);
 }; // namespace webvirt
 
 #endif /* LIBVIRT_TYPES_HPP */

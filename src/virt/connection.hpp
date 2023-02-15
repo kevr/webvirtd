@@ -17,6 +17,7 @@
 #define VIRT_CONNECTION_HPP
 
 #include "../libvirt.hpp"
+#include "../logging.hpp"
 #include "domain.hpp"
 #include "network.hpp"
 #include <cstring>
@@ -36,6 +37,7 @@ class connection
 private:
     libvirt::connect_ptr conn_ = nullptr;
     int errno_ = 0;
+    logger log_;
 
 public:
     connection() = default;
@@ -70,6 +72,7 @@ public:
     const char *strerror();
 };
 
+void on_libvirt_error(void *, webvirt::error_);
 }; // namespace webvirt::virt
 
 #endif /* VIRT_CONNECTION_HPP */

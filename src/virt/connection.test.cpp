@@ -15,6 +15,7 @@
  */
 #include "connection.hpp"
 #include "../mocks/libvirt.hpp"
+#include <cstring>
 #include <gtest/gtest.h>
 using namespace webvirt;
 
@@ -62,4 +63,32 @@ TEST_F(connection_test, inequality)
 {
     virt::connection v("/path/to/socket.sock");
     EXPECT_NE(v, virt::connection());
+}
+
+TEST(connection, on_libvirt_error)
+{
+    testing::internal::CaptureStderr();
+
+    webvirt::logger log;
+    webvirt::error__ err;
+    std::string str("test error");
+    err.message = str.data();
+    virt::on_libvirt_error(&log, &err);
+
+    auto output = testing::internal::GetCapturedStderr();
+    EXPECT_NE(output.find("test error"), std::string::npos);
+}
+
+TEST(connection, on_libvirt_error_metadata)
+{
+    testing::internal::CaptureStderr();
+
+    webvirt::logger log;
+    webvirt::error__ err;
+    std::string str("Requested metadata element is not present");
+    err.message = str.data();
+    virt::on_libvirt_error(&log, &err);
+
+    auto output = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(output, "");
 }

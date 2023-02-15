@@ -98,6 +98,10 @@ public:
 
     // virNetwork
     virtual std::string virNetworkGetXMLDesc(network_ptr, unsigned int);
+
+    // virError
+    virtual void virConnSetErrorFunc(connect_ptr, void *,
+                                     webvirt::error_function);
 };
 
 }; // namespace webvirt

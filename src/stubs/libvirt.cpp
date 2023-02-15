@@ -181,3 +181,7 @@ int virNetworkFree(network *ptr)
     delete ptr;
     return 0;
 }
+
+void virConnSetErrorFunc(webvirt::connect *, void *, webvirt::error_function)
+{
+}
