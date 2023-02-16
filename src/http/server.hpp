@@ -108,30 +108,28 @@ public:
 
     void on_accept(std::function<
                    void(connection<net::unix::acceptor, net::unix::socket> &)>
-                       fn)
+                       accept_handler)
     {
-        on_accept_ = fn;
+        on_accept_ = accept_handler;
     }
 
-    void on_request(
-        std::function<void(
-            connection<net::unix::acceptor, net::unix::socket> &,
-            const boost::beast::http::request<boost::beast::http::dynamic_body>
-                &,
-            boost::beast::http::response<boost::beast::http::string_body> &)>
-            fn)
+    void on_request(std::function<
+                    void(connection<net::unix::acceptor, net::unix::socket> &,
+                         const http::request &, http::response &)>
+                        request_handler)
     {
-        on_request_ = fn;
+        on_request_ = request_handler;
     }
 
-    void on_error(std::function<void(const char *, beast::error_code)> fn)
+    void on_error(
+        std::function<void(const char *, beast::error_code)> error_handler)
     {
-        on_error_ = fn;
+        on_error_ = error_handler;
     }
 
-    void on_close(std::function<void()> fn)
+    void on_close(std::function<void()> close_handler)
     {
-        on_close_ = fn;
+        on_close_ = close_handler;
     }
 
 private:

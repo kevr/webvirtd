@@ -24,9 +24,6 @@
 namespace webvirt::http
 {
 
-using route_function = std::function<void(
-    const std::smatch &, const http::request &, http::response &)>;
-
 namespace middleware
 {
 route_function with_methods(const std::vector<boost::beast::http::verb> &,

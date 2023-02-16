@@ -22,6 +22,7 @@
 #include <boost/beast.hpp>
 #include <map>
 #include <regex>
+#include <string>
 #include <vector>
 
 namespace webvirt::http
@@ -30,21 +31,12 @@ namespace webvirt::http
 class router
 {
 private:
-    logger log_;
-
-    using request_t = beast::http::request<beast::http::dynamic_body>;
-    using response_t = beast::http::response<beast::http::string_body>;
-
-    using route_function_t = std::function<void(
-        const std::smatch &, const request_t &, response_t &)>;
-    std::map<std::string, route_function_t> routes_;
+    std::map<std::string, route_function> routes_;
     std::map<std::string, std::regex> regex_;
 
 public:
-    void run(const request_t &request, response_t &response);
-    void route(std::string request_uri,
-               std::function<void(const std::smatch &, const request_t &,
-                                  response_t &)>);
+    void run(const http::request &, http::response &);
+    void route(const std::string &, route_function);
 };
 
 }; // namespace webvirt::http

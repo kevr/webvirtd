@@ -18,6 +18,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
+#include <regex>
 
 namespace webvirt
 {
@@ -42,6 +43,9 @@ enum version : int {
 
 using request = beast::http::request<beast::http::dynamic_body>;
 using response = beast::http::response<beast::http::string_body>;
+
+using route_function = std::function<void(
+    const std::smatch &, const http::request &, http::response &)>;
 
 }; // namespace http
 

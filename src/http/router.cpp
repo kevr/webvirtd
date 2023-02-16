@@ -27,7 +27,7 @@
 #include <vector>
 using namespace webvirt;
 
-void http::router::run(const request_t &request, response_t &response)
+void http::router::run(const http::request &request, http::response &response)
 {
     const auto request_uri = std::string(request.target());
     const auto method = std::string(request.method_string());
@@ -88,10 +88,8 @@ void http::router::run(const request_t &request, response_t &response)
                     int(elapsed)));
 }
 
-void http::router::route(
-    std::string request_uri,
-    std::function<void(const std::smatch &, const request_t &, response_t &)>
-        fn)
+void http::router::route(const std::string &request_uri,
+                         http::route_function fn)
 {
     routes_[request_uri] = fn;
     regex_[request_uri] = request_uri;
