@@ -115,9 +115,10 @@ private:
     void process_request()
     {
         logger::debug([this] {
+            const char *target = request_.target().data();
             return fmt::format("Received \"{} {} HTTP/{}.{}\"",
                                request_.method_string(),
-                               request_.target(), // LCOV_EXCL_LINE
+                               target,
                                request_.version() / 10,
                                request_.version() % 10);
         });
