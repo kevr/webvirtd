@@ -115,10 +115,11 @@ private:
     void process_request()
     {
         logger::debug([this] {
+            const char *method = request_.method_string().data();
             const char *target = request_.target().data();
             return fmt::format(
                 "Received \"{} {} HTTP/{}.{}\"",
-                request_.method_string(),
+                method,
                 target,
                 boost::numeric_cast<unsigned int>(request_.version() / 10),
                 boost::numeric_cast<unsigned int>(request_.version() % 10));
