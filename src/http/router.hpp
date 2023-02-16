@@ -16,14 +16,10 @@
 #ifndef HTTP_ROUTER_HPP
 #define HTTP_ROUTER_HPP
 
-#include "../logging.hpp"
-#include "../virt/connection.hpp"
 #include "namespaces.hpp"
-#include <boost/beast.hpp>
 #include <map>
 #include <regex>
 #include <string>
-#include <vector>
 
 namespace webvirt::http
 {
