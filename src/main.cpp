@@ -26,6 +26,7 @@
 #include <grp.h>
 #include <iostream>
 #include <unistd.h>
+#include <version.hpp>
 
 using webvirt::errorln;
 using webvirt::print;
@@ -78,6 +79,7 @@ int main(int argc, const char *argv[])
     auto &sys = webvirt::syscaller::instance();
 
     webvirt::config conf;
+    conf.add_option("version", "display version");
     conf.add_option("verbose,v", "enable debug logging");
     conf.add_option("disable-timestamp", "disable logging timestamps");
     conf.add_option("socket,s",
@@ -108,6 +110,11 @@ int main(int argc, const char *argv[])
         conf.parse(argc, argv);
     } catch (const boost::program_options::unknown_option &ec) {
         return errorln(ec.what(), 1);
+    }
+
+    if (conf.has("version")) {
+        std::cout << VERSION << std::endl;
+        return 0;
     }
 
     webvirt::logger::enable_timestamp(!conf.has("disable-timestamp"));

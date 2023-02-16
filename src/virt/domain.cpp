@@ -85,7 +85,7 @@ std::string virt::domain::xml_desc()
     logger::debug(
         fmt::format("Producing XML description took {:.2f}ms", elapsed));
     return desc;
-}
+} // LCOV_EXCL_LINE
 
 pugi::xml_document virt::domain::xml_document()
 {

@@ -1,6 +1,12 @@
 flags = ['-pthread']
 test_flags = ['-DTEST_BUILD']
 
+conf_data = configuration_data()
+conf_data.set('version', get_option('version'))
+configure_file(input : 'version.hpp.in',
+               output : 'version.hpp',
+               configuration : conf_data)
+
 sources = [
   'app.cpp',
   'syscaller.cpp',

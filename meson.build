@@ -1,10 +1,12 @@
 project('webvirtd', 'cpp',
-  version : '1.0.1',
+  version : '0.0.0',
   default_options : [
     'warning_level=3',
     'cpp_std=c++17',
   ]
 )
+
+message('Dynamic version: ' + get_option('version'))
 
 gtest_proj = subproject('gtest')
 gtest_dep = gtest_proj.get_variable('gtest_dep')

@@ -5,3 +5,4 @@ subprojects/*/
 
 # Files
 *.gcov
+/compile_commands.json

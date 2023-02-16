@@ -16,6 +16,7 @@
 #include "mocks/syscaller.hpp"
 #include "stubs/io_service.hpp"
 #include "util.hpp"
+#include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
 #define main main_
@@ -103,6 +104,17 @@ public:
 
 std::filesystem::path main_test::tmpdir;
 std::filesystem::path main_test::socket_path;
+
+TEST_F(webvirt_main_test, version)
+{
+    testing::internal::CaptureStdout();
+
+    const char *argv[] = { "webvirtd", "--version" };
+    EXPECT_EQ(main_(2, argv), 0);
+
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_NE(output.find(VERSION), std::string::npos);
+}
 
 TEST_F(webvirt_main_test, runs)
 {
