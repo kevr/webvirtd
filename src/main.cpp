@@ -18,6 +18,7 @@
 #include "http/connection.hpp"
 #include "http/io_service.hpp"
 #include "http/server.hpp"
+#include "signal.hpp"
 #include "syscaller.hpp"
 #include <boost/program_options/errors.hpp>
 #include <filesystem>
@@ -105,6 +106,8 @@ int main(int argc, const char *argv[])
                         ->default_value(15.0)
                         ->multitoken(),
                     "timeout in seconds for domain shutoff state to react");
+
+    signal(SIGPIPE, webvirt::signal::pipe);
 
     try {
         conf.parse(argc, argv);

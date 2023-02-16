@@ -14,6 +14,7 @@ sources = [
   'json.cpp',
   'config.cpp',
   'libvirt.cpp',
+  'signal.cpp',
   'logging.cpp',
   'views/domains.cpp',
   'views/host.cpp',
@@ -118,6 +119,14 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('logging test', logging_test)
+
+  signal_test = executable(
+    'signal.test',
+    'signal.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('signal test', signal_test)
 endif
 
 subdir('http')
