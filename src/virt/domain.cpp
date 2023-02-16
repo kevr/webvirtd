@@ -88,7 +88,7 @@ pugi::xml_document virt::domain::xml_document()
     // A blank xml_document will produce empty string values for
     // children/attributes read, allowing XML routes to fall through
     // gracefully.
-    doc.load_string(desc.c_str());
+    doc.load_buffer(desc.c_str(), desc.size());
 
     return doc;
 }
