@@ -15,10 +15,12 @@
  */
 #include "router.hpp"
 #include "../json.hpp"
+#include "../logging.hpp"
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "middleware.hpp"
 #include "util.hpp"
+#include <chrono>
 #include <fmt/format.h>
 #include <iostream>
 #include <regex>
@@ -33,8 +35,8 @@ void http::router::run(const request_t &request, response_t &response)
     response.set(beast::http::field::content_type, "application/json");
     response.result(beast::http::status::ok);
 
-    std::function<void(const std::string &)> log([&](const auto &m) {
-        log_.info(m);
+    std::function<void(const std::string &)> log([](const auto &message) {
+        logger::info(message);
     });
 
     std::function<void()> next = [&request, &response] {
@@ -47,12 +49,18 @@ void http::router::run(const request_t &request, response_t &response)
         set_response(response, res, beast::http::status::not_found);
     };
 
-    for (auto &route_ : routes_) {
-        const auto &re = regex_[route_.first];
+    std::chrono::high_resolution_clock clock;
+    std::chrono::high_resolution_clock::time_point start;
+    std::chrono::high_resolution_clock::time_point end;
+
+    for (auto &route : routes_) {
+        const std::regex &re = regex_.at(route.first);
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
             next = [&, match] {
-                route_.second(match, request, response);
+                start = clock.now();
+                route.second(match, request, response);
+                end = clock.now();
             };
             break;
         }
@@ -62,20 +70,22 @@ void http::router::run(const request_t &request, response_t &response)
 
     int status_code = response.result_int();
     if (!(status_code >= 200 && status_code < 400)) {
-        log = [&](const auto &message) {
-            log_.error(message);
+        log = [](const auto &message) {
+            logger::error(message);
         };
     }
 
+    auto elapsed = std::chrono::duration<double>(end - start).count() * 1000;
     auto major = response.version() / 10;
     auto minor = response.version() % 10;
-    log(fmt::format("\"{} {} HTTP/{}.{}\" {} {}",
+    log(fmt::format("\"{} {} HTTP/{}.{}\" {} {} (took {}ms)",
                     method,
                     request_uri,
                     major,
                     minor,
                     response.result_int(),
-                    response.body().size()));
+                    response.body().size(),
+                    int(elapsed)));
 }
 
 void http::router::route(

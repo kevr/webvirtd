@@ -16,6 +16,7 @@
 #ifndef HTTP_SERVER_HPP
 #define HTTP_SERVER_HPP
 
+#include "../logging.hpp"
 #include "connection.hpp"
 #include "handlers.hpp"
 #include "io_service.hpp"
@@ -100,6 +101,7 @@ public:
 
     std::size_t run()
     {
+        logger::info(fmt::format("Listening on '{}'", socket_path_.c_str()));
         async_accept();
         return io_->process();
     }

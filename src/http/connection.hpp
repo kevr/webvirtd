@@ -16,6 +16,7 @@
 #ifndef HTTP_CONNECTION_HPP
 #define HTTP_CONNECTION_HPP
 
+#include "../logging.hpp"
 #include "handlers.hpp"
 #include "io_service.hpp"
 #include "namespaces.hpp"
@@ -113,6 +114,14 @@ private:
 
     void process_request()
     {
+        logger::debug([this] {
+            return fmt::format("Received \"{} {} HTTP/{}.{}\"",
+                               request_.method_string(),
+                               request_.target(), // LCOV_EXCL_LINE
+                               request_.version() / 10,
+                               request_.version() % 10);
+        });
+
         response_.version(request_.version());
         response_.keep_alive(false);
         response_.set(beast::http::field::content_type, "text/plain");

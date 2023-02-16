@@ -15,6 +15,7 @@
  */
 #include "domain.hpp"
 #include "../config.hpp"
+#include "../logging.hpp"
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>
@@ -76,7 +77,14 @@ std::string virt::domain::description() const
 
 std::string virt::domain::xml_desc()
 {
-    return libvirt::ref().virDomainGetXMLDesc(ptr_, 0);
+    std::chrono::high_resolution_clock clock;
+    std::chrono::high_resolution_clock::time_point start = clock.now();
+    auto desc = libvirt::ref().virDomainGetXMLDesc(ptr_, 0);
+    std::chrono::high_resolution_clock::time_point end = clock.now();
+    auto elapsed = std::chrono::duration<double>(end - start).count() * 1000;
+    logger::debug(
+        fmt::format("Producing XML description took {:.2f}ms", elapsed));
+    return desc;
 }
 
 pugi::xml_document virt::domain::xml_document()

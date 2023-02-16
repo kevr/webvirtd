@@ -107,10 +107,13 @@ public:
 
         const char *argv[] = { "webvirtd" };
         conf.parse(1, argv);
+
+        logger::enable_debug(true);
     }
 
     void TearDown() override
     {
+        logger::reset_debug();
         app_test::TearDown();
         libvirt::reset();
     }

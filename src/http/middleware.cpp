@@ -18,6 +18,7 @@
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "util.hpp"
+#include <chrono>
 #include <sstream>
 using namespace webvirt;
 using namespace http;
@@ -92,6 +93,9 @@ http::route_function middleware::with_libvirt(
                                 const auto &request,
                                 auto &response) {
         const std::string user = match[1];
+
+        std::chrono::high_resolution_clock clock;
+        auto start = clock.now();
         virt::connection conn;
         try {
             conn.connect(virt::uri(user));
@@ -101,6 +105,13 @@ http::route_function middleware::with_libvirt(
                                 json::stringify(error),
                                 beast::http::status::internal_server_error);
         }
+        auto end = clock.now();
+
+        double elapsed =
+            std::chrono::duration<double>(end - start).count() * 1000;
+        logger::debug([elapsed] {
+            return fmt::format("Connecting to libvirt took {:.2f}ms", elapsed);
+        });
 
         return route_fn(conn, match, request, response);
     });
