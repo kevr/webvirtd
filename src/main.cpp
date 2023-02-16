@@ -78,8 +78,8 @@ int main(int argc, const char *argv[])
     auto &sys = webvirt::syscaller::instance();
 
     webvirt::config conf;
+    conf.add_option("verbose,v", "enable debug logging");
     conf.add_option("disable-timestamp", "disable logging timestamps");
-
     conf.add_option("socket,s",
                     boost::program_options::value<std::string>()
                         ->default_value("/var/run/webvirtd.sock")
@@ -93,13 +93,11 @@ int main(int argc, const char *argv[])
                         ->default_value(default_group->gr_name)
                         ->multitoken(),
                     "socket group");
-
     conf.add_option("libvirt-shutdown-timeout",
                     boost::program_options::value<double>()
                         ->default_value(3.0)
                         ->multitoken(),
                     "timeout in seconds for domain shutdown state to react");
-
     conf.add_option("libvirt-shutoff-timeout",
                     boost::program_options::value<double>()
                         ->default_value(15.0)
@@ -111,6 +109,9 @@ int main(int argc, const char *argv[])
     } catch (const boost::program_options::unknown_option &ec) {
         return errorln(ec.what(), 1);
     }
+
+    webvirt::logger::enable_timestamp(!conf.has("disable-timestamp"));
+    webvirt::logger::enable_debug(conf.has("verbose"));
 
     if (conf.has("help")) {
         return print(conf);

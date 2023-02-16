@@ -18,11 +18,8 @@
 #include <fmt/format.h>
 using namespace webvirt;
 
-logger::logger()
-{
-    auto &conf = config::instance();
-    time_ = !conf.has("disable-timestamp");
-}
+std::atomic<bool> logger::debug_ { false };
+std::atomic<bool> logger::time_ { true };
 
 void logger::info(const std::string &message)
 {
@@ -34,10 +31,42 @@ void logger::error(const std::string &message)
     return print(std::cerr, "[ERROR]", message);
 }
 
+void logger::debug(const std::string &message)
+{
+    if (debug_) {
+        print(std::cout, "[DEBUG]", message);
+    }
+}
+
+void logger::debug(std::function<std::string()> action)
+{
+    if (debug_) {
+        debug(action());
+    }
+}
+
+void logger::enable_timestamp(bool enabled)
+{
+    time_ = enabled;
+}
+
+void logger::reset_timestamp()
+{
+    enable_timestamp(true);
+}
+
+void logger::enable_debug(bool enabled)
+{
+    debug_ = enabled;
+}
+
+void logger::reset_debug()
+{
+    enable_debug(false);
+}
+
 std::string logger::timestamp()
 {
-    std::string dt;
-
     auto now = std::time({});
     char format[std::size("dd/Mon/yyyy hh:mm:ss")];
     std::strftime(std::data(format),

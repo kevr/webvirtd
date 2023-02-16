@@ -16,7 +16,10 @@
 #ifndef LOGGING_HPP
 #define LOGGING_HPP
 
+#include <atomic>
 #include <chrono>
+#include <fmt/format.h>
+#include <functional>
 #include <iostream>
 #include <string>
 
@@ -26,16 +29,25 @@ namespace webvirt
 class logger
 {
 private:
-    bool time_ = true;
+    static std::atomic<bool> debug_;
+    static std::atomic<bool> time_;
 
 public:
-    logger();
-    void info(const std::string &);
-    void error(const std::string &);
+    static void info(const std::string &);
+    static void error(const std::string &);
+    static void debug(const std::string &);
+    static void debug(std::function<std::string()>);
+
+public:
+    static void enable_timestamp(bool);
+    static void reset_timestamp();
+    static void enable_debug(bool);
+    static void reset_debug();
 
 private:
-    std::string timestamp();
-    void print(std::ostream &, const std::string &, const std::string &);
+    static std::string timestamp();
+    static void print(std::ostream &, const std::string &,
+                      const std::string &);
 };
 
 }; // namespace webvirt

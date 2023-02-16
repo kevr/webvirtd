@@ -104,6 +104,14 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('json test', json_test)
+
+  logging_test = executable(
+    'logging.test',
+    'logging.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('logging test', logging_test)
 endif
 
 subdir('http')
