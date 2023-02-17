@@ -14,8 +14,9 @@
  * permissions and limitations under the License.
  */
 #include "io_service.hpp"
+using namespace webvirt;
 
-std::size_t webvirt::io_service::process()
+std::size_t http::io_service::process()
 {
     return this->run();
 }

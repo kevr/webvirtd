@@ -18,7 +18,7 @@
 
 #include <boost/asio.hpp>
 
-namespace webvirt
+namespace webvirt::http
 {
 
 /**
@@ -33,6 +33,6 @@ public:
     virtual std::size_t process();
 };
 
-}; // namespace webvirt
+}; // namespace webvirt::http
 
 #endif /* HTTP_IO_SERVICE_HPP */

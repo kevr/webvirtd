@@ -20,7 +20,7 @@ using namespace webvirt;
 
 TEST(client, connect_fails)
 {
-    io_service io;
+    http::io_service io;
     auto client = std::make_shared<http::unix_client>(io, "test.sock");
     beast::error_code ec;
     client->on_error([&](const char *, beast::error_code ec_) {

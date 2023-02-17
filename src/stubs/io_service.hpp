@@ -21,10 +21,7 @@
 namespace webvirt::stubs
 {
 
-/**
- * A webvirt::io_service stub with a no-op process()
- **/
-class io_service : public webvirt::io_service
+class io_service : public http::io_service
 {
 private:
     std::size_t iterations = 0;

@@ -56,7 +56,7 @@ int setup_socket(webvirt::syscaller &sys,
     return 0;
 }
 
-int webvirt_main(webvirt::io_service &io, const std::string &socket_path)
+int webvirt_main(webvirt::http::io_service &io, const std::string &socket_path)
 {
     auto &sys = webvirt::syscaller::instance();
 
@@ -135,6 +135,6 @@ int main(int argc, const char *argv[])
 
     const auto socket_path = conf.get<std::string>("socket");
     webvirt::config::change(conf);
-    webvirt::io_service io;
+    webvirt::http::io_service io;
     return webvirt_main(io, socket_path);
 }

@@ -28,12 +28,12 @@ class server_test : public Test
 protected:
     static std::filesystem::path tmpdir, socket_path;
 
-    using server_t = webvirt::http::server<webvirt::net::unix>;
-    webvirt::io_service io;
+    using server_t = http::server<webvirt::net::unix>;
+    http::io_service io;
     std::shared_ptr<server_t> server;
 
-    using client_t = webvirt::http::client<webvirt::net::unix>;
-    webvirt::io_service client_io;
+    using client_t = http::client<webvirt::net::unix>;
+    http::io_service client_io;
     std::shared_ptr<client_t> client;
 
 public:

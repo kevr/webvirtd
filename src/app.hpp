@@ -16,6 +16,7 @@
 #ifndef APP_HPP
 #define APP_HPP
 
+#include "http/io_service.hpp"
 #include "http/router.hpp"
 #include "http/server.hpp"
 #include "views/domains.hpp"
@@ -31,7 +32,7 @@ class app
 private:
     http::router router_;
 
-    webvirt::io_service &io_;
+    http::io_service &io_;
     http::server<net::unix> server_;
 
     views::host host_view_;
@@ -40,7 +41,7 @@ private:
     virt::connection_pool pool_;
 
 public:
-    app(webvirt::io_service &io, const std::filesystem::path &socket_path);
+    app(http::io_service &io, const std::filesystem::path &socket_path);
     std::size_t run();
 
     virt::connection_pool &pool();

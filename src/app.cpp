@@ -22,7 +22,7 @@ using http::middleware::with_libvirt;
 using http::middleware::with_libvirt_domain;
 using http::middleware::with_methods;
 
-app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
+app::app(http::io_service &io, const std::filesystem::path &socket_path)
     : io_(io)
     , server_(io_, socket_path.string())
 {
