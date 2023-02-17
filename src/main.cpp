@@ -28,19 +28,16 @@
 #include <iostream>
 #include <unistd.h>
 #include <version.hpp>
+using namespace webvirt;
 
-using webvirt::errorln;
-using webvirt::print;
-
-int setup_socket(webvirt::syscaller &sys,
-                 const std::filesystem::path &socket_path)
+int setup_socket(syscaller &sys, const std::filesystem::path &socket_path)
 {
     std::filesystem::permissions(socket_path,
                                  std::filesystem::perms::owner_all |
                                      std::filesystem::perms::group_all,
                                  std::filesystem::perm_options::replace);
 
-    auto &conf = webvirt::config::instance();
+    auto &conf = config::instance();
     auto group_str = conf.get<std::string>("socket-group");
     auto *group = sys.getgrnam(group_str.c_str());
     if (!group) {
@@ -56,12 +53,12 @@ int setup_socket(webvirt::syscaller &sys,
     return 0;
 }
 
-int webvirt_main(webvirt::http::io_service &io, const std::string &socket_path)
+int webvirt_main(http::io_service &io, const std::string &socket_path)
 {
-    auto &sys = webvirt::syscaller::instance();
+    auto &sys = syscaller::instance();
 
     sys.fs_remove(socket_path);
-    webvirt::app app(io, socket_path);
+    app app(io, socket_path);
     if (auto rc = setup_socket(sys, socket_path); rc != 0) {
         return rc;
     }
@@ -77,9 +74,9 @@ int main(int argc, const char *argv[])
         setvbuf(file, nullptr, _IOLBF, 0);
     }
 
-    auto &sys = webvirt::syscaller::instance();
+    auto &sys = syscaller::instance();
 
-    webvirt::config conf;
+    config conf;
     conf.add_option("version", "display version");
     conf.add_option("verbose,v", "enable debug logging");
     conf.add_option("disable-timestamp", "disable logging timestamps");
@@ -107,7 +104,8 @@ int main(int argc, const char *argv[])
                         ->multitoken(),
                     "timeout in seconds for domain shutoff state to react");
 
-    signal(SIGPIPE, webvirt::signal::pipe);
+    // Bind process signals
+    ::signal(SIGPIPE, webvirt::signal::pipe);
 
     try {
         conf.parse(argc, argv);
@@ -120,8 +118,8 @@ int main(int argc, const char *argv[])
         return 0;
     }
 
-    webvirt::logger::enable_timestamp(!conf.has("disable-timestamp"));
-    webvirt::logger::enable_debug(conf.has("verbose"));
+    logger::enable_timestamp(!conf.has("disable-timestamp"));
+    logger::enable_debug(conf.has("verbose"));
 
     if (conf.has("help")) {
         return print(conf);
@@ -134,7 +132,7 @@ int main(int argc, const char *argv[])
     conf.parse(argc, argv);
 
     const auto socket_path = conf.get<std::string>("socket");
-    webvirt::config::change(conf);
-    webvirt::http::io_service io;
+    config::change(conf);
+    http::io_service io;
     return webvirt_main(io, socket_path);
 }
