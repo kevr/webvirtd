@@ -37,7 +37,7 @@ int setup_socket(syscaller &sys, const std::filesystem::path &socket_path)
                                      std::filesystem::perms::group_all,
                                  std::filesystem::perm_options::replace);
 
-    auto &conf = config::instance();
+    auto &conf = config::ref();
     auto group_str = conf.get<std::string>("socket-group");
     auto *group = sys.getgrnam(group_str.c_str());
     if (!group) {

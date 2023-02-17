@@ -99,7 +99,7 @@ public:
         auto *passwd = sys.getpwuid(uid);
         username = passwd->pw_name;
 
-        auto &conf = config::instance();
+        auto &conf = config::ref();
         conf.add_option("libvirt-shutdown-timeout",
                         boost::program_options::value<double>()
                             ->default_value(0.01)

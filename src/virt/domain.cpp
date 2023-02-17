@@ -120,7 +120,7 @@ bool virt::domain::shutdown()
         return false;
     }
 
-    auto &conf = config::instance();
+    auto &conf = config::ref();
     double timeout = conf.get<double>("libvirt-shutdown-timeout");
 
     int state = 0, reason;

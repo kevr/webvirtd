@@ -64,7 +64,7 @@ public:
 
 public:
     static config &change(config &conf);
-    static config &instance();
+    static config &ref();
     static config &reset();
 
 private:

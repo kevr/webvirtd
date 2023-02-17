@@ -48,7 +48,7 @@ public:
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _));
         conn_.connect("socket.sock");
 
-        auto &conf = config::instance();
+        auto &conf = config::ref();
         conf.add_option("libvirt-shutdown-timeout",
                         boost::program_options::value<double>()
                             ->default_value(0.01)

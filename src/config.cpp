@@ -92,10 +92,10 @@ std::ostream &webvirt::operator<<(std::ostream &os,
 config &config::change(config &conf)
 {
     ptr_ = &conf;
-    return instance();
+    return ref();
 }
 
-config &config::instance()
+config &config::ref()
 {
     return *ptr_;
 }
@@ -103,7 +103,7 @@ config &config::instance()
 config &config::reset()
 {
     ptr_ = &instance_;
-    return instance();
+    return ref();
 }
 
 void config::init()
