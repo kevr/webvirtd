@@ -71,6 +71,13 @@ libvirt::connect_ptr libvirt::virConnectOpen(const char *uri)
     return connect_ptr(::virConnectOpen(uri), free_connect_ptr());
 }
 
+int libvirt::virConnectRegisterCloseCallback(
+    connect_ptr conn, void (*fn)(connect *, int, void *), void *data,
+    void (*free_data)(void *))
+{
+    return ::virConnectRegisterCloseCallback(conn.get(), fn, data, free_data);
+}
+
 std::string libvirt::virConnectGetCapabilities(connect_ptr conn)
 {
     return from_c_string(::virConnectGetCapabilities(conn.get()));

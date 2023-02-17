@@ -17,6 +17,7 @@
 #include "config.hpp"
 #include "http/client.hpp"
 #include "mocks/libvirt.hpp"
+#include "retry.hpp"
 #include "util.hpp"
 #include "json/forwards.h"
 #include <fmt/format.h>
@@ -526,4 +527,82 @@ TEST_F(mock_app_test, domain_shutdown_bad_request)
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::bad_request));
+}
+
+TEST_F(mock_app_test, persistent_virt_connection)
+{
+    EXPECT_CALL(lv, virConnectOpen(_)).Times(2).WillRepeatedly(Return(conn));
+
+    bool libvirt_closed = false;
+    std::function<void(webvirt::connect *, int, void *)> libvirt_close;
+    std::function<void(void *)> libvirt_free;
+    EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
+        .Times(2)
+        .WillRepeatedly(
+            Invoke([&](libvirt::connect_ptr,
+                       void (*close_fn)(webvirt::connect *, int, void *),
+                       void *closed_ptr,
+                       void (*free_fn)(void *)) {
+                libvirt_closed = *reinterpret_cast<bool *>(closed_ptr);
+                libvirt_close = close_fn;
+                libvirt_free = free_fn;
+                return 0;
+            }));
+
+    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virDomainLookupByName(_, _))
+        .Times(2)
+        .WillRepeatedly(Return(dom));
+    EXPECT_CALL(lv, virDomainGetAutostart(_, _))
+        .Times(2)
+        .WillRepeatedly(Invoke([](auto, int *autostart) {
+            *autostart = 0;
+            return 0;
+        }));
+
+    EXPECT_CALL(lv, virDomainGetID(_)).Times(2).WillRepeatedly(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_))
+        .Times(2)
+        .WillRepeatedly(Return("test"));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .Times(2)
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(4);
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).Times(2);
+
+    client->on_response([this](const auto &response_) {
+        response = response_;
+    });
+
+    auto endpoint = fmt::format("/users/{}/domains/test/", username);
+    client->async_get(endpoint.c_str()).run();
+    EXPECT_EQ(response.result(), beast::http::status::ok);
+
+    auto &connection = app_->pool().get(username);
+    EXPECT_THROW(libvirt_close(nullptr, 0, &connection.closed()),
+                 webvirt::retry_error);
+    EXPECT_TRUE(connection.closed());
+
+    EXPECT_NO_THROW(libvirt_free(nullptr));
+
+    // testing::internal::CaptureStdout();
+    client->close();
+    client->on_response([this](const auto &response_) {
+        response = response_;
+        io_.stop();
+    });
+
+    // Run get again after we've closed the libvirt connection.
+    // During this run, reconnection will be made.
+    client->async_get(endpoint.c_str()).run();
+    EXPECT_EQ(response.result(), beast::http::status::ok);
+
+    /*
+    output = testing::internal::GetCapturedStdout();
+    EXPECT_NE(output.find("Reconnected to libvirt"), std::string::npos);
+    */
 }

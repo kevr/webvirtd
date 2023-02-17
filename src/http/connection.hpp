@@ -115,8 +115,11 @@ private:
     void process_request()
     {
         logger::debug([this] {
-            const char *method = request_.method_string().data();
-            const char *target = request_.target().data();
+            const std::string method =
+                std::string(request_.method_string().data(),
+                            request_.method_string().size());
+            const std::string target = std::string(request_.target().data(),
+                                                   request_.target().size());
             return fmt::format(
                 "Received \"{} {} HTTP/{}.{}\"",
                 method,

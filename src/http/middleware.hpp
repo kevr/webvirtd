@@ -17,6 +17,7 @@
 #define HTTP_MIDDLEWARE_HPP
 
 #include "../virt/connection.hpp"
+#include "../virt/connection_pool.hpp"
 #include "../virt/domain.hpp"
 #include "namespaces.hpp"
 #include <regex>
@@ -30,13 +31,15 @@ route_function with_methods(const std::vector<boost::beast::http::verb> &,
                             route_function);
 
 route_function with_libvirt_domain(
+    virt::connection_pool &pool,
     std::function<void(virt::connection &, virt::domain domain,
                        const std::smatch &, const http::request &,
                        http::response &)>);
 
 route_function
-    with_libvirt(std::function<void(virt::connection &, const std::smatch &,
-                                    const http::request &, http::response &)>);
+with_libvirt(virt::connection_pool &,
+             std::function<void(virt::connection &, const std::smatch &,
+                                const http::request &, http::response &)>);
 
 route_function
     with_user(std::function<void(const std::smatch &, const http::request &,

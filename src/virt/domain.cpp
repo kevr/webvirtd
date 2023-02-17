@@ -14,6 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "domain.hpp"
+#include "../bench.hpp"
 #include "../config.hpp"
 #include "../logging.hpp"
 #include "util.hpp"
@@ -77,11 +78,9 @@ std::string virt::domain::description() const
 
 std::string virt::domain::xml_desc()
 {
-    std::chrono::high_resolution_clock clock;
-    std::chrono::high_resolution_clock::time_point start = clock.now();
+    bench<double> bench_;
     auto desc = libvirt::ref().virDomainGetXMLDesc(ptr_, 0);
-    std::chrono::high_resolution_clock::time_point end = clock.now();
-    auto elapsed = std::chrono::duration<double>(end - start).count() * 1000;
+    double elapsed = bench_.end() * 1000;
     logger::debug(
         fmt::format("Producing XML description took {:.2f}ms", elapsed));
     return desc;

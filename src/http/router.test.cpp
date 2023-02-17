@@ -16,6 +16,7 @@
 #include "router.hpp"
 #include "../json.hpp"
 #include "../mocks/syscaller.hpp"
+#include "../retry.hpp"
 #include "middleware.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
@@ -86,4 +87,18 @@ TEST_F(router_test, with_user_unknown_user)
               static_cast<int>(beast::http::status::not_found));
     auto data = json::parse(response.body());
     EXPECT_EQ(data["detail"], "Unable to locate user");
+}
+
+TEST_F(router_test, retry_until_fatal)
+{
+    router_.route(R"(^/retry/$)", [](auto &, const auto &, auto &) {
+        throw webvirt::retry_error("Retry!");
+    });
+
+    http::request request;
+    request.target("/retry/");
+    http::response response;
+    router_.run(request, response);
+
+    EXPECT_EQ(response.result(), beast::http::status::internal_server_error);
 }

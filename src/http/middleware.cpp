@@ -60,60 +60,55 @@ middleware::with_methods(const std::vector<boost::beast::http::verb> &methods,
 }
 
 http::route_function middleware::with_libvirt_domain(
+    virt::connection_pool &pool,
     std::function<void(virt::connection &, virt::domain domain,
                        const std::smatch &, const http::request &,
                        http::response &)>
         route_fn)
 {
-    return with_libvirt([route_fn](virt::connection &conn,
-                                   const std::smatch &match,
-                                   const http::request &request,
-                                   http::response &response) {
-        const std::string name(match[2]);
-        virt::domain domain;
-        try {
-            domain = conn.domain(name);
-        } catch (const std::domain_error &) {
-            auto error = json::error("Domain not found");
-            return http::set_response(response,
-                                      json::stringify(error),
-                                      beast::http::status::not_found);
-        }
+    return with_libvirt(
+        pool,
+        [route_fn](virt::connection &conn,
+                   const std::smatch &match,
+                   const http::request &request,
+                   http::response &response) {
+            const std::string name(match[2]);
+            virt::domain domain;
+            try {
+                domain = conn.domain(name);
+            } catch (const std::domain_error &) {
+                auto error = json::error("Domain not found");
+                return http::set_response(response,
+                                          json::stringify(error),
+                                          beast::http::status::not_found);
+            }
 
-        return route_fn(conn, domain, match, request, response);
-    });
+            return route_fn(conn, domain, match, request, response);
+        });
 }
 
 http::route_function middleware::with_libvirt(
+    virt::connection_pool &pool,
     std::function<void(virt::connection &, const std::smatch &,
                        const http::request &, http::response &)>
         route_fn)
 {
-    return with_user([route_fn](const auto &match,
-                                const auto &request,
-                                auto &response) {
+    return with_user([&pool, route_fn](const auto &match,
+                                       const auto &request,
+                                       auto &response) {
         const std::string user = match[1];
 
-        std::chrono::high_resolution_clock clock;
-        auto start = clock.now();
-        virt::connection conn;
+        virt::connection *conn;
         try {
-            conn.connect(virt::uri(user));
+            conn = &pool.get(user);
         } catch (const std::runtime_error &e) {
             auto error = json::error("Unable to connect to libvirt");
             return set_response(response,
                                 json::stringify(error),
                                 beast::http::status::internal_server_error);
         }
-        auto end = clock.now();
 
-        double elapsed =
-            std::chrono::duration<double>(end - start).count() * 1000;
-        logger::debug([elapsed] {
-            return fmt::format("Connecting to libvirt took {:.2f}ms", elapsed);
-        });
-
-        return route_fn(conn, match, request, response);
+        return route_fn(*conn, match, request, response);
     });
 }
 

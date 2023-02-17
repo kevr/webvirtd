@@ -30,6 +30,13 @@ connect *virConnectOpen(const char *)
     return nullptr;
 }
 
+int virConnectRegisterCloseCallback(webvirt::connect *,
+                                    void (*)(webvirt::connect *, int, void *),
+                                    void *, void (*)(void *))
+{
+    return 0;
+}
+
 char *virConnectGetCapabilities(webvirt::connect *)
 {
     return make_cstring("");

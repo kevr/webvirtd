@@ -20,6 +20,7 @@ sources = [
   'views/host.cpp',
   'virt/network.cpp',
   'virt/domain.cpp',
+  'virt/connection_pool.cpp',
   'virt/connection.cpp',
   'virt/util.cpp',
   'http/router.cpp',

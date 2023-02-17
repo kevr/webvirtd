@@ -20,6 +20,7 @@
 #include "http/server.hpp"
 #include "views/domains.hpp"
 #include "views/host.hpp"
+#include "virt/connection_pool.hpp"
 #include <regex>
 
 namespace webvirt
@@ -36,9 +37,13 @@ private:
     views::host host_view_;
     views::domains domains_view_;
 
+    virt::connection_pool pool_;
+
 public:
     app(webvirt::io_service &io, const std::filesystem::path &socket_path);
     std::size_t run();
+
+    virt::connection_pool &pool();
 
 private:
     template <typename Func>

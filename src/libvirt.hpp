@@ -20,6 +20,7 @@
 #ifdef TEST_BUILD
 #include "stubs/libvirt.hpp"
 #endif
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -62,6 +63,10 @@ public:
 
     // virConnect
     virtual connect_ptr virConnectOpen(const char *);
+    virtual int virConnectRegisterCloseCallback(connect_ptr,
+                                                void (*)(connect *, int,
+                                                         void *),
+                                                void *, void (*)(void *));
 
     virtual std::string virConnectGetCapabilities(connect_ptr);
     virtual std::string virConnectGetHostname(connect_ptr);

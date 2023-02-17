@@ -14,8 +14,10 @@
  * permissions and limitations under the License.
  */
 #include "router.hpp"
+#include "../bench.hpp"
 #include "../json.hpp"
 #include "../logging.hpp"
+#include "../retry.hpp"
 #include "../syscaller.hpp"
 #include "../virt/util.hpp"
 #include "middleware.hpp"
@@ -49,18 +51,29 @@ void http::router::run(const http::request &request, http::response &response)
         set_response(response, res, beast::http::status::not_found);
     };
 
-    std::chrono::high_resolution_clock clock;
-    std::chrono::high_resolution_clock::time_point start;
-    std::chrono::high_resolution_clock::time_point end;
-
+    bench<double> bench_;
     for (auto &route : routes_) {
         const std::regex &re = regex_.at(route.first);
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
             next = [&, match] {
-                start = clock.now();
-                route.second(match, request, response);
-                end = clock.now();
+                bench_.start();
+
+                try {
+                    // Try route.second five times.
+                    retry([&, match] {
+                        response = http::response();
+                        route.second(match, request, response);
+                    }).retries(5)();
+                } catch (std::exception &exc) {
+                    // If it fails the sixth time, catch its std::domain_error.
+                    http::set_response(
+                        response,
+                        json::error(exc.what()),
+                        beast::http::status::internal_server_error);
+                }
+
+                bench_.end();
             };
             break;
         }
@@ -75,7 +88,7 @@ void http::router::run(const http::request &request, http::response &response)
         };
     }
 
-    auto elapsed = std::chrono::duration<double>(end - start).count() * 1000;
+    double elapsed = bench_.elapsed() * 1000;
     auto major = response.version() / 10;
     auto minor = response.version() % 10;
     log(fmt::format("\"{} {} HTTP/{}.{}\" {} {} (took {}ms)",

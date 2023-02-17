@@ -20,6 +20,7 @@
 #include "../logging.hpp"
 #include "domain.hpp"
 #include "network.hpp"
+#include <atomic>
 #include <cstring>
 #include <errno.h>
 #include <json/json.h>
@@ -35,9 +36,16 @@ namespace webvirt::virt
 class connection
 {
 private:
-    libvirt::connect_ptr conn_ = nullptr;
-    int errno_ = 0;
-    logger log_;
+    libvirt::connect_ptr conn_ { nullptr };
+    int errno_ { 0 };
+    bool closed_ { true };
+
+public:
+#ifdef TEST_BUILD
+    bool &closed();
+#else
+    bool closed();
+#endif
 
 public:
     connection() = default;
@@ -45,8 +53,10 @@ public:
     connection(const std::string &uri);
 
     connection &operator=(const connection &conn);
+    operator bool();
     bool operator==(const connection &other) const;
     bool operator!=(const connection &other) const;
+
     connection &connect(const std::string &str);
 
     std::string capabilities() const;

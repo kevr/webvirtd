@@ -31,46 +31,63 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
     // Host-bound routes
     router_.route(R"(^/users/([^/]+)/host/)",
                   with_methods({ beast::http::verb::get },
-                               with_libvirt(bind_libvirt(&views::host::show,
+                               with_libvirt(pool_,
+                                            bind_libvirt(&views::host::show,
                                                          &host_view_))));
-    router_.route(R"(^/users/([^/]+)/host/networks/)",
-                  with_methods({ beast::http::verb::get },
-                               with_libvirt(bind_libvirt(
-                                   &views::host::networks, &host_view_))));
+    router_.route(
+        R"(^/users/([^/]+)/host/networks/)",
+        with_methods(
+            { beast::http::verb::get },
+            with_libvirt(pool_,
+                         bind_libvirt(&views::host::networks, &host_view_))));
 
     // Domain-bound routes
-    router_.route(R"(^/users/([^/]+)/domains/$)",
-                  with_methods({ beast::http::verb::get },
-                               with_libvirt(bind_libvirt(
-                                   &views::domains::index, &domains_view_))));
+    router_.route(
+        R"(^/users/([^/]+)/domains/$)",
+        with_methods(
+            { beast::http::verb::get },
+            with_libvirt(
+                pool_, bind_libvirt(&views::domains::index, &domains_view_))));
     router_.route(R"(^/users/([^/]+)/domains/([^/]+)/$)",
                   with_methods({ beast::http::verb::get },
-                               with_libvirt_domain(bind_libvirt_domain(
-                                   &views::domains::show, &domains_view_))));
+                               with_libvirt_domain(
+                                   pool_,
+                                   bind_libvirt_domain(&views::domains::show,
+                                                       &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/autostart/$)",
-        with_methods({ beast::http::verb::post, beast::http::verb::delete_ },
-                     with_libvirt_domain(bind_libvirt_domain(
-                         &views::domains::autostart, &domains_view_))));
+        with_methods(
+            { beast::http::verb::post, beast::http::verb::delete_ },
+            with_libvirt_domain(pool_,
+                                bind_libvirt_domain(&views::domains::autostart,
+                                                    &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
-        with_methods({ beast::http::verb::post },
-                     with_libvirt_domain(bind_libvirt_domain(
-                         &views::domains::metadata, &domains_view_))));
+        with_methods(
+            { beast::http::verb::post },
+            with_libvirt_domain(pool_,
+                                bind_libvirt_domain(&views::domains::metadata,
+                                                    &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
-        with_methods({ beast::http::verb::post, beast::http::verb::delete_ },
-                     with_libvirt_domain(bind_libvirt_domain(
-                         &views::domains::bootmenu, &domains_view_))));
+        with_methods(
+            { beast::http::verb::post, beast::http::verb::delete_ },
+            with_libvirt_domain(pool_,
+                                bind_libvirt_domain(&views::domains::bootmenu,
+                                                    &domains_view_))));
     router_.route(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
                   with_methods({ beast::http::verb::post },
-                               with_libvirt_domain(bind_libvirt_domain(
-                                   &views::domains::start, &domains_view_))));
+                               with_libvirt_domain(
+                                   pool_,
+                                   bind_libvirt_domain(&views::domains::start,
+                                                       &domains_view_))));
     router_.route(
         R"(^/users/([^/]+)/domains/([^/]+)/shutdown/)",
-        with_methods({ beast::http::verb::post },
-                     with_libvirt_domain(bind_libvirt_domain(
-                         &views::domains::shutdown, &domains_view_))));
+        with_methods(
+            { beast::http::verb::post },
+            with_libvirt_domain(pool_,
+                                bind_libvirt_domain(&views::domains::shutdown,
+                                                    &domains_view_))));
 
     server_.on_request([this](auto &, const auto &request, auto &response) {
         return router_.run(request, response);
@@ -80,6 +97,11 @@ app::app(webvirt::io_service &io, const std::filesystem::path &socket_path)
 std::size_t app::run()
 {
     return server_.run();
+}
+
+virt::connection_pool &app::pool()
+{
+    return pool_;
 }
 
 void app::append_trailing_slash(const std::smatch &location,

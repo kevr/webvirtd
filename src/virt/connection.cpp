@@ -16,6 +16,7 @@
 #include "connection.hpp"
 #include "../config.hpp"
 #include "../logging.hpp"
+#include "../retry.hpp"
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>
@@ -28,6 +29,18 @@
 #include <unistd.h>
 using namespace webvirt;
 
+#ifdef TEST_BUILD
+bool &virt::connection::closed()
+{
+    return closed_;
+}
+#else
+bool virt::connection::closed()
+{
+    return closed_;
+}
+#endif
+
 virt::connection::connection(const connection &conn)
     : conn_(conn.conn_)
     , errno_(conn.errno_)
@@ -37,6 +50,11 @@ virt::connection::connection(const connection &conn)
 virt::connection::connection(const std::string &uri)
 {
     connect(uri);
+}
+
+virt::connection::operator bool()
+{
+    return !closed_;
 }
 
 bool virt::connection::operator==(const connection &other) const
@@ -58,6 +76,8 @@ virt::connection &virt::connection::operator=(const virt::connection &conn)
 
 virt::connection &virt::connection::connect(const std::string &str)
 {
+    logger::debug("Connecting to libvirt");
+
     if (conn_) {
         throw std::overflow_error("cannot connect more than once");
     }
@@ -71,8 +91,18 @@ virt::connection &virt::connection::connect(const std::string &str)
         message.push_back('\n');
         throw std::runtime_error(message);
     }
+    closed_ = false;
 
-    libvirt::ref().virConnSetErrorFunc(conn_, &log_, virt::on_libvirt_error);
+    auto close_func = [](webvirt::connect *, int, void *data) {
+        bool *closed = reinterpret_cast<bool *>(data);
+        *closed = true;
+        throw retry_error("libvirt connection closed");
+    };
+    auto free_func = [](void *) {
+    };
+    lv.virConnectRegisterCloseCallback(conn_, close_func, &closed_, free_func);
+
+    libvirt::ref().virConnSetErrorFunc(conn_, nullptr, virt::on_libvirt_error);
     return *this;
 }
 
@@ -181,7 +211,7 @@ const char *virt::connection::strerror()
     return ::strerror(error());
 }
 
-void virt::on_libvirt_error(void *data, webvirt::error_ err)
+void virt::on_libvirt_error(void *, webvirt::error_ err)
 {
     static const std::list<std::string> whitelist {
         "Requested metadata element is not present",
@@ -192,6 +222,5 @@ void virt::on_libvirt_error(void *data, webvirt::error_ err)
         }
     }
 
-    logger &log = *reinterpret_cast<logger *>(data);
-    log.error(err->message);
+    logger::error(err->message);
 }

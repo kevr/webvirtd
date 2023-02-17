@@ -28,6 +28,9 @@ public:
     ~libvirt() = default;
 
     MOCK_METHOD(connect_ptr, virConnectOpen, (const char *));
+    MOCK_METHOD(int, virConnectRegisterCloseCallback,
+                (connect_ptr, void (*)(webvirt::connect *, int, void *),
+                 void *, void (*)(void *)));
 
     MOCK_METHOD(std::string, virConnectGetCapabilities, (connect_ptr));
     MOCK_METHOD(std::string, virConnectGetHostname, (connect_ptr));

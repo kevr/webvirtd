@@ -148,7 +148,9 @@ public:
 
     std::size_t run()
     {
-        return io_.process();
+        std::size_t count = io_.process();
+        close();
+        return count;
     }
 
 private:
@@ -164,6 +166,7 @@ private:
 
     void async_connect()
     {
+        io_.reset();
         socket_.async_connect(socket_path_,
                               boost::beast::bind_front_handler(
                                   &client<protocol_t>::client_async_on_connect,
