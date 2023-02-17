@@ -63,7 +63,7 @@ private:
 public:
     static syscaller &change(syscaller *);
     static syscaller &reset();
-    static syscaller &instance();
+    static syscaller &ref();
 };
 
 }; // namespace webvirt

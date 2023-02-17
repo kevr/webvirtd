@@ -108,7 +108,7 @@ config &config::reset()
 
 void config::init()
 {
-    auto &sys = syscaller::instance();
+    auto &sys = syscaller::ref();
     std::filesystem::path home(sys.getenv("HOME"));
     home /= ".webvirtd.conf";
 

@@ -55,7 +55,7 @@ int setup_socket(syscaller &sys, const std::filesystem::path &socket_path)
 
 int webvirt_main(http::io_service &io, const std::string &socket_path)
 {
-    auto &sys = syscaller::instance();
+    auto &sys = syscaller::ref();
 
     sys.fs_remove(socket_path);
     app app(io, socket_path);
@@ -74,7 +74,7 @@ int main(int argc, const char *argv[])
         setvbuf(file, nullptr, _IOLBF, 0);
     }
 
-    auto &sys = syscaller::instance();
+    auto &sys = syscaller::ref();
 
     config conf;
     conf.add_option("version", "display version");

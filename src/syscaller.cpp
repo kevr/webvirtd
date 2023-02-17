@@ -25,7 +25,7 @@ syscaller *syscaller::ptr_ = &syscaller::root_;
 syscaller &syscaller::change(syscaller *ptr)
 {
     ptr_ = ptr;
-    return instance();
+    return ref();
 }
 
 syscaller &syscaller::reset()
@@ -33,7 +33,7 @@ syscaller &syscaller::reset()
     return change(&root_);
 }
 
-syscaller &syscaller::instance()
+syscaller &syscaller::ref()
 {
     return *ptr_;
 }

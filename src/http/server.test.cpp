@@ -45,8 +45,7 @@ public:
 
     void SetUp() override
     {
-        auto &sys = webvirt::syscaller::instance();
-        sys.fs_remove(socket_path);
+        syscaller::ref().fs_remove(socket_path);
         std::cout << socket_path << std::endl;
 
         server = std::make_shared<webvirt::http::server<webvirt::net::unix>>(
@@ -61,8 +60,7 @@ public:
 
     static void TearDownTestSuite()
     {
-        auto &sys = webvirt::syscaller::instance();
-        sys.fs_remove_all(tmpdir);
+        syscaller::ref().fs_remove_all(tmpdir);
     }
 };
 

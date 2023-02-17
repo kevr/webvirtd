@@ -18,22 +18,23 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <syscaller.hpp>
+using namespace webvirt;
 
 using testing::Test;
 
 class config_test : public Test
 {
 protected:
-    webvirt::config conf;
+    config conf;
 };
 
 TEST_F(config_test, constructors)
 {
     {
-        webvirt::config copied(conf);
+        config copied(conf);
     }
 
-    webvirt::config moved(std::move(conf));
+    config moved(std::move(conf));
 }
 
 TEST_F(config_test, add_option)
@@ -48,7 +49,7 @@ TEST_F(config_test, add_option)
 
 TEST_F(config_test, parse_file)
 {
-    auto tmpdir = webvirt::make_tmpdir();
+    auto tmpdir = make_tmpdir();
     auto config_file = tmpdir / "webvirtd.conf";
 
     conf.add_option("test-option",
@@ -59,7 +60,7 @@ TEST_F(config_test, parse_file)
     config_stream << "test-option = test-value\n";
     config_stream.close();
     conf.parse(config_file);
-    webvirt::syscaller::instance().fs_remove_all(tmpdir);
+    syscaller::ref().fs_remove_all(tmpdir);
 
     EXPECT_EQ(conf.get<std::string>("test-option"), "test-value");
 }

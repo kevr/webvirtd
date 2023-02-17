@@ -21,10 +21,11 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
+using namespace webvirt;
 
 std::filesystem::path webvirt::make_tmpdir()
 {
-    auto &sys = webvirt::syscaller::instance();
+    auto &sys = syscaller::ref();
     std::string template_("/tmp/webvirtd-XXXXXX");
 
     char *result = sys.mkdtemp(template_.data());

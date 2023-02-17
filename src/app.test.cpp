@@ -94,7 +94,7 @@ public:
 
         conn = std::make_shared<webvirt::connect>();
 
-        auto &sys = syscaller::instance();
+        auto &sys = syscaller::ref();
         uid = sys.getuid();
         auto *passwd = sys.getpwuid(uid);
         username = passwd->pw_name;

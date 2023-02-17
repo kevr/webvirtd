@@ -118,7 +118,7 @@ http::route_function middleware::with_user(route_function route_fn)
         // Parse expected JSON from the request body.
         std::string user(match[1]);
 
-        auto &sys = syscaller::instance();
+        auto &sys = syscaller::ref();
         auto *passwd = sys.getpwnam(user.c_str());
         if (!passwd) {
             auto error = json::error("Unable to locate user");
