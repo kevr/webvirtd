@@ -100,7 +100,7 @@ pugi::xml_document virt::domain::xml_document()
     return doc;
 }
 
-libvirt::block_info_ptr virt::domain::block_info(const std::string &device)
+block_info_ptr virt::domain::block_info(const std::string &device)
 {
     return libvirt::ref().virDomainGetBlockInfo(ptr_, device.c_str(), 0);
 }

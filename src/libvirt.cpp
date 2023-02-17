@@ -46,7 +46,7 @@ static std::string from_c_string(char *c_str)
 }
 
 /* virConnect definitions */
-libvirt::connect_ptr libvirt::virConnectOpen(const char *uri)
+connect_ptr libvirt::virConnectOpen(const char *uri)
 {
     return connect_ptr(::virConnectOpen(uri), free_connect_ptr());
 }
@@ -108,10 +108,10 @@ int libvirt::virConnectIsSecure(connect_ptr conn)
     return ::virConnectIsSecure(conn.get());
 }
 
-std::vector<libvirt::domain_ptr>
-libvirt::virConnectListAllDomains(connect_ptr conn, int flags)
+std::vector<domain_ptr> libvirt::virConnectListAllDomains(connect_ptr conn,
+                                                          int flags)
 {
-    std::vector<libvirt::domain_ptr> output;
+    std::vector<domain_ptr> output;
 
     domain **domains = nullptr;
     int count = ::virConnectListAllDomains(conn.get(), &domains, flags);
@@ -122,10 +122,10 @@ libvirt::virConnectListAllDomains(connect_ptr conn, int flags)
     return output;
 }
 
-std::vector<libvirt::network_ptr>
-libvirt::virConnectListAllNetworks(connect_ptr conn, int flags)
+std::vector<network_ptr> libvirt::virConnectListAllNetworks(connect_ptr conn,
+                                                            int flags)
 {
-    std::vector<libvirt::network_ptr> output;
+    std::vector<network_ptr> output;
 
     network **networks = nullptr;
     int count = ::virConnectListAllNetworks(conn.get(), &networks, flags);
@@ -137,8 +137,7 @@ libvirt::virConnectListAllNetworks(connect_ptr conn, int flags)
 }
 
 /* virDomain definitions */
-libvirt::domain_ptr libvirt::virDomainLookupByName(connect_ptr conn,
-                                                   const char *name)
+domain_ptr libvirt::virDomainLookupByName(connect_ptr conn, const char *name)
 {
     return domain_ptr(::virDomainLookupByName(conn.get(), name),
                       free_domain_ptr());
@@ -203,15 +202,14 @@ std::string libvirt::virDomainGetXMLDesc(domain_ptr domain, int flags)
     return s;
 }
 
-libvirt::domain_ptr libvirt::virDomainDefineXML(connect_ptr conn,
-                                                const char *xml)
+domain_ptr libvirt::virDomainDefineXML(connect_ptr conn, const char *xml)
 {
     auto ptr = ::virDomainDefineXML(conn.get(), xml);
     return std::shared_ptr<domain>(ptr, free_domain_ptr());
 }
 
-libvirt::block_info_ptr
-libvirt::virDomainGetBlockInfo(domain_ptr domain, const char *name, int flags)
+block_info_ptr libvirt::virDomainGetBlockInfo(domain_ptr domain,
+                                              const char *name, int flags)
 {
     auto block_info_ptr = std::make_shared<block_info>();
     ::virDomainGetBlockInfo(domain.get(), name, block_info_ptr.get(), flags);

@@ -27,7 +27,7 @@ class connection_test : public Test
 {
 protected:
     mocks::libvirt lv;
-    libvirt::connect_ptr conn = std::make_shared<connect>();
+    connect_ptr conn = std::make_shared<connect>();
 
 public:
     void SetUp() override

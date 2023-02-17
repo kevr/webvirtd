@@ -36,7 +36,7 @@ namespace webvirt::virt
 class connection
 {
 private:
-    libvirt::connect_ptr conn_ { nullptr };
+    connect_ptr conn_ { nullptr };
     int errno_ { 0 };
     bool closed_ { true };
 
@@ -72,11 +72,11 @@ public:
 
     std::vector<virt::domain> domains();
     virt::domain domain(const std::string &name);
-    libvirt::domain_ptr get_domain_ptr(const std::string &name);
+    domain_ptr get_domain_ptr(const std::string &name);
 
     std::vector<virt::network> networks();
 
-    libvirt::connect_ptr get_ptr();
+    connect_ptr get_ptr();
 
     int error();
     const char *strerror();

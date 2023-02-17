@@ -24,7 +24,7 @@
 namespace webvirt::virt
 {
 
-class domain : public ptr_type<libvirt::domain_ptr>
+class domain : public ptr_type<domain_ptr>
 {
 public:
     using ptr_type::ptr_type;
@@ -44,7 +44,7 @@ public:
     std::string xml_desc();
     pugi::xml_document xml_document();
 
-    libvirt::block_info_ptr block_info(const std::string &);
+    block_info_ptr block_info(const std::string &);
 
     bool start();
     bool shutdown();

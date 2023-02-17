@@ -23,7 +23,7 @@
 namespace webvirt::virt
 {
 
-class network : public ptr_type<libvirt::network_ptr>
+class network : public ptr_type<network_ptr>
 {
 public:
     using ptr_type::ptr_type;

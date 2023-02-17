@@ -16,6 +16,8 @@
 #ifndef LIBVIRT_TYPES_HPP
 #define LIBVIRT_TYPES_HPP
 
+#include <memory>
+
 #ifndef TEST_BUILD
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
@@ -23,6 +25,7 @@
 
 namespace webvirt
 {
+
 #ifdef TEST_BUILD
 struct connect {
 };
@@ -48,7 +51,14 @@ using network = virNetwork;
 using block_info = virDomainBlockInfo;
 using error_ = virErrorPtr;
 #endif
+
+using connect_ptr = std::shared_ptr<connect>;
+using domain_ptr = std::shared_ptr<domain>;
+using network_ptr = std::shared_ptr<network>;
+using block_info_ptr = std::shared_ptr<block_info>;
+
 using error_function = void (*)(void *, error_);
+
 }; // namespace webvirt
 
 #endif /* LIBVIRT_TYPES_HPP */

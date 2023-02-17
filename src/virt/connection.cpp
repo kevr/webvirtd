@@ -185,7 +185,7 @@ virt::domain virt::connection::domain(const std::string &name)
     return virt::domain(get_domain_ptr(name));
 }
 
-libvirt::domain_ptr virt::connection::get_domain_ptr(const std::string &name)
+domain_ptr virt::connection::get_domain_ptr(const std::string &name)
 {
     auto &lv = libvirt::ref();
     auto domain = lv.virDomainLookupByName(conn_, name.c_str());
@@ -195,7 +195,7 @@ libvirt::domain_ptr virt::connection::get_domain_ptr(const std::string &name)
     return domain;
 }
 
-libvirt::connect_ptr virt::connection::get_ptr()
+connect_ptr virt::connection::get_ptr()
 {
     return conn_;
 }

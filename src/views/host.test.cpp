@@ -41,7 +41,7 @@ public:
     void SetUp() override
     {
         libvirt::change(lv);
-        libvirt::connect_ptr ptr = std::make_shared<webvirt::connect>();
+        connect_ptr ptr = std::make_shared<webvirt::connect>();
         EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
         conn_.connect("socket.sock");
 
@@ -116,7 +116,7 @@ TEST_F(host_test, show)
 
 TEST_F(host_test, networks)
 {
-    std::vector<libvirt::network_ptr> networks = {
+    std::vector<network_ptr> networks = {
         std::make_shared<webvirt::network>()
     };
     EXPECT_CALL(lv, virConnectListAllNetworks(_, _))

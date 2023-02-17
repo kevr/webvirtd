@@ -17,14 +17,15 @@
 #define LIBVIRT_HPP
 
 #include "libvirt_types.hpp"
-#ifdef TEST_BUILD
-#include "stubs/libvirt.hpp"
-#endif
 #include "singleton.hpp"
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
+
+#ifdef TEST_BUILD
+#include "stubs/libvirt.hpp"
+#endif
 
 namespace webvirt
 {
@@ -43,12 +44,6 @@ private:
     struct free_network_ptr {
         void operator()(network *);
     };
-
-public:
-    using connect_ptr = std::shared_ptr<connect>;
-    using domain_ptr = std::shared_ptr<domain>;
-    using network_ptr = std::shared_ptr<network>;
-    using block_info_ptr = std::shared_ptr<block_info>;
 
 public:
     virtual ~libvirt() = default;

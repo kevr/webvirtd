@@ -75,7 +75,7 @@ public:
 class mock_app_test : public app_test
 {
 protected:
-    libvirt::connect_ptr conn;
+    connect_ptr conn;
     mocks::libvirt lv;
 
     uid_t uid;
@@ -116,7 +116,7 @@ public:
 
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
             .WillRepeatedly(
-                Invoke([&](libvirt::connect_ptr,
+                Invoke([&](connect_ptr,
                            void (*close_fn)(webvirt::connect *, int, void *),
                            void *closed_ptr,
                            void (*free_fn)(void *)) {
@@ -208,7 +208,7 @@ TEST_F(mock_app_test, persistent_virt_connection)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).Times(2).WillRepeatedly(Return(conn));
 
-    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
+    domain_ptr dom = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _))
         .Times(2)
         .WillRepeatedly(Return(dom));
