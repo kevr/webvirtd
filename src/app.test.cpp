@@ -81,6 +81,11 @@ protected:
     uid_t uid;
     std::string username;
 
+    // libvirt control
+    bool libvirt_closed = false;
+    std::function<void(webvirt::connect *, int, void *)> libvirt_close;
+    std::function<void(void *)> libvirt_free;
+
 public:
     void SetUp() override
     {
@@ -108,6 +113,18 @@ public:
 
         const char *argv[] = { "webvirtd" };
         conf.parse(1, argv);
+
+        EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
+            .WillRepeatedly(
+                Invoke([&](libvirt::connect_ptr,
+                           void (*close_fn)(webvirt::connect *, int, void *),
+                           void *closed_ptr,
+                           void (*free_fn)(void *)) {
+                    libvirt_closed = *reinterpret_cast<bool *>(closed_ptr);
+                    libvirt_close = close_fn;
+                    libvirt_free = free_fn;
+                    return 0;
+                }));
 
         logger::enable_debug(true);
     }
@@ -190,22 +207,6 @@ TEST_F(mock_app_test, domain_not_found)
 TEST_F(mock_app_test, persistent_virt_connection)
 {
     EXPECT_CALL(lv, virConnectOpen(_)).Times(2).WillRepeatedly(Return(conn));
-
-    bool libvirt_closed = false;
-    std::function<void(webvirt::connect *, int, void *)> libvirt_close;
-    std::function<void(void *)> libvirt_free;
-    EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
-        .Times(2)
-        .WillRepeatedly(
-            Invoke([&](libvirt::connect_ptr,
-                       void (*close_fn)(webvirt::connect *, int, void *),
-                       void *closed_ptr,
-                       void (*free_fn)(void *)) {
-                libvirt_closed = *reinterpret_cast<bool *>(closed_ptr);
-                libvirt_close = close_fn;
-                libvirt_free = free_fn;
-                return 0;
-            }));
 
     libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virDomainLookupByName(_, _))
