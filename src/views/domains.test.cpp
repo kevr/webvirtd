@@ -14,9 +14,9 @@
  * permissions and limitations under the License.
  */
 #include "domains.hpp"
-#include "../config.hpp"
-#include "../json.hpp"
 #include "../mocks/libvirt.hpp"
+#include "../util/config.hpp"
+#include "../util/json.hpp"
 #include "../virt/connection.hpp"
 #include "../virt/domain.hpp"
 #include <gtest/gtest.h>

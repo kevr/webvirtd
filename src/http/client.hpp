@@ -16,7 +16,7 @@
 #ifndef HTTP_CLIENT_HPP
 #define HTTP_CLIENT_HPP
 
-#include "../util.hpp"
+#include "../util/util.hpp"
 #include "handlers.hpp"
 #include "io_service.hpp"
 #include "namespaces.hpp"

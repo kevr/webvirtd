@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef SYSCALLER_HPP
-#define SYSCALLER_HPP
+#ifndef SYSCALL_HPP
+#define SYSCALL_HPP
 
 #include "singleton.hpp"
 #include <filesystem>
@@ -25,10 +25,10 @@
 namespace webvirt
 {
 
-class syscaller : public singleton<syscaller>
+class syscall : public singleton<syscall>
 {
 public:
-    virtual ~syscaller() = default;
+    virtual ~syscall() = default;
 
 public:
     virtual FILE *popen(const char *, const char *);
@@ -60,4 +60,4 @@ public:
 
 }; // namespace webvirt
 
-#endif /* SYSCALLER_HPP */
+#endif /* SYSCALL_HPP */

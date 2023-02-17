@@ -17,7 +17,7 @@
 #define VIRT_CONNECTION_HPP
 
 #include "../libvirt.hpp"
-#include "../logging.hpp"
+#include "../util/logging.hpp"
 #include "domain.hpp"
 #include "network.hpp"
 #include <atomic>

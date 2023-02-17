@@ -15,8 +15,8 @@
  */
 #include "host.hpp"
 #include "../http/util.hpp"
-#include "../json.hpp"
-#include "../logging.hpp"
+#include "../util/json.hpp"
+#include "../util/logging.hpp"
 #include <iostream>
 using namespace webvirt::views;
 

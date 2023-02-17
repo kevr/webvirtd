@@ -14,8 +14,8 @@
  * permissions and limitations under the License.
  */
 #include "middleware.hpp"
-#include "../json.hpp"
-#include "../syscaller.hpp"
+#include "../syscall.hpp"
+#include "../util/json.hpp"
 #include "../virt/util.hpp"
 #include "util.hpp"
 #include <chrono>
@@ -118,7 +118,7 @@ http::route_function middleware::with_user(route_function route_fn)
         // Parse expected JSON from the request body.
         std::string user(match[1]);
 
-        auto &sys = syscaller::ref();
+        auto &sys = syscall::ref();
         auto *passwd = sys.getpwnam(user.c_str());
         if (!passwd) {
             auto error = json::error("Unable to locate user");

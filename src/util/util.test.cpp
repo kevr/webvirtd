@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "util.hpp"
-#include "mocks/syscaller.hpp"
+#include "../mocks/syscall.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
 
@@ -25,17 +25,17 @@ using testing::Test;
 class util_test : public Test
 {
 protected:
-    mocks::syscaller sys;
+    mocks::syscall sys;
 
 public:
     void SetUp() override
     {
-        syscaller::change(sys);
+        syscall::change(sys);
     }
 
     void TearDown() override
     {
-        syscaller::reset();
+        syscall::reset();
     }
 };
 

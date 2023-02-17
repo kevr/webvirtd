@@ -14,8 +14,8 @@
  * permissions and limitations under the License.
  */
 #include "server.hpp"
-#include "../syscaller.hpp"
-#include "../util.hpp"
+#include "../syscall.hpp"
+#include "../util/util.hpp"
 #include "client.hpp"
 #include <boost/beast/http/status.hpp>
 #include <gtest/gtest.h>
@@ -45,7 +45,7 @@ public:
 
     void SetUp() override
     {
-        syscaller::ref().fs_remove(socket_path);
+        syscall::ref().fs_remove(socket_path);
         std::cout << socket_path << std::endl;
 
         server = std::make_shared<webvirt::http::server<webvirt::net::unix>>(
@@ -60,7 +60,7 @@ public:
 
     static void TearDownTestSuite()
     {
-        syscaller::ref().fs_remove_all(tmpdir);
+        syscall::ref().fs_remove_all(tmpdir);
     }
 };
 

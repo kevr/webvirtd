@@ -14,12 +14,12 @@
  * permissions and limitations under the License.
  */
 #include "app.hpp"
-#include "config.hpp"
 #include "http/connection.hpp"
 #include "http/io_service.hpp"
 #include "http/server.hpp"
-#include "signal.hpp"
-#include "syscaller.hpp"
+#include "syscall.hpp"
+#include "util/config.hpp"
+#include "util/signal.hpp"
 #include <boost/program_options/errors.hpp>
 #include <filesystem>
 #include <fmt/format.h>
@@ -30,7 +30,8 @@
 #include <version.hpp>
 using namespace webvirt;
 
-int setup_socket(syscaller &sys, const std::filesystem::path &socket_path)
+int setup_socket(webvirt::syscall &sys,
+                 const std::filesystem::path &socket_path)
 {
     std::filesystem::permissions(socket_path,
                                  std::filesystem::perms::owner_all |
@@ -55,7 +56,7 @@ int setup_socket(syscaller &sys, const std::filesystem::path &socket_path)
 
 int webvirt_main(http::io_service &io, const std::string &socket_path)
 {
-    auto &sys = syscaller::ref();
+    auto &sys = syscall::ref();
 
     sys.fs_remove(socket_path);
     app app(io, socket_path);
@@ -74,7 +75,7 @@ int main(int argc, const char *argv[])
         setvbuf(file, nullptr, _IOLBF, 0);
     }
 
-    auto &sys = syscaller::ref();
+    auto &sys = syscall::ref();
 
     config conf;
     conf.add_option("version", "display version");

@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "libvirt.hpp"
-#include "logging.hpp"
+#include "util/logging.hpp"
 using namespace webvirt;
 
 void libvirt::free_connect_ptr::operator()(connect *ptr)

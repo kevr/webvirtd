@@ -14,8 +14,8 @@
  * permissions and limitations under the License.
  */
 #include "host.hpp"
-#include "../json.hpp"
 #include "../mocks/libvirt.hpp"
+#include "../util/json.hpp"
 #include "json/forwards.h"
 #include <gtest/gtest.h>
 #include <regex>

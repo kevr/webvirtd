@@ -16,7 +16,7 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
-#include "singleton.hpp"
+#include "../singleton.hpp"
 #include <boost/program_options.hpp>
 #include <filesystem>
 

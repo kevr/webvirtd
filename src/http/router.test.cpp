@@ -14,9 +14,9 @@
  * permissions and limitations under the License.
  */
 #include "router.hpp"
-#include "../json.hpp"
-#include "../mocks/syscaller.hpp"
+#include "../mocks/syscall.hpp"
 #include "../retry.hpp"
+#include "../util/json.hpp"
 #include "middleware.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
@@ -44,8 +44,8 @@ TEST_F(router_test, noop)
 
 TEST_F(router_test, with_user_invalid_user)
 {
-    mocks::syscaller sys;
-    syscaller::change(sys);
+    mocks::syscall sys;
+    syscall::change(sys);
     EXPECT_CALL(sys, getpwnam(_)).WillOnce(Return(nullptr));
 
     // with_user depends on std::smatch index [1].
@@ -62,7 +62,7 @@ TEST_F(router_test, with_user_invalid_user)
     auto data = json::parse(response.body());
     EXPECT_EQ(data["detail"], "Unable to locate user");
 
-    syscaller::reset();
+    syscall::reset();
 }
 
 TEST_F(router_test, with_user_unknown_user)
@@ -76,9 +76,9 @@ TEST_F(router_test, with_user_unknown_user)
     json["user"] = "test";
     beast::ostream(request.body()) << json::stringify(json);
 
-    mocks::syscaller sys;
+    mocks::syscall sys;
     EXPECT_CALL(sys, getpwnam(_)).WillOnce(Return(nullptr));
-    syscaller::change(sys);
+    syscall::change(sys);
 
     http::response response;
     router_.run(request, response);

@@ -16,7 +16,7 @@
 #ifndef MOCKS_SYSCALLER_HPP
 #define MOCKS_SYSCALLER_HPP
 
-#include "../syscaller.hpp"
+#include "../syscall.hpp"
 #include <filesystem>
 #include <gmock/gmock.h>
 #include <grp.h>
@@ -25,10 +25,10 @@
 namespace webvirt::mocks
 {
 
-class syscaller : public webvirt::syscaller
+class syscall : public webvirt::syscall
 {
 public:
-    virtual ~syscaller() = default;
+    virtual ~syscall() = default;
 
 public:
     MOCK_METHOD(bool, fs_remove, (const std::filesystem::path &));

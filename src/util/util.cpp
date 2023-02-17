@@ -15,7 +15,7 @@
  */
 #include "util.hpp"
 #include "config.hpp"
-#include "syscaller.hpp"
+#include "syscall.hpp"
 #include <cstring>
 #include <filesystem>
 #include <stdexcept>
@@ -25,7 +25,7 @@ using namespace webvirt;
 
 std::filesystem::path webvirt::make_tmpdir()
 {
-    auto &sys = syscaller::ref();
+    auto &sys = syscall::ref();
     std::string template_("/tmp/webvirtd-XXXXXX");
 
     char *result = sys.mkdtemp(template_.data());

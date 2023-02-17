@@ -15,7 +15,7 @@
  */
 #include "domains.hpp"
 #include "../http/util.hpp"
-#include "../json.hpp"
+#include "../util/json.hpp"
 #include "../virt/util.hpp"
 #include <boost/cast.hpp>
 #include <fmt/format.h>

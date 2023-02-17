@@ -16,9 +16,9 @@
 #ifndef HTTP_HANDLERS_HPP
 #define HTTP_HANDLERS_HPP
 
-#include "../json.hpp"
-#include "../logging.hpp"
-#include "../util.hpp"
+#include "../util/json.hpp"
+#include "../util/logging.hpp"
+#include "../util/util.hpp"
 #include "../virt/connection.hpp"
 #include "../virt/util.hpp"
 #include "namespaces.hpp"
@@ -28,6 +28,7 @@
 #include <boost/beast/http/dynamic_body.hpp>
 #include <sys/wait.h>
 #include <thread>
+
 namespace webvirt::http
 {
 

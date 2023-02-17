@@ -15,8 +15,8 @@
  */
 #include "domain.hpp"
 #include "../bench.hpp"
-#include "../config.hpp"
-#include "../logging.hpp"
+#include "../util/config.hpp"
+#include "../util/logging.hpp"
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>

@@ -14,9 +14,8 @@
  * permissions and limitations under the License.
  */
 #include "connection.hpp"
-#include "../config.hpp"
-#include "../logging.hpp"
 #include "../retry.hpp"
+#include "../util/config.hpp"
 #include "util.hpp"
 #include <chrono>
 #include <fmt/format.h>

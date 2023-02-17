@@ -14,11 +14,11 @@
  * permissions and limitations under the License.
  */
 #include "app.hpp"
-#include "config.hpp"
 #include "http/client.hpp"
 #include "mocks/libvirt.hpp"
 #include "retry.hpp"
-#include "util.hpp"
+#include "util/config.hpp"
+#include "util/util.hpp"
 #include "json/forwards.h"
 #include <fmt/format.h>
 #include <gtest/gtest.h>
@@ -94,7 +94,7 @@ public:
 
         conn = std::make_shared<webvirt::connect>();
 
-        auto &sys = syscaller::ref();
+        auto &sys = syscall::ref();
         uid = sys.getuid();
         auto *passwd = sys.getpwuid(uid);
         username = passwd->pw_name;

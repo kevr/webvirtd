@@ -9,13 +9,13 @@ configure_file(input : 'version.hpp.in',
 
 sources = [
   'app.cpp',
-  'syscaller.cpp',
-  'util.cpp',
-  'json.cpp',
-  'config.cpp',
+  'syscall.cpp',
   'libvirt.cpp',
-  'signal.cpp',
-  'logging.cpp',
+  'util/config.cpp',
+  'util/json.cpp',
+  'util/logging.cpp',
+  'util/signal.cpp',
+  'util/util.cpp',
   'views/domains.cpp',
   'views/host.cpp',
   'virt/network.cpp',
@@ -81,14 +81,6 @@ if not get_option('disable_tests')
   )
   test('main test', main_test)
 
-  util_test = executable(
-    'util.test',
-    'util.test.cpp',
-    dependencies : test_deps,
-    cpp_args : flags + test_flags,
-  )
-  test('util test', util_test)
-
   app_test = executable(
     'app.test',
     'app.test.cpp',
@@ -96,40 +88,9 @@ if not get_option('disable_tests')
     cpp_args : flags + test_flags,
   )
   test('app test', app_test)
-
-  config_test = executable(
-    'config.test',
-    'config.test.cpp',
-    dependencies : test_deps,
-    cpp_args : flags + test_flags,
-  )
-  test('config test', config_test)
-
-  json_test = executable(
-    'json.test',
-    'json.test.cpp',
-    dependencies : test_deps,
-    cpp_args : flags + test_flags,
-  )
-  test('json test', json_test)
-
-  logging_test = executable(
-    'logging.test',
-    'logging.test.cpp',
-    dependencies : test_deps,
-    cpp_args : flags + test_flags,
-  )
-  test('logging test', logging_test)
-
-  signal_test = executable(
-    'signal.test',
-    'signal.test.cpp',
-    dependencies : test_deps,
-    cpp_args : flags + test_flags,
-  )
-  test('signal test', signal_test)
 endif
 
-subdir('http')
+subdir('util')
 subdir('virt')
+subdir('http')
 subdir('views')

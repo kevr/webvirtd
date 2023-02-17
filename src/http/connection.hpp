@@ -16,7 +16,7 @@
 #ifndef HTTP_CONNECTION_HPP
 #define HTTP_CONNECTION_HPP
 
-#include "../logging.hpp"
+#include "../util/logging.hpp"
 #include "handlers.hpp"
 #include "io_service.hpp"
 #include "namespaces.hpp"

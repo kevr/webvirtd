@@ -15,7 +15,7 @@
  */
 #include "connection_pool.hpp"
 #include "../bench.hpp"
-#include "../logging.hpp"
+#include "../util/logging.hpp"
 #include "util.hpp"
 using namespace webvirt::virt;
 

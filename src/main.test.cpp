@@ -13,9 +13,9 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "mocks/syscaller.hpp"
+#include "mocks/syscall.hpp"
 #include "stubs/io_service.hpp"
-#include "util.hpp"
+#include "util/util.hpp"
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
@@ -34,7 +34,7 @@ class main_test : public Test
 {
 protected:
     static std::filesystem::path tmpdir, socket_path;
-    syscaller sys;
+    webvirt::syscall sys;
     config conf;
 
 public:
@@ -66,13 +66,13 @@ public:
 
     void TearDown() override
     {
-        webvirt::syscaller::reset();
+        webvirt::syscall::reset();
         webvirt::config::reset();
     }
 
     static void TearDownTestSuite()
     {
-        webvirt::syscaller().fs_remove_all(tmpdir);
+        webvirt::syscall().fs_remove_all(tmpdir);
     }
 };
 
@@ -125,8 +125,8 @@ TEST_F(webvirt_main_test, runs)
 
 TEST_F(webvirt_main_test, group_not_found)
 {
-    mocks::syscaller sys;
-    syscaller::change(sys);
+    mocks::syscall sys;
+    syscall::change(sys);
 
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
         return this->sys.fs_remove(arg);
@@ -137,8 +137,8 @@ TEST_F(webvirt_main_test, group_not_found)
 
 TEST_F(webvirt_main_test, chown_failed)
 {
-    mocks::syscaller sys;
-    syscaller::change(sys);
+    mocks::syscall sys;
+    syscall::change(sys);
 
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
         return this->sys.fs_remove(arg);
@@ -167,8 +167,8 @@ TEST_F(main_test, help)
 
 TEST_F(main_test, runs)
 {
-    mocks::syscaller sys;
-    syscaller::change(sys);
+    mocks::syscall sys;
+    syscall::change(sys);
 
     EXPECT_CALL(sys, getgid()).WillOnce(Return(this->sys.getgid()));
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &path) {

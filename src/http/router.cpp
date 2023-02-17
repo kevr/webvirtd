@@ -15,10 +15,10 @@
  */
 #include "router.hpp"
 #include "../bench.hpp"
-#include "../json.hpp"
-#include "../logging.hpp"
 #include "../retry.hpp"
-#include "../syscaller.hpp"
+#include "../syscall.hpp"
+#include "../util/json.hpp"
+#include "../util/logging.hpp"
 #include "../virt/util.hpp"
 #include "middleware.hpp"
 #include "util.hpp"

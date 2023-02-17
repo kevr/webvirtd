@@ -14,10 +14,10 @@
  * permissions and limitations under the License.
  */
 #include "config.hpp"
+#include "../syscall.hpp"
 #include "util.hpp"
 #include <fstream>
 #include <gtest/gtest.h>
-#include <syscaller.hpp>
 using namespace webvirt;
 
 using testing::Test;
@@ -60,7 +60,7 @@ TEST_F(config_test, parse_file)
     config_stream << "test-option = test-value\n";
     config_stream.close();
     conf.parse(config_file);
-    syscaller::ref().fs_remove_all(tmpdir);
+    syscall::ref().fs_remove_all(tmpdir);
 
     EXPECT_EQ(conf.get<std::string>("test-option"), "test-value");
 }

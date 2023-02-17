@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 #include "config.hpp"
-#include "syscaller.hpp"
+#include "syscall.hpp"
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <sstream>
@@ -88,7 +88,7 @@ std::ostream &webvirt::operator<<(std::ostream &os,
 
 void config::init()
 {
-    auto &sys = syscaller::ref();
+    auto &sys = syscall::ref();
     std::filesystem::path home(sys.getenv("HOME"));
     home /= ".webvirtd.conf";
 

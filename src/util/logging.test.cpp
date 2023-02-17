@@ -14,7 +14,6 @@
  * permissions and limitations under the License.
  */
 #include "logging.hpp"
-#include "http/io_service.hpp"
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
 #include <regex>
