@@ -19,18 +19,18 @@
 #include <unistd.h>
 using namespace webvirt;
 
-syscaller syscaller::root_;
-syscaller *syscaller::ptr_ = &syscaller::root_;
+syscaller syscaller::instance_;
+syscaller *syscaller::ptr_ = &syscaller::instance_;
 
-syscaller &syscaller::change(syscaller *ptr)
+syscaller &syscaller::change(syscaller &instance)
 {
-    ptr_ = ptr;
+    ptr_ = &instance;
     return ref();
 }
 
 syscaller &syscaller::reset()
 {
-    return change(&root_);
+    return change(instance_);
 }
 
 syscaller &syscaller::ref()

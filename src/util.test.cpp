@@ -16,6 +16,7 @@
 #include "util.hpp"
 #include "mocks/syscaller.hpp"
 #include <gtest/gtest.h>
+using namespace webvirt;
 
 using testing::_;
 using testing::Return;
@@ -24,17 +25,17 @@ using testing::Test;
 class util_test : public Test
 {
 protected:
-    webvirt::mocks::syscaller sys;
+    mocks::syscaller sys;
 
 public:
     void SetUp() override
     {
-        webvirt::syscaller::change(&sys);
+        syscaller::change(sys);
     }
 
     void TearDown() override
     {
-        webvirt::syscaller::reset();
+        syscaller::reset();
     }
 };
 

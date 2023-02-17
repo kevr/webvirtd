@@ -23,6 +23,8 @@
 #include "main.cpp"
 #undef main
 
+using namespace webvirt;
+
 using testing::_;
 using testing::Invoke;
 using testing::Return;
@@ -32,8 +34,8 @@ class main_test : public Test
 {
 protected:
     static std::filesystem::path tmpdir, socket_path;
-    webvirt::syscaller sys;
-    webvirt::config conf;
+    syscaller sys;
+    config conf;
 
 public:
     static void SetUpTestSuite()
@@ -123,8 +125,8 @@ TEST_F(webvirt_main_test, runs)
 
 TEST_F(webvirt_main_test, group_not_found)
 {
-    webvirt::mocks::syscaller sys;
-    webvirt::syscaller::change(&sys);
+    mocks::syscaller sys;
+    syscaller::change(sys);
 
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
         return this->sys.fs_remove(arg);
@@ -135,8 +137,8 @@ TEST_F(webvirt_main_test, group_not_found)
 
 TEST_F(webvirt_main_test, chown_failed)
 {
-    webvirt::mocks::syscaller sys;
-    webvirt::syscaller::change(&sys);
+    mocks::syscaller sys;
+    syscaller::change(sys);
 
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &arg) {
         return this->sys.fs_remove(arg);
@@ -165,8 +167,8 @@ TEST_F(main_test, help)
 
 TEST_F(main_test, runs)
 {
-    webvirt::mocks::syscaller sys;
-    webvirt::syscaller::change(&sys);
+    mocks::syscaller sys;
+    syscaller::change(sys);
 
     EXPECT_CALL(sys, getgid()).WillOnce(Return(this->sys.getgid()));
     EXPECT_CALL(sys, fs_remove(_)).WillOnce(Invoke([this](const auto &path) {

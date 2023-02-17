@@ -57,11 +57,11 @@ public:
     virtual void exit(int);
 
 private:
-    static syscaller root_;
+    static syscaller instance_;
     static syscaller *ptr_;
 
 public:
-    static syscaller &change(syscaller *);
+    static syscaller &change(syscaller &);
     static syscaller &reset();
     static syscaller &ref();
 };

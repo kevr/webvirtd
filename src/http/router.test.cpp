@@ -45,7 +45,7 @@ TEST_F(router_test, noop)
 TEST_F(router_test, with_user_invalid_user)
 {
     mocks::syscaller sys;
-    syscaller::change(&sys);
+    syscaller::change(sys);
     EXPECT_CALL(sys, getpwnam(_)).WillOnce(Return(nullptr));
 
     // with_user depends on std::smatch index [1].
@@ -78,7 +78,7 @@ TEST_F(router_test, with_user_unknown_user)
 
     mocks::syscaller sys;
     EXPECT_CALL(sys, getpwnam(_)).WillOnce(Return(nullptr));
-    syscaller::change(&sys);
+    syscaller::change(sys);
 
     http::response response;
     router_.run(request, response);
