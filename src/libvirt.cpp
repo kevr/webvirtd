@@ -17,26 +17,6 @@
 #include "logging.hpp"
 using namespace webvirt;
 
-libvirt libvirt::instance_;
-libvirt *libvirt::ptr_ = &instance_;
-
-libvirt &libvirt::ref()
-{
-    return *ptr_;
-}
-
-libvirt &libvirt::change(libvirt &other)
-{
-    ptr_ = &other;
-    return ref();
-}
-
-libvirt &libvirt::reset()
-{
-    ptr_ = &instance_;
-    return ref();
-}
-
 void libvirt::free_connect_ptr::operator()(connect *ptr)
 {
     if (ptr) {

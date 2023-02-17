@@ -16,18 +16,15 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+#include "singleton.hpp"
 #include <boost/program_options.hpp>
 #include <filesystem>
 
 namespace webvirt
 {
 
-class config
+class config : public singleton<config>
 {
-private:
-    static config instance_;
-    static config *ptr_;
-
 private:
     boost::program_options::options_description cmdline_desc_ {
         "command-line options"
@@ -61,11 +58,6 @@ public:
     config &parse(const std::filesystem::path &file);
 
     friend std::ostream &operator<<(std::ostream &, const config &);
-
-public:
-    static config &change(config &conf);
-    static config &ref();
-    static config &reset();
 
 private:
     void init();

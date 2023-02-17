@@ -20,9 +20,6 @@
 #include <sstream>
 using namespace webvirt;
 
-config config::instance_;
-config *config::ptr_ = &instance_;
-
 config::config()
 {
     init();
@@ -87,23 +84,6 @@ std::ostream &webvirt::operator<<(std::ostream &os,
        << epilog << std::endl;
     os << ss.str();
     return os;
-}
-
-config &config::change(config &conf)
-{
-    ptr_ = &conf;
-    return ref();
-}
-
-config &config::ref()
-{
-    return *ptr_;
-}
-
-config &config::reset()
-{
-    ptr_ = &instance_;
-    return ref();
 }
 
 void config::init()

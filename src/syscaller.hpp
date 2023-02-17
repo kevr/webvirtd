@@ -16,6 +16,7 @@
 #ifndef SYSCALLER_HPP
 #define SYSCALLER_HPP
 
+#include "singleton.hpp"
 #include <filesystem>
 #include <grp.h>
 #include <pwd.h>
@@ -24,7 +25,7 @@
 namespace webvirt
 {
 
-class syscaller
+class syscaller : public singleton<syscaller>
 {
 public:
     virtual ~syscaller() = default;
@@ -55,15 +56,6 @@ public:
     virtual char *getenv(const char *);
 
     virtual void exit(int);
-
-private:
-    static syscaller instance_;
-    static syscaller *ptr_;
-
-public:
-    static syscaller &change(syscaller &);
-    static syscaller &reset();
-    static syscaller &ref();
 };
 
 }; // namespace webvirt

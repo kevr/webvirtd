@@ -19,25 +19,6 @@
 #include <unistd.h>
 using namespace webvirt;
 
-syscaller syscaller::instance_;
-syscaller *syscaller::ptr_ = &syscaller::instance_;
-
-syscaller &syscaller::change(syscaller &instance)
-{
-    ptr_ = &instance;
-    return ref();
-}
-
-syscaller &syscaller::reset()
-{
-    return change(instance_);
-}
-
-syscaller &syscaller::ref()
-{
-    return *ptr_;
-}
-
 FILE *syscaller::popen(const char *command, const char *mode)
 {
     return ::popen(command, mode);

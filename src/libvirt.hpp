@@ -20,6 +20,7 @@
 #ifdef TEST_BUILD
 #include "stubs/libvirt.hpp"
 #endif
+#include "singleton.hpp"
 #include <functional>
 #include <memory>
 #include <string>
@@ -28,17 +29,8 @@
 namespace webvirt
 {
 
-class libvirt
+class libvirt : public singleton<libvirt>
 {
-private:
-    static libvirt instance_;
-    static libvirt *ptr_;
-
-public:
-    static libvirt &ref();
-    static libvirt &change(libvirt &);
-    static libvirt &reset();
-
 private:
     struct free_connect_ptr {
         void operator()(connect *);
