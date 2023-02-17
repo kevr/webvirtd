@@ -14,12 +14,14 @@
  * permissions and limitations under the License.
  */
 #include "domains.hpp"
+#include "../config.hpp"
 #include "../json.hpp"
 #include "../mocks/libvirt.hpp"
 #include "../virt/connection.hpp"
 #include "../virt/domain.hpp"
 #include <gtest/gtest.h>
 using namespace webvirt;
+using namespace std::string_literals;
 
 using testing::_;
 using testing::Invoke;
@@ -43,7 +45,23 @@ public:
         libvirt::change(lv);
         libvirt::connect_ptr ptr = std::make_shared<webvirt::connect>();
         EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
+        EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _));
         conn_.connect("socket.sock");
+
+        auto &conf = config::instance();
+        conf.add_option("libvirt-shutdown-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.01)
+                            ->multitoken(),
+                        "libvirt shutdown timeout");
+        conf.add_option("libvirt-shutoff-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.02)
+                            ->multitoken(),
+                        "libvirt shutoff timeout");
+
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
 
         request_.method(beast::http::verb::get);
     }
@@ -54,6 +72,79 @@ public:
     }
 
 protected:
+    std::string libvirt_domain_xml(
+        unsigned id = 1, unsigned int vcpu = 2,
+        unsigned int current_memory = 1024, unsigned int memory = 1024,
+        std::vector<std::tuple<std::string, std::string, std::string,
+                               std::string, std::string, std::string>>
+            disks = {},
+        std::vector<std::tuple<std::string, std::string, std::string>>
+            interfaces = {})
+    {
+        std::string disks_;
+        for (auto [device,
+                   driver_name,
+                   driver_type,
+                   source_file,
+                   target_dev,
+                   target_bus] : disks) {
+            disks_.append(fmt::format(R"(
+<disk device="{}">
+    <driver name="{}" type="{}" />
+    <source file="{}" />
+    <target dev="{}" bus="{}" />
+</disk>
+)",
+                                      device,
+                                      driver_name,
+                                      driver_type,
+                                      source_file,
+                                      target_dev,
+                                      target_bus));
+        }
+
+        std::string interfaces_;
+        for (auto [mac, model, name] : interfaces) {
+            interfaces_.append(fmt::format(R"(
+<interface>
+    <mac address="{}" />
+    <model type="{}" />
+    <alias name="{}" />
+</interface>
+)",
+                                           mac,
+                                           model,
+                                           name));
+        }
+
+        return fmt::format(R"(
+<domain id="{}">
+    <vcpu>{}</vcpu>
+    <currentMemory>{}</currentMemory>
+    <memory>{}</memory>
+    <os>
+        <type arch="x86_64" machine="pc-q35-7.2">hvm</type>
+    </os>
+    <devices>
+        {}
+        {}
+        <controller index="0" model="qemu-xhci" ports="15" type="usb">
+            <address bus="0x02" domain="0x0000" function="0x0" slot="0x00" type="pci" />
+        </controller>
+        <controller index="1" model="qemu-xhci" ports="15" type="usb">
+            <address bus="0x03" domain="0x0000" function="0x0" slot="0x00" type="pci" />
+        </controller>
+    </devices>
+</domain>
+)",
+                           id,
+                           vcpu,
+                           current_memory,
+                           memory,
+                           disks_,
+                           interfaces_);
+    }
+
     std::smatch make_location(const std::string &pattern,
                               const std::string &uri)
     {
@@ -63,6 +154,242 @@ protected:
         return m;
     }
 };
+
+TEST_F(domains_test, domains)
+{
+    std::vector<libvirt::domain_ptr> domains;
+    libvirt::domain_ptr dom = std::make_shared<webvirt::domain>();
+    domains.emplace_back(dom);
+    EXPECT_CALL(lv, virConnectListAllDomains(_, _)).WillOnce(Return(domains));
+
+    const char *domain_name = "test-domain";
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return(domain_name));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *reason, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            *reason = 0;
+            return 0;
+        }));
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+
+    auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
+                                  "/users/test/domains/test/");
+    libvirt::domain_ptr domain = std::make_shared<webvirt::domain>();
+    views_.index(conn_, location, request_, response_);
+
+    auto array = json::parse(response_.body());
+    EXPECT_TRUE(array.isArray());
+    EXPECT_EQ(array.size(), 1);
+
+    auto object =
+        array.get(Json::ArrayIndex(0), Json::Value(Json::objectValue));
+    EXPECT_EQ(object["id"], 1);
+    EXPECT_EQ(object["name"]["text"], "test-domain");
+    EXPECT_EQ(object["state"]["attrib"]["id"], VIR_DOMAIN_RUNNING);
+    EXPECT_EQ(object["state"]["attrib"]["string"], "Running");
+}
+
+TEST_F(domains_test, show)
+{
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(2);
+    EXPECT_CALL(lv, virDomainGetAutostart(_, _))
+        .WillOnce(Invoke([](auto, int *autostart) {
+            *autostart = 0;
+            return 0;
+        }));
+
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    auto disk = std::make_tuple("disk"s,
+                                "test_driver"s,
+                                "sata"s,
+                                "/path/to/source.qcow"s,
+                                "vda"s,
+                                "virtio"s);
+    auto iface =
+        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
+    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk }, { iface });
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
+
+    auto block_info_ptr = std::make_shared<webvirt::block_info>();
+    EXPECT_CALL(lv, virDomainGetBlockInfo(_, _, _))
+        .WillRepeatedly(Return(block_info_ptr));
+
+    auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
+                                  "/users/test/domains/test/");
+    libvirt::domain_ptr domain = std::make_shared<webvirt::domain>();
+    views_.show(conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+
+    auto data = json::parse(response_.body());
+    const auto &disk_json = data["devices"]["disk"][0];
+    const auto &block_info = disk_json["block_info"];
+    EXPECT_EQ(block_info["unit"], "KiB");
+    EXPECT_EQ(block_info["capacity"], 0);
+    EXPECT_EQ(block_info["allocation"], 0);
+    EXPECT_EQ(block_info["physical"], 0);
+}
+
+TEST_F(domains_test, show_cdrom)
+{
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(2);
+    EXPECT_CALL(lv, virDomainGetAutostart(_, _))
+        .WillOnce(Invoke([](auto, int *autostart) {
+            *autostart = 0;
+            return 0;
+        }));
+
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    auto disk = std::make_tuple(
+        "cdrom"s, "qemu"s, "raw"s, "/path/to/source.iso"s, "sda"s, "sata"s);
+    auto iface =
+        std::make_tuple("aa:bb:cc:dd:11:22:33:44"s, "virtio"s, "net0"s);
+    auto buffer = libvirt_domain_xml(1, 2, 1024, 1024, { disk });
+    EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).WillOnce(Return(buffer));
+
+    auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
+                                  "/users/test/domains/test/");
+    libvirt::domain_ptr domain = std::make_shared<webvirt::domain>();
+    views_.show(conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+}
+
+TEST_F(domains_test, domain_start)
+{
+    EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = 1;
+            return 0;
+        }));
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
+
+    auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
+                                  "/users/test/domains/test/start/");
+    auto domain = std::make_shared<webvirt::domain>();
+    request_.method(boost::beast::http::verb::post);
+    views_.start(conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::created);
+}
+
+TEST_F(domains_test, domain_start_error)
+{
+    EXPECT_CALL(lv, virDomainCreate(_)).WillOnce(Return(-1));
+
+    auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/start/$)",
+                                  "/users/test/domains/test/start/");
+    auto domain = std::make_shared<webvirt::domain>();
+    request_.method(boost::beast::http::verb::post);
+    views_.start(conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::bad_request);
+}
+
+TEST_F(domains_test, domain_shutdown)
+{
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    const char *domain_name = "test-domain";
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return(domain_name));
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(2);
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTDOWN;
+            return 0;
+        }))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTOFF;
+            return 0;
+        }));
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/shutdown/$)",
+                      "/users/test/domains/test/shutdown/");
+    request_.method(boost::beast::http::verb::post);
+
+    auto domain = std::make_shared<webvirt::domain>();
+    views_.shutdown(
+        conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::ok);
+}
+
+TEST_F(domains_test, domain_shutdown_timeout)
+{
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/shutdown/$)",
+                      "/users/test/domains/test/shutdown/");
+    auto domain = std::make_shared<webvirt::domain>();
+    request_.method(boost::beast::http::verb::post);
+    views_.shutdown(
+        conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::gateway_timeout);
+}
+
+TEST_F(domains_test, domain_shutoff_timeout)
+{
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(0));
+
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillRepeatedly(Invoke([](auto, int *state, int *, int) {
+            *state = VIR_DOMAIN_SHUTDOWN;
+            return 0;
+        }));
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/shutdown/$)",
+                      "/users/test/domains/test/shutdown/");
+    auto domain = std::make_shared<webvirt::domain>();
+    request_.method(boost::beast::http::verb::post);
+    views_.shutdown(
+        conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::gateway_timeout);
+}
+
+TEST_F(domains_test, domain_shutdown_bad_request)
+{
+    EXPECT_CALL(lv, virDomainShutdown(_)).WillOnce(Return(-1));
+
+    auto location =
+        make_location(R"(^/users/([^/]+)/domains/([^/]+)/shutdown/$)",
+                      "/users/test/domains/test/shutdown/");
+    request_.method(boost::beast::http::verb::post);
+
+    auto domain = std::make_shared<webvirt::domain>();
+    views_.shutdown(
+        conn_, virt::domain(domain), location, request_, response_);
+
+    EXPECT_EQ(response_.result(), beast::http::status::bad_request);
+}
 
 TEST_F(domains_test, autostart_post)
 {
