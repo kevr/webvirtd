@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef BENCH_HPP
-#define BENCH_HPP
+#ifndef UTIL_BENCH_HPP
+#define UTIL_BENCH_HPP
 
 #include <chrono>
 
@@ -54,4 +54,4 @@ public:
 
 }; // namespace webvirt
 
-#endif /* BENCH_HPP */
+#endif /* UTIL_BENCH_HPP */

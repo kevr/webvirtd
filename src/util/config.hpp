@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#ifndef UTIL_CONFIG_HPP
+#define UTIL_CONFIG_HPP
 
 #include <singleton.hpp>
 
@@ -68,4 +68,4 @@ std::ostream &operator<<(std::ostream &, const config &);
 
 }; // namespace webvirt
 
-#endif /* CONFIG_HPP */
+#endif /* UTIL_CONFIG_HPP */

@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef SIGNAL_HPP
-#define SIGNAL_HPP
+#ifndef UTIL_SIGNAL_HPP
+#define UTIL_SIGNAL_HPP
 
 namespace webvirt::signal
 {
@@ -23,4 +23,4 @@ void pipe(int);
 
 };
 
-#endif /* SIGNAL_HPP */
+#endif /* UTIL_SIGNAL_HPP */

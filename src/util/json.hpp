@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef JSON_HPP
-#define JSON_HPP
+#ifndef UTIL_JSON_HPP
+#define UTIL_JSON_HPP
 
 #include <boost/beast.hpp>
 #include <json/json.h>
@@ -36,4 +36,4 @@ Json::Value xml_to_json(const pugi::xml_node &node);
 
 }; // namespace webvirt::json
 
-#endif /* JSON_HPP */
+#endif /* UTIL_JSON_HPP */

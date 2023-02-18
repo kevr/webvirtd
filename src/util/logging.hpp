@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef LOGGING_HPP
-#define LOGGING_HPP
+#ifndef UTIL_LOGGING_HPP
+#define UTIL_LOGGING_HPP
 
 #include <atomic>
 #include <chrono>
@@ -52,4 +52,4 @@ private:
 
 }; // namespace webvirt
 
-#endif /* LOGGING_HPP */
+#endif /* UTIL_LOGGING_HPP */
