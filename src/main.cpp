@@ -86,7 +86,7 @@ int main(int argc, const char *argv[])
     conf.add_option("disable-timestamp", "disable logging timestamps");
     conf.add_option("socket,s",
                     boost::program_options::value<std::string>()
-                        ->default_value("/var/run/webvirtd.sock")
+                        ->default_value("/var/run/webvirtd/webvirtd.sock")
                         ->multitoken(),
                     "unix socket path");
 
