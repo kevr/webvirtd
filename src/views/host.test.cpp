@@ -42,9 +42,6 @@ public:
     void SetUp() override
     {
         libvirt::change(lv);
-        connect_ptr ptr = std::make_shared<webvirt::connect>();
-        EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
-        conn_.connect("socket.sock");
 
         request_.method(beast::http::verb::get);
     }
@@ -52,6 +49,15 @@ public:
     void TearDown() override
     {
         libvirt::reset();
+    }
+
+    connect_ptr make_connection(const std::string &user)
+    {
+        connect_ptr ptr = std::make_shared<webvirt::connect>();
+        EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
+        EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _));
+        conn_.connect(user);
+        return ptr;
     }
 
 protected:
@@ -66,16 +72,17 @@ protected:
 
 TEST_F(host_test, show)
 {
-    EXPECT_CALL(lv, virConnectGetCapabilities(_)).Times(2);
+    make_connection("test");
+
+    EXPECT_CALL(lv, virConnectGetCapabilities(_)).Times(1);
     EXPECT_CALL(lv, virConnectGetHostname(_)).WillRepeatedly(Return("test"));
-    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).Times(2);
+    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).Times(1);
     EXPECT_CALL(lv, virConnectGetMaxVcpus(_, _)).WillRepeatedly(Return(2));
     EXPECT_CALL(lv, virConnectGetType(_)).WillRepeatedly(Return("QEMU"));
     EXPECT_CALL(lv, virConnectGetURI(_))
-        .WillOnce(Return("qemu+ssh://test@localhost/session"))
-        .WillOnce(Return("qemu+ssh://root@localhost/system"));
-    EXPECT_CALL(lv, virConnectGetVersion(_, _)).Times(2);
-    EXPECT_CALL(lv, virConnectIsEncrypted(_)).Times(2);
+        .WillOnce(Return("qemu+ssh://test@localhost/session"));
+    EXPECT_CALL(lv, virConnectGetVersion(_, _)).Times(1);
+    EXPECT_CALL(lv, virConnectIsEncrypted(_)).Times(1);
     EXPECT_CALL(lv, virConnectIsSecure(_)).WillRepeatedly(Return(1));
 
     // Make a request as test user.
@@ -90,6 +97,22 @@ TEST_F(host_test, show)
     EXPECT_EQ(data["version"].asUInt(), 0);
     EXPECT_EQ(data["encrypted"].asBool(), false);
     EXPECT_EQ(data["secure"].asBool(), true);
+}
+
+TEST_F(host_test, show_as_root)
+{
+    make_connection("root");
+
+    EXPECT_CALL(lv, virConnectGetCapabilities(_)).Times(1);
+    EXPECT_CALL(lv, virConnectGetHostname(_)).WillRepeatedly(Return("test"));
+    EXPECT_CALL(lv, virConnectGetLibVersion(_, _)).Times(1);
+    EXPECT_CALL(lv, virConnectGetMaxVcpus(_, _)).WillRepeatedly(Return(2));
+    EXPECT_CALL(lv, virConnectGetType(_)).WillRepeatedly(Return("QEMU"));
+    EXPECT_CALL(lv, virConnectGetURI(_))
+        .WillOnce(Return("qemu+ssh://root@localhost/system"));
+    EXPECT_CALL(lv, virConnectGetVersion(_, _)).Times(1);
+    EXPECT_CALL(lv, virConnectIsEncrypted(_)).Times(1);
+    EXPECT_CALL(lv, virConnectIsSecure(_)).WillRepeatedly(Return(1));
 
     // Make a request as root user, which includes sysinfo.
     auto xml = R"(
@@ -98,12 +121,11 @@ TEST_F(host_test, show)
 )";
     EXPECT_CALL(lv, virConnectGetSysinfo(_, _)).WillOnce(Return(xml));
 
-    endpoint = "/users/root/info/";
-    location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
-    response_ = http::response();
+    std::string endpoint("/users/root/info/");
+    auto location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
     views_.show(conn_, location, request_, response_);
 
-    data = json::parse(response_.body());
+    auto data = json::parse(response_.body());
     EXPECT_EQ(data["hostname"].asString(), "test");
     EXPECT_EQ(data["libVersion"].asUInt(), 0);
     EXPECT_EQ(data["type"].asString(), "QEMU");
@@ -117,6 +139,8 @@ TEST_F(host_test, show)
 
 TEST_F(host_test, networks)
 {
+    make_connection("test");
+
     std::vector<network_ptr> networks = {
         std::make_shared<webvirt::network>()
     };

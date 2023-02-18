@@ -48,7 +48,7 @@ public:
         connect_ptr ptr = std::make_shared<webvirt::connect>();
         EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(ptr));
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _));
-        conn_.connect("socket.sock");
+        conn_.connect("test");
 
         auto &conf = config::ref();
         conf.add_option("libvirt-shutdown-timeout",

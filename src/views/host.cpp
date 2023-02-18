@@ -21,12 +21,11 @@
 
 using namespace webvirt::views;
 
-void host::show(virt::connection &conn, const std::smatch &location,
+void host::show(virt::connection &conn, const std::smatch &,
                 const http::request &, http::response &response)
 {
-    const std::string user(location[1]);
     return http::set_response(
-        response, data::host(conn, user), beast::http::status::ok);
+        response, data::host(conn), beast::http::status::ok);
 }
 
 void host::networks(virt::connection &conn, const std::smatch &,

@@ -24,7 +24,7 @@
 namespace webvirt::data
 {
 
-Json::Value host(virt::connection &, const std::string &);
+Json::Value host(virt::connection &);
 Json::Value networks(virt::connection &);
 
 }; // namespace webvirt::data

@@ -27,7 +27,7 @@ connection &connection_pool::get(const std::string &user)
     auto iter = connections_.find(user);
     if (iter == connections_.end()) {
         connections_[user] = virt::connection();
-        connections_[user].connect(virt::uri(user));
+        connections_[user].connect(user);
         auto ms = bench_.end() * 1000;
         logger::debug(fmt::format("Connected to libvirt in {}ms", int(ms)));
         return connections_.at(user);
@@ -36,7 +36,7 @@ connection &connection_pool::get(const std::string &user)
     if (!iter->second) {
         // If connection is stale, try reconnecting.
         iter->second = virt::connection();
-        iter->second.connect(virt::uri(user));
+        iter->second.connect(user);
         auto ms = bench_.end() * 1000;
         logger::debug(fmt::format("Reconnected to libvirt in {}ms", int(ms)));
     }

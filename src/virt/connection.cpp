@@ -40,9 +40,9 @@ virt::connection::connection(const connection &conn)
 {
 }
 
-virt::connection::connection(const std::string &uri)
+virt::connection::connection(const std::string &user)
 {
-    connect(uri);
+    connect(user);
 }
 
 virt::connection::operator bool()
@@ -67,7 +67,12 @@ virt::connection &virt::connection::operator=(const virt::connection &conn)
     return *this;
 }
 
-virt::connection &virt::connection::connect(const std::string &str)
+const std::string &virt::connection::user() const
+{
+    return user_;
+}
+
+virt::connection &virt::connection::connect(const std::string &user)
 {
     logger::debug("Connecting to libvirt");
 
@@ -76,7 +81,8 @@ virt::connection &virt::connection::connect(const std::string &str)
     }
 
     auto &lv = libvirt::ref();
-    conn_ = lv.virConnectOpen(str.c_str());
+    const std::string uri(virt::uri(user));
+    conn_ = lv.virConnectOpen(uri.c_str());
     if (!conn_) {
         errno_ = errno;
         std::string message("error: ");
@@ -84,6 +90,7 @@ virt::connection &virt::connection::connect(const std::string &str)
         message.push_back('\n');
         throw std::runtime_error(message);
     }
+    user_ = user;
     closed_ = false;
 
     auto close_func = [](webvirt::connect *, int, void *data) {

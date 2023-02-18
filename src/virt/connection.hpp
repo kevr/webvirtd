@@ -40,6 +40,7 @@ private:
     connect_ptr conn_ { nullptr };
     int errno_ { 0 };
     bool closed_ { true };
+    std::string user_;
 
 public:
 #ifdef TEST_BUILD
@@ -58,7 +59,9 @@ public:
     bool operator==(const connection &other) const;
     bool operator!=(const connection &other) const;
 
-    connection &connect(const std::string &str);
+    const std::string &user() const;
+
+    connection &connect(const std::string &);
 
     std::string capabilities() const;
     std::string hostname() const;

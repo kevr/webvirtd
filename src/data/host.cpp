@@ -17,7 +17,7 @@
 
 using namespace webvirt;
 
-Json::Value data::host(virt::connection &conn, const std::string &user)
+Json::Value data::host(virt::connection &conn)
 {
     Json::Value output(Json::objectValue);
 
@@ -25,7 +25,7 @@ Json::Value data::host(virt::connection &conn, const std::string &user)
     output["libVersion"] = conn.library_version();
     output["uri"] = conn.uri();
 
-    if (user == "root") {
+    if (conn.user() == "root") {
         auto sysinfo = conn.sysinfo();
         pugi::xml_document doc;
         doc.load_string(sysinfo.c_str());
