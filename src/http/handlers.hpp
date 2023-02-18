@@ -21,27 +21,24 @@
 namespace webvirt::http
 {
 
-template <typename client_t>
-void on_connect(client_t &)
+template <typename... args>
+using function = std::function<void(args...)>;
+
+using simple_function = std::function<void()>;
+
+template <typename... args>
+function<args...> noop()
 {
+    return [](args...) {
+    };
 }
-
-template <typename connection_t>
-void on_accept(connection_t &)
-{
-}
-
-void on_close();
-
-void on_error(const char *, boost::beast::error_code);
-
-template <typename connection_t>
-void on_request(connection_t &, const http::request &, http::response &)
-{
-}
-
-void on_response(const http::response &);
 
 }; // namespace webvirt::http
+
+#define HANDLER(handler, member)                                              \
+    void handler(decltype(member) fn)                                         \
+    {                                                                         \
+        member = fn;                                                          \
+    }
 
 #endif /* HTTP_HANDLERS_HPP */

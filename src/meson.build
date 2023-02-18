@@ -28,7 +28,6 @@ sources = [
   'virt/util.cpp',
   'http/router.cpp',
   'http/middleware.cpp',
-  'http/handlers.cpp',
   'http/io_service.cpp',
   'http/util.cpp',
   'stubs/io_service.cpp',

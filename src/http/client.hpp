@@ -41,17 +41,13 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
     std::string host_;
     int version_;
 
-    std::function<void(client<protocol_t> &)> on_connect_ =
-        webvirt::http::on_connect<client<protocol_t>>;
-
-    std::function<void(
-        const beast::http::response<beast::http::string_body> &)>
-        on_response_ = webvirt::http::on_response;
-
-    std::function<void()> on_close_ = webvirt::http::on_close;
-
-    std::function<void(const char *, beast::error_code)> on_error_ =
-        webvirt::http::on_error;
+    using client_t = client<protocol_t>;
+    function<client_t &> on_connect_ = noop<client_t &>();
+    function<const http::response &> on_response_ =
+        noop<const http::response &>();
+    function<const char *, beast::error_code> on_error_ =
+        noop<const char *, beast::error_code>();
+    simple_function on_close_ = noop<>();
 
 public:
     explicit client(io_service &io, std::string socket_path,
@@ -113,29 +109,6 @@ public:
         return *this;
     }
 
-    void on_connect(std::function<void(client<protocol_t> &)> fn)
-    {
-        on_connect_ = fn;
-    }
-
-    void on_close(std::function<void()> fn)
-    {
-        on_close_ = fn;
-    }
-
-    void on_error(std::function<void(const char *, beast::error_code)> fn)
-    {
-        on_error_ = fn;
-    }
-
-    void
-    on_response(std::function<
-                void(const beast::http::response<beast::http::string_body> &)>
-                    fn)
-    {
-        on_response_ = fn;
-    }
-
     const beast::http::request<beast::http::string_body> &request() const
     {
         return request_;
@@ -152,6 +125,11 @@ public:
         close();
         return count;
     }
+
+    HANDLER(on_connect, on_connect_);
+    HANDLER(on_response, on_response_);
+    HANDLER(on_error, on_error_);
+    HANDLER(on_close, on_close_);
 
 private:
     void init_request(const char *target)

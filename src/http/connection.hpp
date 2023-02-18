@@ -43,16 +43,13 @@ class connection
 
     boost::asio::steady_timer deadline_;
 
-    std::function<void(connection<net::unix::acceptor, net::unix::socket> &,
-                       const beast::http::request<beast::http::dynamic_body> &,
-                       beast::http::response<beast::http::string_body> &)>
-        on_request_ = webvirt::http::on_request<
-            connection<net::unix::acceptor, net::unix::socket>>;
-
-    std::function<void()> on_close_ = webvirt::http::on_close;
-
-    std::function<void(const char *, beast::error_code)> on_error_ =
-        webvirt::http::on_error;
+    using connection_t = connection<net::unix::acceptor, net::unix::socket>;
+    function<connection_t &, const http::request &, http::response &>
+        on_request_ =
+            noop<connection_t &, const http::request &, http::response &>();
+    function<const char *, beast::error_code> on_error_ =
+        noop<const char *, beast::error_code>();
+    simple_function on_close_ = noop<>();
 
 public:
     explicit connection(socket_t socket, std::chrono::milliseconds ms)
@@ -67,25 +64,9 @@ public:
         check_deadline();
     }
 
-    void on_error(std::function<void(const char *, beast::error_code)> fn)
-    {
-        on_error_ = fn;
-    }
-
-    void
-    on_request(std::function<
-               void(connection<net::unix::acceptor, net::unix::socket> &,
-                    const beast::http::request<beast::http::dynamic_body> &,
-                    beast::http::response<beast::http::string_body> &)>
-                   fn)
-    {
-        on_request_ = fn;
-    }
-
-    void on_close(std::function<void()> fn)
-    {
-        on_close_ = fn;
-    }
+    HANDLER(on_request, on_request_);
+    HANDLER(on_error, on_error_);
+    HANDLER(on_close, on_close_);
 
     void close()
     {

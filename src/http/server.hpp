@@ -49,21 +49,14 @@ private:
 
     std::chrono::milliseconds timeout_ = std::chrono::milliseconds(60 * 1000);
 
-    std::function<void(connection<net::unix::acceptor, net::unix::socket> &)>
-        on_accept_ = webvirt::http::on_accept<
-            connection<net::unix::acceptor, net::unix::socket>>;
-
-    std::function<void(
-        connection<net::unix::acceptor, net::unix::socket> &,
-        const boost::beast::http::request<boost::beast::http::dynamic_body> &,
-        boost::beast::http::response<boost::beast::http::string_body> &)>
-        on_request_ = webvirt::http::on_request<
-            connection<net::unix::acceptor, net::unix::socket>>;
-
-    std::function<void()> on_close_ = webvirt::http::on_close;
-
-    std::function<void(const char *, beast::error_code)> on_error_ =
-        webvirt::http::on_error;
+    using connection_t = connection<net::unix::acceptor, net::unix::socket>;
+    function<connection_t &> on_accept_ = noop<connection_t &>();
+    function<connection_t &, const http::request &, http::response &>
+        on_request_ =
+            noop<connection_t &, const http::request &, http::response &>();
+    function<const char *, beast::error_code> on_error_ =
+        noop<const char *, beast::error_code>();
+    simple_function on_close_ = noop<>();
 
 public:
     server(std::filesystem::path socket_path)
@@ -107,31 +100,10 @@ public:
         return io_->process();
     }
 
-    void on_accept(std::function<
-                   void(connection<net::unix::acceptor, net::unix::socket> &)>
-                       accept_handler)
-    {
-        on_accept_ = accept_handler;
-    }
-
-    void on_request(std::function<
-                    void(connection<net::unix::acceptor, net::unix::socket> &,
-                         const http::request &, http::response &)>
-                        request_handler)
-    {
-        on_request_ = request_handler;
-    }
-
-    void on_error(
-        std::function<void(const char *, beast::error_code)> error_handler)
-    {
-        on_error_ = error_handler;
-    }
-
-    void on_close(std::function<void()> close_handler)
-    {
-        on_close_ = close_handler;
-    }
+    HANDLER(on_accept, on_accept_);
+    HANDLER(on_request, on_request_);
+    HANDLER(on_error, on_error_);
+    HANDLER(on_close, on_close_);
 
 private:
     void async_accept()
