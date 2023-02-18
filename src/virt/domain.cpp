@@ -154,30 +154,3 @@ bool virt::domain::shutdown()
 
     return true;
 }
-
-Json::Value virt::domain::simple_json() const
-{
-    Json::Value data(Json::objectValue);
-    data["id"] = id();
-
-    Json::Value name_(Json::objectValue);
-    name_["text"] = name();
-    data["name"] = std::move(name_);
-
-    Json::Value title_(Json::objectValue);
-    title_["text"] = title();
-    data["title"] = std::move(title_);
-
-    Json::Value desc(Json::objectValue);
-    desc["text"] = description();
-    data["description"] = std::move(desc);
-
-    int state_ = state();
-    data["state"] = Json::Value(Json::objectValue);
-    Json::Value state_json(Json::objectValue);
-    state_json["id"] = state_;
-    state_json["string"] = virt::state_string(state_);
-    data["state"]["attrib"] = std::move(state_json);
-
-    return data;
-} // LCOV_EXCL_LINE

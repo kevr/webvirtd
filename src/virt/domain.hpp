@@ -50,8 +50,6 @@ public:
     bool start();
     bool shutdown();
 
-    Json::Value simple_json() const;
-
     template <typename connection_ptr>
     virt::domain &define_xml(connection_ptr conn, const char *xml)
     {

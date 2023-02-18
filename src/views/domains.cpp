@@ -13,6 +13,7 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include <data/domain.hpp>
 #include <http/util.hpp>
 #include <util/json.hpp>
 #include <views/domains.hpp>
@@ -30,68 +31,24 @@ void domains::index(virt::connection &conn, const std::smatch &,
 
     Json::Value data(Json::arrayValue);
     for (auto &domain : domains) {
-        data.append(domain.simple_json());
+        data.append(data::simple_domain(domain));
     }
 
     return http::set_response(response, data, beast::http::status::ok);
 }
 
 void domains::show(virt::connection &, virt::domain domain,
-                   const std::smatch &location, const http::request &,
+                   const std::smatch &, const http::request &,
                    http::response &response)
 {
-    const std::string name(location[2]);
-
-    auto data = domain.simple_json();
-    auto doc = domain.xml_document();
-
-    auto xml_data = json::xml_to_json(doc.child("domain"));
-    for (const auto &key : xml_data.getMemberNames()) {
-        data[key] = xml_data[key];
-    }
-
-    data["autostart"] = domain.autostart();
-
-    std::vector<std::string> keys = { "interface", "disk" };
-    for (const auto &key : keys) {
-        if (data["devices"][key] &&
-            data["devices"][key].type() == Json::objectValue) {
-            auto current = data["devices"][key];
-            data["devices"][key] = Json::Value(Json::arrayValue);
-            data["devices"][key].append(std::move(current));
-        }
-    }
-
-    if (data["devices"]["disk"]) {
-        for (auto &disk : data["devices"]["disk"]) {
-            // If this is not a storage disk, continue on.
-            if (disk["attrib"]["device"].asString() != "disk"s)
-                continue;
-
-            // Collect block_info sizing for the disk.
-            auto dev = disk["target"]["attrib"]["dev"].asString();
-            auto block_info_ptr = domain.block_info(dev);
-            auto block_info = Json::Value(Json::objectValue);
-            block_info["unit"] = "KiB";
-            block_info["capacity"] = boost::numeric_cast<unsigned long>(
-                block_info_ptr->capacity / 1000);
-            block_info["allocation"] = boost::numeric_cast<unsigned long>(
-                block_info_ptr->allocation / 1000);
-            block_info["physical"] = boost::numeric_cast<unsigned long>(
-                block_info_ptr->physical / 1000);
-            disk["block_info"] = std::move(block_info);
-        }
-    }
-
-    return http::set_response(response, data, beast::http::status::ok);
+    return http::set_response(
+        response, data::domain(domain), beast::http::status::ok);
 }
 
 void domains::autostart(virt::connection &, virt::domain domain,
-                        const std::smatch &location,
-                        const http::request &request, http::response &response)
+                        const std::smatch &, const http::request &request,
+                        http::response &response)
 {
-    const std::string name(location[2]);
-
     bool enabled = request.method() == beast::http::verb::post;
     domain.autostart(enabled);
 
@@ -102,11 +59,9 @@ void domains::autostart(virt::connection &, virt::domain domain,
 }
 
 void domains::bootmenu(virt::connection &conn, virt::domain domain,
-                       const std::smatch &location,
-                       const http::request &request, http::response &response)
+                       const std::smatch &, const http::request &request,
+                       http::response &response)
 {
-    const std::string name(location[2]);
-
     auto doc = domain.xml_document();
     auto os = doc.child("domain").child("os");
     std::string enabled =
@@ -126,20 +81,14 @@ void domains::bootmenu(virt::connection &conn, virt::domain domain,
                                   beast::http::status::internal_server_error);
     }
 
-    Json::Value data(Json::objectValue);
-    data["type"] = json::xml_to_json(os.child("type"));
-    data["boot"] = json::xml_to_json(os.child("boot"));
-    data["bootmenu"] = json::xml_to_json(os.child("bootmenu"));
-
-    return http::set_response(response, data, beast::http::status::ok);
+    return http::set_response(
+        response, json::xml_to_json(os), beast::http::status::ok);
 }
 
 void domains::metadata(virt::connection &, virt::domain domain,
-                       const std::smatch &location,
-                       const http::request &request, http::response &response)
+                       const std::smatch &, const http::request &request,
+                       http::response &response)
 {
-    const std::string name(location[2]);
-
     Json::Value data(Json::objectValue);
     try {
         data = json::parse(request.body());
@@ -181,11 +130,9 @@ void domains::metadata(virt::connection &, virt::domain domain,
 }
 
 void domains::start(virt::connection &, virt::domain domain,
-                    const std::smatch &location, const http::request &,
+                    const std::smatch &, const http::request &,
                     http::response &response)
 {
-    const std::string name(location[2]);
-
     if (!domain.start()) {
         return http::set_response(response,
                                   json::error("Unable to start domain"),
@@ -193,15 +140,13 @@ void domains::start(virt::connection &, virt::domain domain,
     }
 
     return http::set_response(
-        response, domain.simple_json(), beast::http::status::created);
+        response, data::simple_domain(domain), beast::http::status::created);
 }
 
 void domains::shutdown(virt::connection &, virt::domain domain,
-                       const std::smatch &location, const http::request &,
+                       const std::smatch &, const http::request &,
                        http::response &response)
 {
-    const std::string name(location[2]);
-
     bool ok = false;
     try {
         ok = domain.shutdown();
@@ -218,5 +163,5 @@ void domains::shutdown(virt::connection &, virt::domain domain,
     }
 
     return http::set_response(
-        response, domain.simple_json(), beast::http::status::ok);
+        response, data::simple_domain(domain), beast::http::status::ok);
 }
