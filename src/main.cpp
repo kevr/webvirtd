@@ -20,6 +20,7 @@
 #include <syscall.hpp>
 #include <util/config.hpp>
 #include <util/signal.hpp>
+#include <util/util.hpp>
 #include <version.hpp>
 
 #include <boost/program_options/errors.hpp>
