@@ -16,7 +16,7 @@
 #ifndef HTTP_MIDDLEWARE_HPP
 #define HTTP_MIDDLEWARE_HPP
 
-#include <http/namespaces.hpp>
+#include <http/types.hpp>
 #include <virt/connection.hpp>
 #include <virt/connection_pool.hpp>
 #include <virt/domain.hpp>

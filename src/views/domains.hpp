@@ -16,7 +16,7 @@
 #ifndef VIEWS_DOMAINS_HPP
 #define VIEWS_DOMAINS_HPP
 
-#include <http/namespaces.hpp>
+#include <http/types.hpp>
 #include <virt/connection.hpp>
 #include <virt/domain.hpp>
 

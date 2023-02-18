@@ -16,7 +16,7 @@
 #ifndef HTTP_HANDLERS_HPP
 #define HTTP_HANDLERS_HPP
 
-#include <http/namespaces.hpp>
+#include <http/types.hpp>
 
 namespace webvirt::http
 {

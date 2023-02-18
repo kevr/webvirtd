@@ -16,7 +16,7 @@
 #ifndef HTTP_UTIL_HPP
 #define HTTP_UTIL_HPP
 
-#include <http/namespaces.hpp>
+#include <http/types.hpp>
 
 #include <json/json.h>
 

@@ -18,7 +18,7 @@
 
 #include <http/handlers.hpp>
 #include <http/io_service.hpp>
-#include <http/namespaces.hpp>
+#include <http/types.hpp>
 #include <util/logging.hpp>
 
 #include <boost/asio.hpp>

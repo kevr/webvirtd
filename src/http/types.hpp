@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef NAMESPACES_HPP
-#define NAMESPACES_HPP
+#ifndef HTTP_TYPES_HPP
+#define HTTP_TYPES_HPP
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
