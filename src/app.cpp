@@ -13,9 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "app.hpp"
-#include "http/middleware.hpp"
+#include <app.hpp>
+#include <http/middleware.hpp>
+
 #include <pugixml.hpp>
+
 using namespace webvirt;
 
 using http::middleware::with_libvirt;

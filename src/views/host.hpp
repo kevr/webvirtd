@@ -16,10 +16,9 @@
 #ifndef VIEWS_HOST_HPP
 #define VIEWS_HOST_HPP
 
-#include "../http/namespaces.hpp"
-#include "../virt/connection.hpp"
-#include <boost/asio/ip/host_name.hpp>
-#include <boost/beast.hpp>
+#include <http/namespaces.hpp>
+#include <virt/connection.hpp>
+
 #include <regex>
 
 namespace webvirt::views

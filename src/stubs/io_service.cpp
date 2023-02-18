@@ -13,7 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "io_service.hpp"
+#include <stubs/io_service.hpp>
+
 using namespace webvirt;
 
 stubs::io_service::io_service(std::size_t iterations)

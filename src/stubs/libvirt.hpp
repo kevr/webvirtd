@@ -16,7 +16,7 @@
 #ifndef STUBS_LIBVIRT_HPP
 #define STUBS_LIBVIRT_HPP
 
-#include "../libvirt_types.hpp"
+#include <libvirt_types.hpp>
 
 enum virDomainState : int {
     VIR_DOMAIN_NOSTATE,

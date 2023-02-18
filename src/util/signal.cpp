@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "signal.hpp"
-#include "logging.hpp"
+#include <util/logging.hpp>
+#include <util/signal.hpp>
 using namespace webvirt;
 
 void signal::pipe(int)

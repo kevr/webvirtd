@@ -13,11 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "host.hpp"
-#include "../http/util.hpp"
-#include "../util/json.hpp"
-#include "../util/logging.hpp"
-#include <iostream>
+#include <http/util.hpp>
+#include <util/json.hpp>
+#include <util/logging.hpp>
+#include <views/host.hpp>
+
 using namespace webvirt::views;
 
 void host::show(virt::connection &conn, const std::smatch &location,

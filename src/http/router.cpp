@@ -13,20 +13,22 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "router.hpp"
-#include "../bench.hpp"
-#include "../retry.hpp"
-#include "../syscall.hpp"
-#include "../util/json.hpp"
-#include "../util/logging.hpp"
-#include "../virt/util.hpp"
-#include "middleware.hpp"
-#include "util.hpp"
+#include <bench.hpp>
+#include <http/middleware.hpp>
+#include <http/router.hpp>
+#include <http/util.hpp>
+#include <retry.hpp>
+#include <syscall.hpp>
+#include <util/json.hpp>
+#include <util/logging.hpp>
+#include <virt/util.hpp>
+
 #include <chrono>
 #include <fmt/format.h>
 #include <iostream>
 #include <regex>
 #include <vector>
+
 using namespace webvirt;
 
 void http::router::run(const http::request &request, http::response &response)

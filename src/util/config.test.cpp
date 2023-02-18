@@ -13,11 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "config.hpp"
-#include "../syscall.hpp"
-#include "util.hpp"
+#include <syscall.hpp>
+#include <util/config.hpp>
+#include <util/util.hpp>
+
 #include <fstream>
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 using testing::Test;

@@ -16,7 +16,8 @@
 #ifndef MOCKS_SYSCALLER_HPP
 #define MOCKS_SYSCALLER_HPP
 
-#include "../syscall.hpp"
+#include <syscall.hpp>
+
 #include <filesystem>
 #include <gmock/gmock.h>
 #include <grp.h>

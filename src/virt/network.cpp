@@ -13,7 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "network.hpp"
+#include <virt/network.hpp>
+
 using namespace webvirt::virt;
 
 std::string network::xml_desc()

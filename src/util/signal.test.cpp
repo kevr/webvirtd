@@ -13,9 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "signal.hpp"
-#include "logging.hpp"
+#include <util/logging.hpp>
+#include <util/signal.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 using testing::Test;

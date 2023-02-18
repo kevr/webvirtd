@@ -13,14 +13,16 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "util.hpp"
-#include "config.hpp"
-#include "syscall.hpp"
+#include <syscall.hpp>
+#include <util/config.hpp>
+#include <util/util.hpp>
+
 #include <cstring>
 #include <filesystem>
 #include <stdexcept>
 #include <sys/stat.h>
 #include <unistd.h>
+
 using namespace webvirt;
 
 std::filesystem::path webvirt::make_tmpdir()

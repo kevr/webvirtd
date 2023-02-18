@@ -16,10 +16,11 @@
 #ifndef HTTP_SERVER_HPP
 #define HTTP_SERVER_HPP
 
-#include "../util/logging.hpp"
-#include "connection.hpp"
-#include "handlers.hpp"
-#include "io_service.hpp"
+#include <http/connection.hpp>
+#include <http/handlers.hpp>
+#include <http/io_service.hpp>
+#include <util/logging.hpp>
+
 #include <boost/asio.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <boost/beast.hpp>

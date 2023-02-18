@@ -16,7 +16,8 @@
 #ifndef MOCKS_LIBVIRT_HPP
 #define MOCKS_LIBVIRT_HPP
 
-#include "../libvirt.hpp"
+#include <libvirt.hpp>
+
 #include <gmock/gmock.h>
 
 namespace webvirt::mocks

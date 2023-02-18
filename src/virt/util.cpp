@@ -13,12 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "util.hpp"
-#include "../libvirt.hpp"
+#include <libvirt.hpp>
+#include <virt/util.hpp>
+
 #include <fmt/format.h>
-#include <iostream>
 #include <map>
 #include <string>
+
 using namespace webvirt;
 
 std::string virt::uri(const std::string &user)

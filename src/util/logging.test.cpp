@@ -13,10 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "logging.hpp"
-#include "gtest/gtest.h"
+#include <util/logging.hpp>
+
 #include <gtest/gtest.h>
 #include <regex>
+
 using namespace webvirt;
 
 using testing::Test;

@@ -16,7 +16,8 @@
 #ifndef SYSCALL_HPP
 #define SYSCALL_HPP
 
-#include "singleton.hpp"
+#include <singleton.hpp>
+
 #include <filesystem>
 #include <grp.h>
 #include <pwd.h>

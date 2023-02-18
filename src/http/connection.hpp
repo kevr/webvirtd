@@ -16,10 +16,11 @@
 #ifndef HTTP_CONNECTION_HPP
 #define HTTP_CONNECTION_HPP
 
-#include "../util/logging.hpp"
-#include "handlers.hpp"
-#include "io_service.hpp"
-#include "namespaces.hpp"
+#include <http/handlers.hpp>
+#include <http/io_service.hpp>
+#include <http/namespaces.hpp>
+#include <util/logging.hpp>
+
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>

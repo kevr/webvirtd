@@ -13,8 +13,9 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "util.hpp"
-#include "../util/json.hpp"
+#include <http/util.hpp>
+#include <util/json.hpp>
+
 using namespace webvirt;
 
 void http::set_response(http::response &response, const std::string &data,

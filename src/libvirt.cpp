@@ -13,8 +13,9 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "libvirt.hpp"
-#include "util/logging.hpp"
+#include <libvirt.hpp>
+#include <util/logging.hpp>
+
 using namespace webvirt;
 
 void libvirt::free_connect_ptr::operator()(connect *ptr)

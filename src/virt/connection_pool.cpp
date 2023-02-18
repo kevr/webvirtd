@@ -13,10 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "connection_pool.hpp"
-#include "../bench.hpp"
-#include "../util/logging.hpp"
-#include "util.hpp"
+#include <bench.hpp>
+#include <util/logging.hpp>
+#include <virt/connection_pool.hpp>
+#include <virt/util.hpp>
+
 using namespace webvirt::virt;
 
 connection &connection_pool::get(const std::string &user)

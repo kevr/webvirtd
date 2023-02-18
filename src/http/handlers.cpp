@@ -13,23 +13,24 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "handlers.hpp"
-#include <iostream>
+#include <http/handlers.hpp>
+#include <util/logging.hpp>
 
-void webvirt::http::on_close()
+using namespace webvirt;
+
+void http::on_close()
 {
 }
 
-void webvirt::http::on_error(const char *source, boost::beast::error_code ec)
+void http::on_error(const char *source, boost::beast::error_code ec)
 {
     std::string message(source);
     message.append(": ");
     message.append(ec.message());
-    message.push_back('\n');
-    std::cerr << message;
+    logger::error(message);
 }
 
-void webvirt::http::on_response(
+void http::on_response(
     const boost::beast::http::response<boost::beast::http::string_body> &)
 {
 }

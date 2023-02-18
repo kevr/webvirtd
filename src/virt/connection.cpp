@@ -13,19 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "connection.hpp"
-#include "../retry.hpp"
-#include "../util/config.hpp"
-#include "util.hpp"
-#include <chrono>
-#include <fmt/format.h>
-#include <fstream>
-#include <iostream>
+#include <retry.hpp>
+#include <util/config.hpp>
+#include <virt/connection.hpp>
+#include <virt/util.hpp>
+
 #include <list>
-#include <pugixml.hpp>
-#include <stdexcept>
-#include <thread>
-#include <unistd.h>
+
 using namespace webvirt;
 
 #ifdef TEST_BUILD

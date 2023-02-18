@@ -16,8 +16,9 @@
 #ifndef VIRT_DOMAIN_HPP
 #define VIRT_DOMAIN_HPP
 
-#include "../libvirt.hpp"
-#include "ptr_type.hpp"
+#include <libvirt.hpp>
+#include <virt/ptr_type.hpp>
+
 #include <json/json.h>
 #include <pugixml.hpp>
 

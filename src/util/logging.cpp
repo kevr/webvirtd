@@ -13,9 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "logging.hpp"
-#include "config.hpp"
+#include <util/config.hpp>
+#include <util/logging.hpp>
+
 #include <fmt/format.h>
+
 using namespace webvirt;
 
 std::atomic<bool> logger::debug_ { false };

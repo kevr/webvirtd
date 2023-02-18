@@ -16,10 +16,11 @@
 #ifndef HTTP_MIDDLEWARE_HPP
 #define HTTP_MIDDLEWARE_HPP
 
-#include "../virt/connection.hpp"
-#include "../virt/connection_pool.hpp"
-#include "../virt/domain.hpp"
-#include "namespaces.hpp"
+#include <http/namespaces.hpp>
+#include <virt/connection.hpp>
+#include <virt/connection_pool.hpp>
+#include <virt/domain.hpp>
+
 #include <regex>
 
 namespace webvirt::http

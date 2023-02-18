@@ -13,8 +13,10 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "util.hpp"
+#include <virt/util.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 TEST(util, root_uri)

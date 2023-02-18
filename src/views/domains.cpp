@@ -13,15 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "domains.hpp"
-#include "../http/util.hpp"
-#include "../util/json.hpp"
-#include "../virt/util.hpp"
+#include <http/util.hpp>
+#include <util/json.hpp>
+#include <views/domains.hpp>
+#include <virt/util.hpp>
+
 #include <boost/cast.hpp>
-#include <fmt/format.h>
-#include <fstream>
-#include <iostream>
-#include <pugixml.hpp>
+
 using namespace webvirt::views;
 using namespace std::string_literals;
 

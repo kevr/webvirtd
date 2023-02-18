@@ -13,7 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "io_service.hpp"
+#include <http/io_service.hpp>
+
 using namespace webvirt;
 
 std::size_t http::io_service::process()

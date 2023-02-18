@@ -13,9 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "client.hpp"
-#include "io_service.hpp"
+#include <http/client.hpp>
+#include <http/io_service.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 TEST(client, connect_fails)

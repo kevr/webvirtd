@@ -16,12 +16,12 @@
 #ifndef HTTP_CLIENT_HPP
 #define HTTP_CLIENT_HPP
 
-#include "../util/util.hpp"
-#include "handlers.hpp"
-#include "io_service.hpp"
-#include "namespaces.hpp"
+#include <http/handlers.hpp>
+#include <http/io_service.hpp>
+#include <http/namespaces.hpp>
+#include <util/util.hpp>
+
 #include <boost/beast.hpp>
-#include <iostream>
 #include <memory>
 
 namespace webvirt::http

@@ -13,14 +13,17 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "server.hpp"
-#include "../syscall.hpp"
-#include "../util/util.hpp"
-#include "client.hpp"
+#include <http/client.hpp>
+#include <http/server.hpp>
+#include <syscall.hpp>
+#include <util/util.hpp>
+
 #include <boost/beast/http/status.hpp>
 #include <gtest/gtest.h>
 #include <thread>
+
 using namespace webvirt;
+
 using testing::Test;
 
 class server_test : public Test

@@ -13,13 +13,15 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "domains.hpp"
-#include "../mocks/libvirt.hpp"
-#include "../util/config.hpp"
-#include "../util/json.hpp"
-#include "../virt/connection.hpp"
-#include "../virt/domain.hpp"
+#include <mocks/libvirt.hpp>
+#include <util/config.hpp>
+#include <util/json.hpp>
+#include <views/domains.hpp>
+#include <virt/connection.hpp>
+#include <virt/domain.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 using namespace std::string_literals;
 

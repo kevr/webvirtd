@@ -16,8 +16,9 @@
 #ifndef VIRT_NETWORK_HPP
 #define VIRT_NETWORK_HPP
 
-#include "../libvirt.hpp"
-#include "ptr_type.hpp"
+#include <libvirt.hpp>
+#include <virt/ptr_type.hpp>
+
 #include <pugixml.hpp>
 
 namespace webvirt::virt

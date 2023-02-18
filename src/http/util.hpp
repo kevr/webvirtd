@@ -16,7 +16,8 @@
 #ifndef HTTP_UTIL_HPP
 #define HTTP_UTIL_HPP
 
-#include "namespaces.hpp"
+#include <http/namespaces.hpp>
+
 #include <json/json.h>
 
 namespace webvirt::http

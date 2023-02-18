@@ -16,7 +16,7 @@
 #ifndef STUBS_IO_SERVICE_HPP
 #define STUBS_IO_SERVICE_HPP
 
-#include "../http/io_service.hpp"
+#include <http/io_service.hpp>
 
 namespace webvirt::stubs
 {

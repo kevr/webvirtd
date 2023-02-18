@@ -13,9 +13,11 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "libvirt.hpp"
+#include <stubs/libvirt.hpp>
+
 #include <cstring>
 #include <string>
+
 using namespace webvirt;
 
 static char *make_cstring(const std::string &str)

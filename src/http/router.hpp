@@ -16,7 +16,8 @@
 #ifndef HTTP_ROUTER_HPP
 #define HTTP_ROUTER_HPP
 
-#include "namespaces.hpp"
+#include <http/namespaces.hpp>
+
 #include <map>
 #include <regex>
 #include <string>

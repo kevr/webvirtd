@@ -13,14 +13,14 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "mocks/syscall.hpp"
-#include "stubs/io_service.hpp"
-#include "util/util.hpp"
-#include "gtest/gtest.h"
+#include <mocks/syscall.hpp>
+#include <stubs/io_service.hpp>
+#include <util/util.hpp>
+
 #include <gtest/gtest.h>
 
 #define main main_
-#include "main.cpp"
+#include <main.cpp>
 #undef main
 
 using namespace webvirt;

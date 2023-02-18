@@ -55,12 +55,12 @@ test_deps = [
   gmock_dep,
 ] + base_deps
 
-subdir('src')
-
 bash = find_program('bash')
 root = meson.source_root()
 filtered_lcov = root + '/scripts/filtered-lcov.sh'
 build_dir = meson.current_build_dir()
+
+subdir('src')
 
 service_data = configuration_data()
 service_data.set('prefix', get_option('prefix'))

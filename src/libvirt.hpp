@@ -16,15 +16,16 @@
 #ifndef LIBVIRT_HPP
 #define LIBVIRT_HPP
 
-#include "libvirt_types.hpp"
-#include "singleton.hpp"
+#include <libvirt_types.hpp>
+#include <singleton.hpp>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
 #ifdef TEST_BUILD
-#include "stubs/libvirt.hpp"
+#include <stubs/libvirt.hpp>
 #endif
 
 namespace webvirt

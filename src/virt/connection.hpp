@@ -16,14 +16,15 @@
 #ifndef VIRT_CONNECTION_HPP
 #define VIRT_CONNECTION_HPP
 
-#include "../libvirt.hpp"
-#include "../util/logging.hpp"
-#include "domain.hpp"
-#include "network.hpp"
+#include <libvirt.hpp>
+#include <util/json.hpp>
+#include <util/logging.hpp>
+#include <virt/domain.hpp>
+#include <virt/network.hpp>
+
 #include <atomic>
 #include <cstring>
 #include <errno.h>
-#include <json/json.h>
 #include <map>
 #include <memory>
 #include <stdexcept>

@@ -13,8 +13,10 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "domain.hpp"
+#include <virt/domain.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt::virt;
 
 TEST(domain, constructors)

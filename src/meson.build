@@ -1,4 +1,7 @@
-flags = ['-pthread']
+flags = [
+  '-isystem', root + '/src',
+  '-pthread',
+]
 test_flags = ['-DTEST_BUILD']
 
 conf_data = configuration_data()

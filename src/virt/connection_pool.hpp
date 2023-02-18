@@ -16,7 +16,8 @@
 #ifndef VIRT_CONNECTION_POOL_HPP
 #define VIRT_CONNECTION_POOL_HPP
 
-#include "connection.hpp"
+#include <virt/connection.hpp>
+
 #include <map>
 #include <string>
 

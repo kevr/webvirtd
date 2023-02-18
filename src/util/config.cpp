@@ -13,11 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "config.hpp"
-#include "syscall.hpp"
+#include <syscall.hpp>
+#include <util/config.hpp>
+
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <sstream>
+
 using namespace webvirt;
 
 config::config()

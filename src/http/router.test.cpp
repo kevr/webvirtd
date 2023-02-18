@@ -13,12 +13,14 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "router.hpp"
-#include "../mocks/syscall.hpp"
-#include "../retry.hpp"
-#include "../util/json.hpp"
-#include "middleware.hpp"
+#include <http/middleware.hpp>
+#include <http/router.hpp>
+#include <mocks/syscall.hpp>
+#include <retry.hpp>
+#include <util/json.hpp>
+
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 using testing::_;

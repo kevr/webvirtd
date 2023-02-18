@@ -13,14 +13,16 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "domain.hpp"
-#include "../bench.hpp"
-#include "../util/config.hpp"
-#include "../util/logging.hpp"
-#include "util.hpp"
+#include <bench.hpp>
+#include <util/config.hpp>
+#include <util/logging.hpp>
+#include <virt/domain.hpp>
+#include <virt/util.hpp>
+
 #include <chrono>
 #include <fmt/format.h>
 #include <thread>
+
 using namespace webvirt;
 using namespace virt;
 

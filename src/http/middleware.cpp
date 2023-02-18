@@ -13,13 +13,15 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "middleware.hpp"
-#include "../syscall.hpp"
-#include "../util/json.hpp"
-#include "../virt/util.hpp"
-#include "util.hpp"
+#include <http/middleware.hpp>
+#include <http/util.hpp>
+#include <syscall.hpp>
+#include <util/json.hpp>
+#include <virt/util.hpp>
+
 #include <chrono>
 #include <sstream>
+
 using namespace webvirt;
 using namespace http;
 

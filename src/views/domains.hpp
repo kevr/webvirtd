@@ -16,9 +16,10 @@
 #ifndef VIEWS_DOMAINS_HPP
 #define VIEWS_DOMAINS_HPP
 
-#include "../http/namespaces.hpp"
-#include "../virt/connection.hpp"
-#include <boost/beast.hpp>
+#include <http/namespaces.hpp>
+#include <virt/connection.hpp>
+#include <virt/domain.hpp>
+
 #include <regex>
 
 namespace webvirt::views

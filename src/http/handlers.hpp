@@ -16,18 +16,7 @@
 #ifndef HTTP_HANDLERS_HPP
 #define HTTP_HANDLERS_HPP
 
-#include "../util/json.hpp"
-#include "../util/logging.hpp"
-#include "../util/util.hpp"
-#include "../virt/connection.hpp"
-#include "../virt/util.hpp"
-#include "namespaces.hpp"
-#include "router.hpp"
-#include <boost/asio/buffer.hpp>
-#include <boost/beast.hpp>
-#include <boost/beast/http/dynamic_body.hpp>
-#include <sys/wait.h>
-#include <thread>
+#include <http/namespaces.hpp>
 
 namespace webvirt::http
 {

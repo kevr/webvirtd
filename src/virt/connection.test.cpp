@@ -13,10 +13,12 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "connection.hpp"
-#include "../mocks/libvirt.hpp"
+#include <mocks/libvirt.hpp>
+#include <virt/connection.hpp>
+
 #include <cstring>
 #include <gtest/gtest.h>
+
 using namespace webvirt;
 
 using testing::_;
@@ -27,7 +29,7 @@ class connection_test : public Test
 {
 protected:
     mocks::libvirt lv;
-    connect_ptr conn = std::make_shared<connect>();
+    connect_ptr conn = std::make_shared<webvirt::connect>();
 
 public:
     void SetUp() override
