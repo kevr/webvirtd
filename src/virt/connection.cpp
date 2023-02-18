@@ -13,8 +13,8 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include <retry.hpp>
 #include <util/config.hpp>
+#include <util/retry.hpp>
 #include <virt/connection.hpp>
 #include <virt/util.hpp>
 

@@ -16,11 +16,11 @@
 #include <http/middleware.hpp>
 #include <http/router.hpp>
 #include <http/util.hpp>
-#include <retry.hpp>
 #include <syscall.hpp>
 #include <util/bench.hpp>
 #include <util/json.hpp>
 #include <util/logging.hpp>
+#include <util/retry.hpp>
 #include <virt/util.hpp>
 
 #include <chrono>

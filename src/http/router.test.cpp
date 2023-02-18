@@ -16,8 +16,8 @@
 #include <http/middleware.hpp>
 #include <http/router.hpp>
 #include <mocks/syscall.hpp>
-#include <retry.hpp>
 #include <util/json.hpp>
+#include <util/retry.hpp>
 
 #include <gtest/gtest.h>
 

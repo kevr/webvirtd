@@ -13,14 +13,15 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef RETRY_HPP
-#define RETRY_HPP
+#ifndef UTIL_RETRY_HPP
+#define UTIL_RETRY_HPP
 
 #include <functional>
 #include <stdexcept>
 
 namespace webvirt
 {
+
 struct retry_error : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
@@ -62,4 +63,4 @@ public:
 
 }; // namespace webvirt
 
-#endif /* RETRY_HPP */
+#endif /* UTIL_RETRY_HPP */

@@ -16,8 +16,8 @@
 #include <app.hpp>
 #include <http/client.hpp>
 #include <mocks/libvirt.hpp>
-#include <retry.hpp>
 #include <util/config.hpp>
+#include <util/retry.hpp>
 #include <util/util.hpp>
 
 #include <fmt/format.h>
