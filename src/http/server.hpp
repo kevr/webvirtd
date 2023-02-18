@@ -50,13 +50,11 @@ private:
     std::chrono::milliseconds timeout_ = std::chrono::milliseconds(60 * 1000);
 
     using connection_t = connection<net::unix::acceptor, net::unix::socket>;
-    function<connection_t &> on_accept_ = noop<connection_t &>();
-    function<connection_t &, const http::request &, http::response &>
-        on_request_ =
-            noop<connection_t &, const http::request &, http::response &>();
-    function<const char *, beast::error_code> on_error_ =
-        noop<const char *, beast::error_code>();
-    simple_function on_close_ = noop<>();
+    handler<connection_t &> on_accept_;
+    handler<connection_t &, const http::request &, http::response &>
+        on_request_;
+    handler<const char *, beast::error_code> on_error_;
+    handler<> on_close_;
 
 public:
     server(std::filesystem::path socket_path)
@@ -100,10 +98,10 @@ public:
         return io_->process();
     }
 
-    HANDLER(on_accept, on_accept_);
-    HANDLER(on_request, on_request_);
-    HANDLER(on_error, on_error_);
-    HANDLER(on_close, on_close_);
+    handler_setter(on_accept, on_accept_);
+    handler_setter(on_request, on_request_);
+    handler_setter(on_error, on_error_);
+    handler_setter(on_close, on_close_);
 
 private:
     void async_accept()

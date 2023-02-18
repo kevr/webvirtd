@@ -22,20 +22,33 @@ namespace webvirt::http
 {
 
 template <typename... args>
-using function = std::function<void(args...)>;
-
-using simple_function = std::function<void()>;
-
-template <typename... args>
-function<args...> noop()
+std::function<void(args...)> noop()
 {
     return [](args...) {
     };
 }
 
+template <typename... args>
+class handler : public std::function<void(args...)>
+{
+public:
+    using std::function<void(args...)>::function;
+    using type = std::function<void(args...)>;
+
+    handler()
+        : type(noop<args...>())
+    {
+    }
+
+    handler(type f)
+        : type(f)
+    {
+    }
+};
+
 }; // namespace webvirt::http
 
-#define HANDLER(handler, member)                                              \
+#define handler_setter(handler, member)                                       \
     void handler(decltype(member) fn)                                         \
     {                                                                         \
         member = fn;                                                          \

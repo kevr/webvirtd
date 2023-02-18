@@ -42,12 +42,10 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
     int version_;
 
     using client_t = client<protocol_t>;
-    function<client_t &> on_connect_ = noop<client_t &>();
-    function<const http::response &> on_response_ =
-        noop<const http::response &>();
-    function<const char *, beast::error_code> on_error_ =
-        noop<const char *, beast::error_code>();
-    simple_function on_close_ = noop<>();
+    handler<client_t &> on_connect_;
+    handler<const http::response &> on_response_;
+    handler<const char *, beast::error_code> on_error_;
+    handler<> on_close_;
 
 public:
     explicit client(io_service &io, std::string socket_path,
@@ -126,10 +124,10 @@ public:
         return count;
     }
 
-    HANDLER(on_connect, on_connect_);
-    HANDLER(on_response, on_response_);
-    HANDLER(on_error, on_error_);
-    HANDLER(on_close, on_close_);
+    handler_setter(on_connect, on_connect_);
+    handler_setter(on_response, on_response_);
+    handler_setter(on_error, on_error_);
+    handler_setter(on_close, on_close_);
 
 private:
     void init_request(const char *target)
