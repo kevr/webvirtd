@@ -13,7 +13,7 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include <bench.hpp>
+#include <util/bench.hpp>
 #include <util/logging.hpp>
 #include <virt/connection_pool.hpp>
 #include <virt/util.hpp>
