@@ -54,6 +54,17 @@ public:
     {
         tmpdir = socket_path = webvirt::make_tmpdir();
         socket_path /= "socket.sock";
+
+        auto &conf = config::ref();
+        conf.add_option("threads",
+                        boost::program_options::value<unsigned>()
+                            ->default_value(1)
+                            ->multitoken(),
+                        "number of worker threads");
+
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
+
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
         client = std::make_shared<client_t>(client_io_, socket_path);
 

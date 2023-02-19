@@ -32,6 +32,8 @@ sources = [
   'http/middleware.cpp',
   'http/io_context.cpp',
   'http/util.cpp',
+  'thread/worker_pool.cpp',
+  'thread/worker.cpp',
   'stubs/io_context.cpp',
 ]
 

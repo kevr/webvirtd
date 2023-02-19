@@ -19,6 +19,8 @@
 #include <http/connection.hpp>
 #include <http/handlers.hpp>
 #include <http/io_context.hpp>
+#include <thread/worker_pool.hpp>
+#include <util/config.hpp>
 #include <util/logging.hpp>
 
 #include <boost/asio.hpp>
@@ -56,12 +58,15 @@ private:
     handler<const char *, beast::error_code> on_error_;
     handler<> on_close_;
 
+    thread::worker_pool pool_;
+
 public:
     server(std::filesystem::path socket_path)
         : socket_path_(std::move(socket_path))
         , io_(new io_context())
         , acceptor_(*io_, socket_path_.string())
         , socket_(*io_)
+        , pool_(*io_)
     {
     }
 
@@ -71,6 +76,7 @@ public:
         , io_(&io)
         , acceptor_(*io_, socket_path_.string())
         , socket_(*io_)
+        , pool_(*io_)
     {
     }
 
@@ -94,7 +100,15 @@ public:
     std::size_t run()
     {
         logger::info(fmt::format("Listening on '{}'", socket_path_.c_str()));
+
+        // Begin async calls
         async_accept();
+
+        // Start up internal worker_pool
+        const auto threads = config::ref().get<unsigned>("threads");
+        pool_.start(threads);
+
+        // Run the io_context on the main thread
         return io_->run();
     }
 

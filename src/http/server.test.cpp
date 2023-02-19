@@ -16,6 +16,7 @@
 #include <http/client.hpp>
 #include <http/server.hpp>
 #include <syscall.hpp>
+#include <util/config.hpp>
 #include <util/util.hpp>
 
 #include <boost/beast/http/status.hpp>
@@ -39,6 +40,8 @@ protected:
     http::io_context client_io;
     std::shared_ptr<client_t> client;
 
+    config conf;
+
 public:
     static void SetUpTestSuite()
     {
@@ -51,6 +54,9 @@ public:
         syscall::ref().fs_remove(socket_path);
         std::cout << socket_path << std::endl;
 
+        setup_config();
+        config::change(conf);
+
         server = std::make_shared<webvirt::http::server<webvirt::net::unix>>(
             io, socket_path);
         client = std::make_shared<client_t>(client_io, socket_path.string());
@@ -58,12 +64,26 @@ public:
 
     void TearDown() override
     {
+        config::reset();
         server.reset();
     }
 
     static void TearDownTestSuite()
     {
         syscall::ref().fs_remove_all(tmpdir);
+    }
+
+private:
+    void setup_config()
+    {
+        conf.add_option("threads",
+                        boost::program_options::value<unsigned>()
+                            ->default_value(1)
+                            ->multitoken(),
+                        "number of worker threads");
+
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
     }
 };
 

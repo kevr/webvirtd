@@ -58,7 +58,7 @@ public:
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _));
         conn_.connect(user);
         return ptr;
-    }
+    } // LCOV_EXCL_LINE
 
 protected:
     std::smatch make_location(const std::string &expr, const std::string &uri)

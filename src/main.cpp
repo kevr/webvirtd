@@ -29,6 +29,7 @@
 #include <functional>
 #include <grp.h>
 #include <iostream>
+#include <thread>
 #include <unistd.h>
 
 using namespace webvirt;
@@ -89,6 +90,11 @@ int main(int argc, const char *argv[])
                         ->default_value("/var/run/webvirtd/webvirtd.sock")
                         ->multitoken(),
                     "unix socket path");
+    conf.add_option("threads,t",
+                    boost::program_options::value<unsigned>()
+                        ->default_value(std::thread::hardware_concurrency())
+                        ->multitoken(),
+                    "number of worker threads");
 
     auto gid = sys.getgid();
     auto *default_group = sys.getgrgid(gid);

@@ -51,6 +51,11 @@ public:
                             ->default_value(socket_path)
                             ->multitoken(),
                         "unix socket path");
+        conf.add_option("threads",
+                        boost::program_options::value<unsigned>()
+                            ->default_value(1)
+                            ->multitoken(),
+                        "number of worker threads");
 
         auto gid = sys.getgid();
         auto *default_group = sys.getgrgid(gid);
