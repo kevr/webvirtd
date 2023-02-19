@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 #include <http/client.hpp>
-#include <http/io_service.hpp>
+#include <http/io_context.hpp>
 
 #include <gtest/gtest.h>
 
@@ -22,7 +22,7 @@ using namespace webvirt;
 
 TEST(client, connect_fails)
 {
-    http::io_service io;
+    http::io_context io;
     auto client = std::make_shared<http::unix_client>(io, "test.sock");
     beast::error_code ec;
     client->on_error([&](const char *, beast::error_code ec_) {

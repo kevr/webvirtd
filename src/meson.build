@@ -30,9 +30,9 @@ sources = [
   'virt/util.cpp',
   'http/router.cpp',
   'http/middleware.cpp',
-  'http/io_service.cpp',
+  'http/io_context.cpp',
   'http/util.cpp',
-  'stubs/io_service.cpp',
+  'stubs/io_context.cpp',
 ]
 
 if not get_option('disable_tests')

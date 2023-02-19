@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 #include <mocks/syscall.hpp>
-#include <stubs/io_service.hpp>
+#include <stubs/io_context.hpp>
 #include <util/util.hpp>
 
 #include <gtest/gtest.h>
@@ -79,7 +79,7 @@ public:
 class webvirt_main_test : public main_test
 {
 protected:
-    webvirt::stubs::io_service io { 0 };
+    webvirt::stubs::io_context io { 0 };
 
 public:
     static void SetUpTestSuite()

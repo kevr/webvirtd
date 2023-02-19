@@ -17,7 +17,7 @@
 #define HTTP_CONNECTION_HPP
 
 #include <http/handlers.hpp>
-#include <http/io_service.hpp>
+#include <http/io_context.hpp>
 #include <http/types.hpp>
 #include <util/logging.hpp>
 
@@ -35,7 +35,7 @@ template <typename acceptor_t, typename socket_t>
 class connection
     : public std::enable_shared_from_this<connection<acceptor_t, socket_t>>
 {
-    http::io_service::strand strand_;
+    http::io_context::strand strand_;
 
     socket_t socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
@@ -52,7 +52,7 @@ class connection
     handler<> on_close_;
 
 public:
-    explicit connection(http::io_service &io, socket_t socket,
+    explicit connection(http::io_context &io, socket_t socket,
                         std::chrono::milliseconds ms)
         : strand_(io)
         , socket_(std::move(socket))

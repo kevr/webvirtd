@@ -32,11 +32,11 @@ protected:
     static std::filesystem::path tmpdir, socket_path;
 
     using server_t = http::server<webvirt::net::unix>;
-    http::io_service io;
+    http::io_context io;
     std::shared_ptr<server_t> server;
 
     using client_t = http::client<webvirt::net::unix>;
-    http::io_service client_io;
+    http::io_context client_io;
     std::shared_ptr<client_t> client;
 
 public:

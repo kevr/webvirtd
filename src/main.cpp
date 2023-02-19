@@ -15,7 +15,7 @@
  */
 #include <app.hpp>
 #include <http/connection.hpp>
-#include <http/io_service.hpp>
+#include <http/io_context.hpp>
 #include <http/server.hpp>
 #include <syscall.hpp>
 #include <util/config.hpp>
@@ -57,7 +57,7 @@ int setup_socket(webvirt::syscall &sys,
     return 0;
 }
 
-int webvirt_main(http::io_service &io, const std::string &socket_path)
+int webvirt_main(http::io_context &io, const std::string &socket_path)
 {
     auto &sys = syscall::ref();
 
@@ -137,6 +137,6 @@ int main(int argc, const char *argv[])
 
     const auto socket_path = conf.get<std::string>("socket");
     config::change(conf);
-    http::io_service io;
+    http::io_context io;
     return webvirt_main(io, socket_path);
 }

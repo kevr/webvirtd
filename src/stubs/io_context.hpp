@@ -13,11 +13,24 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include <http/io_service.hpp>
+#ifndef STUBS_IO_CONTEXT_HPP
+#define STUBS_IO_CONTEXT_HPP
 
-using namespace webvirt;
+#include <http/io_context.hpp>
 
-std::size_t http::io_service::run()
+namespace webvirt::stubs
 {
-    return boost::asio::io_service::run();
-}
+
+class io_context : public http::io_context
+{
+private:
+    std::size_t iterations = 0;
+
+public:
+    io_context(std::size_t iterations = 0);
+    std::size_t run() override;
+};
+
+}; // namespace webvirt::stubs
+
+#endif /* STUBS_IO_CONTEXT_HPP */

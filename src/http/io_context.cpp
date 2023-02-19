@@ -13,26 +13,16 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef HTTP_IO_SERVICE_HPP
-#define HTTP_IO_SERVICE_HPP
+#include <http/io_context.hpp>
 
-#include <boost/asio.hpp>
+using namespace webvirt;
 
-namespace webvirt::http
+std::size_t http::io_context::run()
 {
+    return boost::asio::io_context::run();
+}
 
-/**
- * A boost::asio::io_service wrapper
- **/
-class io_service : public boost::asio::io_service
+void http::io_context::stop()
 {
-public:
-    using boost::asio::io_service::io_service;
-    virtual ~io_service() = default;
-
-    virtual std::size_t run();
-};
-
-}; // namespace webvirt::http
-
-#endif /* HTTP_IO_SERVICE_HPP */
+    boost::asio::post(*this, std::bind(&boost::asio::io_context::stop, this));
+}

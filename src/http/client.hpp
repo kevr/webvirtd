@@ -17,7 +17,7 @@
 #define HTTP_CLIENT_HPP
 
 #include <http/handlers.hpp>
-#include <http/io_service.hpp>
+#include <http/io_context.hpp>
 #include <http/types.hpp>
 #include <util/util.hpp>
 
@@ -32,7 +32,7 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
 {
     std::string socket_path_;
 
-    io_service &io_;
+    io_context &io_;
     net::unix::socket socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
     beast::http::request<beast::http::string_body> request_;
@@ -48,7 +48,7 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
     handler<> on_close_;
 
 public:
-    explicit client(io_service &io, std::string socket_path,
+    explicit client(io_context &io, std::string socket_path,
                     std::string host = "localhost",
                     int version = webvirt::http::version::http_1_1)
         : socket_path_(std::move(socket_path))

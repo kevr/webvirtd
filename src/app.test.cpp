@@ -39,12 +39,12 @@ class app_test : public Test
 protected:
     std::filesystem::path tmpdir, socket_path;
 
-    http::io_service io_;
+    http::io_context io_;
     std::shared_ptr<webvirt::app> app_;
     std::thread server_thread;
 
     using client_t = http::client<net::unix>;
-    http::io_service client_io_;
+    http::io_context client_io_;
     std::shared_ptr<client_t> client;
 
     http::response response;

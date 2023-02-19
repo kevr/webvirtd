@@ -13,17 +13,17 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include <stubs/io_service.hpp>
+#include <stubs/io_context.hpp>
 
 using namespace webvirt;
 
-stubs::io_service::io_service(std::size_t iterations)
-    : http::io_service()
+stubs::io_context::io_context(std::size_t iterations)
+    : http::io_context()
 {
     this->iterations = iterations;
 }
 
-std::size_t stubs::io_service::run()
+std::size_t stubs::io_context::run()
 {
     return iterations;
 }

@@ -18,7 +18,7 @@
 
 #include <http/connection.hpp>
 #include <http/handlers.hpp>
-#include <http/io_service.hpp>
+#include <http/io_context.hpp>
 #include <util/logging.hpp>
 
 #include <boost/asio.hpp>
@@ -43,7 +43,7 @@ private:
     std::filesystem::path socket_path_;
 
     bool io_owned_ = true;
-    io_service *io_ = nullptr;
+    io_context *io_ = nullptr;
     typename protocol_t::acceptor acceptor_;
     typename protocol_t::socket socket_;
 
@@ -59,13 +59,13 @@ private:
 public:
     server(std::filesystem::path socket_path)
         : socket_path_(std::move(socket_path))
-        , io_(new io_service())
+        , io_(new io_context())
         , acceptor_(*io_, socket_path_.string())
         , socket_(*io_)
     {
     }
 
-    server(io_service &io, std::filesystem::path socket_path)
+    server(io_context &io, std::filesystem::path socket_path)
         : socket_path_(std::move(socket_path))
         , io_owned_(false)
         , io_(&io)
