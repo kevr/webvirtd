@@ -19,6 +19,12 @@
 
 using namespace webvirt;
 
+const std::vector<std::string> ARRAY_KEYS = {
+    "disk",    "controller", "interface",  "serial", "console",
+    "channel", "input",      "graphics",   "sound",  "audio",
+    "video",   "redirdev",   "memballoon", "rng"
+};
+
 Json::Value data::simple_domain(virt::domain &domain)
 {
     Json::Value output(Json::objectValue);
@@ -66,8 +72,7 @@ Json::Value data::domain(virt::domain &domain)
     }
 
     // Turn various JSON values into arrays
-    std::vector<std::string> keys = { "interface", "disk" };
-    for (const auto &key : keys) {
+    for (const auto &key : ARRAY_KEYS) {
         if (output["devices"].isMember(key) &&
             output["devices"][key].type() == Json::objectValue) {
             auto current = output["devices"][key];
