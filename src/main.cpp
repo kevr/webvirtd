@@ -17,6 +17,7 @@
 #include <http/connection.hpp>
 #include <http/io_context.hpp>
 #include <http/server.hpp>
+#include <state.hpp>
 #include <syscall.hpp>
 #include <util/config.hpp>
 #include <util/signal.hpp>
@@ -143,6 +144,6 @@ int main(int argc, const char *argv[])
 
     const auto socket_path = conf.get<std::string>("socket");
     config::change(conf);
-    http::io_context io;
-    return webvirt_main(io, socket_path);
+    auto &io_context = state::ref().io;
+    return webvirt_main(io_context, socket_path);
 }
