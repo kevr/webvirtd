@@ -119,7 +119,7 @@ public:
 
     std::size_t run()
     {
-        std::size_t count = io_.process();
+        std::size_t count = io_.run();
         close();
         return count;
     }

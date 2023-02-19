@@ -17,7 +17,7 @@
 
 using namespace webvirt;
 
-std::size_t http::io_service::process()
+std::size_t http::io_service::run()
 {
-    return this->run();
+    return boost::asio::io_service::run();
 }

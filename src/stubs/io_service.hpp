@@ -28,7 +28,7 @@ private:
 
 public:
     io_service(std::size_t iterations = 0);
-    std::size_t process() override;
+    std::size_t run() override;
 };
 
 }; // namespace webvirt::stubs

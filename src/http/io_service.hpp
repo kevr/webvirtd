@@ -30,7 +30,7 @@ public:
     using boost::asio::io_service::io_service;
     virtual ~io_service() = default;
 
-    virtual std::size_t process();
+    virtual std::size_t run();
 };
 
 }; // namespace webvirt::http

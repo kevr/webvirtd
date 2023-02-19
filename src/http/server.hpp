@@ -95,7 +95,7 @@ public:
     {
         logger::info(fmt::format("Listening on '{}'", socket_path_.c_str()));
         async_accept();
-        return io_->process();
+        return io_->run();
     }
 
     handler_setter(on_accept, on_accept_);

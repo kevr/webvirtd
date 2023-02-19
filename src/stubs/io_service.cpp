@@ -23,7 +23,7 @@ stubs::io_service::io_service(std::size_t iterations)
     this->iterations = iterations;
 }
 
-std::size_t stubs::io_service::process()
+std::size_t stubs::io_service::run()
 {
     return iterations;
 }

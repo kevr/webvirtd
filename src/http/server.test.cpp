@@ -221,7 +221,7 @@ TEST_F(server_test, deadline)
     });
     client_io.run_one();
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    client_io.process();
+    client_io.run();
 
     server_thread.join();
 }
