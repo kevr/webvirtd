@@ -142,7 +142,7 @@ private:
 
     void async_connect()
     {
-        io_.reset();
+        io_.restart();
         socket_.async_connect(socket_path_,
                               boost::beast::bind_front_handler(
                                   &client<protocol_t>::client_async_on_connect,
