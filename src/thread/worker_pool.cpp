@@ -29,6 +29,15 @@ void worker_pool::start(std::size_t num_threads)
         auto w = std::make_unique<worker>(*io_);
         workers_.emplace_back(std::move(w));
         workers_.back()->start();
-        logger::info(fmt::format("Thread {} launched", i + 1));
+        logger::debug(fmt::format("Thread {} launched", i + 1));
+    }
+}
+
+void worker_pool::join()
+{
+    std::size_t i = 1;
+    for (auto &worker : workers_) {
+        worker->join();
+        logger::debug(fmt::format("Thread {} stopped", i++));
     }
 }

@@ -25,6 +25,7 @@
 #include <version.hpp>
 
 #include <boost/program_options/errors.hpp>
+#include <csignal>
 #include <filesystem>
 #include <fmt/format.h>
 #include <functional>
@@ -117,6 +118,7 @@ int main(int argc, const char *argv[])
 
     // Bind process signals
     ::signal(SIGPIPE, webvirt::signal::pipe);
+    ::signal(SIGINT, webvirt::signal::int_);
 
     try {
         conf.parse(argc, argv);

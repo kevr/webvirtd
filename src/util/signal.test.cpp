@@ -43,3 +43,11 @@ TEST_F(signal_test, sigpipe)
     std::string output = testing::internal::GetCapturedStdout();
     EXPECT_NE(output.find("Caught SIGPIPE"), std::string::npos);
 }
+
+TEST_F(signal_test, sigint)
+{
+    testing::internal::CaptureStdout();
+    signal::int_(SIGINT);
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_NE(output.find("Caught SIGINT"), std::string::npos);
+}

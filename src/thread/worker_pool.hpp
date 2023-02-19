@@ -39,6 +39,7 @@ private:
 public:
     worker_pool(http::io_context &);
     void start(std::size_t);
+    void join();
 };
 
 }; // namespace webvirt::thread

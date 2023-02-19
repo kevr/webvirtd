@@ -13,11 +13,21 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include <state.hpp>
 #include <util/logging.hpp>
 #include <util/signal.hpp>
+
 using namespace webvirt;
 
 void signal::pipe(int)
 {
     logger::debug("Caught SIGPIPE");
+}
+
+void signal::int_(int)
+{
+    logger::info("Caught SIGINT");
+
+    auto &io_context = state::ref().io;
+    io_context.stop();
 }

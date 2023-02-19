@@ -20,7 +20,8 @@ namespace webvirt::signal
 {
 
 void pipe(int);
+void int_(int);
 
-};
+}; // namespace webvirt::signal
 
 #endif /* UTIL_SIGNAL_HPP */

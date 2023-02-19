@@ -82,6 +82,8 @@ public:
 
     ~server()
     {
+        pool_.join();
+
         if (io_owned_)
             delete io_;
     }
