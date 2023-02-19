@@ -34,7 +34,7 @@ private:
     http::router router_;
 
     http::io_context &io_;
-    http::server<net::unix> server_;
+    http::server server_;
 
     views::host host_view_;
     views::domains domains_view_;

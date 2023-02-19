@@ -31,13 +31,11 @@
 namespace webvirt::http
 {
 
-template <typename acceptor_t, typename socket_t>
-class connection
-    : public std::enable_shared_from_this<connection<acceptor_t, socket_t>>
+class connection : public std::enable_shared_from_this<connection>
 {
     http::io_context::strand strand_;
 
-    socket_t socket_;
+    net::unix::socket socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
 
     beast::http::request<beast::http::dynamic_body> request_;
@@ -45,14 +43,12 @@ class connection
 
     boost::asio::steady_timer deadline_;
 
-    using connection_t = connection<net::unix::acceptor, net::unix::socket>;
-    handler<connection_t &, const http::request &, http::response &>
-        on_request_;
+    handler<connection &, const http::request &, http::response &> on_request_;
     handler<const char *, beast::error_code> on_error_;
     handler<> on_close_;
 
 public:
-    explicit connection(http::io_context &io, socket_t socket,
+    explicit connection(http::io_context &io, net::unix::socket socket,
                         std::chrono::milliseconds ms)
         : strand_(io)
         , socket_(std::move(socket))

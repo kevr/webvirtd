@@ -38,7 +38,6 @@ using unix = boost::asio::local::stream_protocol;
 namespace webvirt::http
 {
 
-template <typename protocol_t>
 class server
 {
 private:
@@ -46,15 +45,13 @@ private:
 
     bool io_owned_ = true;
     io_context *io_ = nullptr;
-    typename protocol_t::acceptor acceptor_;
-    typename protocol_t::socket socket_;
+    net::unix::stream_protocol::acceptor acceptor_;
+    net::unix::socket socket_;
 
     std::chrono::milliseconds timeout_ = std::chrono::milliseconds(60 * 1000);
 
-    using connection_t = connection<net::unix::acceptor, net::unix::socket>;
-    handler<connection_t &> on_accept_;
-    handler<connection_t &, const http::request &, http::response &>
-        on_request_;
+    handler<connection &> on_accept_;
+    handler<connection &, const http::request &, http::response &> on_request_;
     handler<const char *, beast::error_code> on_error_;
     handler<> on_close_;
 
@@ -128,8 +125,7 @@ private:
             // a problem with the socket, operations will fails within
             // the connection immediately, which calls on_error_.
 
-            auto conn = std::make_shared<
-                connection<net::unix::acceptor, net::unix::socket>>(
+            auto conn = std::make_shared<connection>(
                 *io_, std::move(socket_), timeout_);
 
             on_accept_(*conn);
@@ -142,8 +138,6 @@ private:
         });
     }
 };
-
-using unix_server = server<net::unix>;
 
 }; // namespace webvirt::http
 
