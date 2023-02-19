@@ -76,6 +76,6 @@ run_target('filter-coverage',
     bash, filtered_lcov, build_dir,
     '**/src/libvirt.cpp',
     '**/src/stubs/libvirt.cpp',
-    '**/src/syscaller.cpp',
+    '**/src/syscall.cpp',
   ],
 )
