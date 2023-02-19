@@ -35,6 +35,8 @@ template <typename acceptor_t, typename socket_t>
 class connection
     : public std::enable_shared_from_this<connection<acceptor_t, socket_t>>
 {
+    http::io_service::strand strand_;
+
     socket_t socket_;
     boost::beast::flat_buffer buffer_ { 8192 };
 
@@ -50,8 +52,10 @@ class connection
     handler<> on_close_;
 
 public:
-    explicit connection(socket_t socket, std::chrono::milliseconds ms)
-        : socket_(std::move(socket))
+    explicit connection(http::io_service &io, socket_t socket,
+                        std::chrono::milliseconds ms)
+        : strand_(io)
+        , socket_(std::move(socket))
         , deadline_(socket_.get_executor(), ms)
     {
     }
@@ -77,19 +81,20 @@ private:
         auto self = this->shared_from_this();
 
         const std::string func = __func__;
-        beast::http::async_read(
-            socket_,
-            buffer_,
-            request_,
-            [self, func](beast::error_code ec, std::size_t bytes) {
-                boost::ignore_unused(bytes);
+        beast::http::async_read(socket_,
+                                buffer_,
+                                request_,
+                                strand_.wrap([self, func](beast::error_code ec,
+                                                          std::size_t bytes) {
+                                    boost::ignore_unused(bytes);
 
-                if (ec) {
-                    return self->on_error_(func.c_str(), ec);
-                }
+                                    if (ec) {
+                                        return self->on_error_(func.c_str(),
+                                                               ec);
+                                    }
 
-                self->process_request();
-            });
+                                    self->process_request();
+                                }));
     }
 
     void process_request()
@@ -132,7 +137,8 @@ private:
         beast::http::async_write(
             socket_,
             response_,
-            [self, func](boost::beast::error_code ec, std::size_t) {
+            strand_.wrap([self, func](boost::beast::error_code ec,
+                                      std::size_t) {
                 if (ec) {
                     return self->on_error_(func.c_str(), ec);
                 }
@@ -140,7 +146,7 @@ private:
                 self->socket_.shutdown(net::unix::socket::shutdown_send, ec);
                 self->deadline_.cancel();
                 self->on_close_();
-            });
+            }));
     }
 
     void check_deadline()
@@ -148,10 +154,11 @@ private:
         auto self = this->shared_from_this();
 
         const std::string func = __func__;
-        deadline_.async_wait([self, func](boost::beast::error_code ec) {
-            self->socket_.close(ec);
-            self->on_close_();
-        });
+        deadline_.async_wait(
+            strand_.wrap([self, func](boost::beast::error_code ec) {
+                self->socket_.close(ec);
+                self->on_close_();
+            }));
     }
 };
 

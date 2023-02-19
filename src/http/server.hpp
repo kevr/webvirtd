@@ -114,7 +114,8 @@ private:
 
             auto conn = std::make_shared<
                 connection<net::unix::acceptor, net::unix::socket>>(
-                std::move(socket_), timeout_);
+                *io_, std::move(socket_), timeout_);
+
             on_accept_(*conn);
             conn->on_error(on_error_);
             conn->on_close(on_close_);
