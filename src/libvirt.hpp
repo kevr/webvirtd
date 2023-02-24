@@ -92,6 +92,12 @@ public:
     // virNetwork
     virtual std::string virNetworkGetXMLDesc(network_ptr, unsigned int);
 
+    // virEvent
+    virtual int virEventRegisterDefaultImpl();
+    virtual int virEventAddTimeout(int, void (*)(int, void *), void *,
+                                   void (*)(void *));
+    virtual int virEventRunDefaultImpl();
+
     // virError
     virtual void virConnSetErrorFunc(connect_ptr, void *,
                                      webvirt::error_function);

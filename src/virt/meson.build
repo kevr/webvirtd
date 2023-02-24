@@ -15,6 +15,14 @@ if not get_option('disable_tests')
   )
   test('virt domain test', virt_domain_test)
 
+  virt_event_test = executable(
+    'event.test',
+    'event.test.cpp',
+    dependencies : test_deps,
+    cpp_args : flags + test_flags,
+  )
+  test('virt event test', virt_event_test)
+
   virt_util_test = executable(
     'util.test',
     'util.test.cpp',

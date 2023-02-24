@@ -41,10 +41,17 @@ private:
 
     virt::connection_pool pool_;
 
+    std::atomic<bool> event_loop_ { true };
+    std::atomic<bool> event_error_ { false };
+    std::condition_variable event_cv_;
+    std::mutex event_mutex_;
+    std::thread event_thread_;
+
 public:
     app(http::io_context &io, const std::filesystem::path &socket_path);
-    std::size_t run();
+    ~app();
 
+    std::size_t run();
     virt::connection_pool &pool();
 
 private:
@@ -82,8 +89,11 @@ private:
     }
 
 private:
-    void append_trailing_slash(const std::smatch &, const http::request &,
-                               http::response &);
+    void event_loop();
+
+private:
+    void append_trailing_slash(http::connection_ptr, const std::smatch &,
+                               const http::request &, http::response &);
 };
 
 }; // namespace webvirt

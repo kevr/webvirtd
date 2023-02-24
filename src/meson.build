@@ -23,6 +23,7 @@ sources = [
   'views/host.cpp',
   'data/domain.cpp',
   'data/host.cpp',
+  'virt/event.cpp',
   'virt/network.cpp',
   'virt/domain.cpp',
   'virt/connection_pool.cpp',

@@ -13,8 +13,10 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include "util/logging.hpp"
 #include <app.hpp>
 #include <http/middleware.hpp>
+#include <virt/event.hpp>
 
 #include <pugixml.hpp>
 
@@ -96,8 +98,26 @@ app::app(http::io_context &io, const std::filesystem::path &socket_path)
     });
 }
 
+app::~app()
+{
+    event_loop_ = false;
+    if (event_thread_.joinable()) {
+        event_thread_.join();
+    }
+}
+
 std::size_t app::run()
 {
+    event_thread_ = std::thread(std::bind(&app::event_loop, this));
+
+    std::unique_lock<std::mutex> guard(event_mutex_);
+    event_cv_.wait(guard);
+
+    if (event_error_) {
+        logger::error("Event loop encountered an error during registration");
+        return 0;
+    }
+
     return server_.run();
 }
 
@@ -106,7 +126,31 @@ virt::connection_pool &app::pool()
     return pool_;
 }
 
-void app::append_trailing_slash(const std::smatch &location,
+void app::event_loop()
+{
+    if (virt::event::register_impl() == -1) {
+        event_error_ = true;
+    }
+    logger::info("Registered default libvirt event implementation");
+
+    logger::info("Event loop started");
+
+    event_cv_.notify_one();
+    if (event_error_) {
+        return;
+    }
+
+    while (event_loop_) {
+        // Run a single event loop iteration. Errors are logged
+        // via libvirt's on error handler.
+        virt::event::run_one();
+    }
+
+    logger::info("Event loop stopped");
+}
+
+void app::append_trailing_slash(http::connection_ptr,
+                                const std::smatch &location,
                                 const http::request &,
                                 http::response &response)
 {

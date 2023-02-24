@@ -222,6 +222,7 @@ int libvirt::virDomainShutdown(domain_ptr domain)
     return ::virDomainShutdown(domain.get());
 }
 
+/* virNetwork definitions */
 std::string libvirt::virNetworkGetXMLDesc(network_ptr network,
                                           unsigned int flags)
 {
@@ -231,6 +232,24 @@ std::string libvirt::virNetworkGetXMLDesc(network_ptr network,
     return s;
 }
 
+/* virEvent definitions */
+int libvirt::virEventRegisterDefaultImpl()
+{
+    return ::virEventRegisterDefaultImpl();
+}
+
+int libvirt::virEventAddTimeout(int ms, void (*cb)(int, void *), void *data,
+                                void (*free_data)(void *))
+{
+    return ::virEventAddTimeout(ms, cb, data, free_data);
+}
+
+int libvirt::virEventRunDefaultImpl()
+{
+    return ::virEventRunDefaultImpl();
+}
+
+/* virError definitions */
 void libvirt::virConnSetErrorFunc(connect_ptr conn, void *data,
                                   error_function fn)
 {

@@ -15,8 +15,10 @@
  */
 #include <stubs/libvirt.hpp>
 
+#include <chrono>
 #include <cstring>
 #include <string>
+#include <thread>
 
 using namespace webvirt;
 
@@ -188,6 +190,22 @@ char *virNetworkGetXMLDesc(webvirt::network *, unsigned int)
 int virNetworkFree(network *ptr)
 {
     delete ptr;
+    return 0;
+}
+
+int virEventRegisterDefaultImpl()
+{
+    return 0;
+}
+
+int virEventAddTimeout(int, void (*)(int, void *), void *, void (*)(void *))
+{
+    return 0;
+}
+
+int virEventRunDefaultImpl()
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     return 0;
 }
 

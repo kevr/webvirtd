@@ -71,6 +71,8 @@ public:
 
     MOCK_METHOD(std::string, virNetworkGetXMLDesc,
                 (network_ptr, unsigned int));
+
+    MOCK_METHOD(int, virEventRegisterDefaultImpl, ());
 };
 
 }; // namespace webvirt::mocks
