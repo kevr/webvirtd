@@ -32,13 +32,11 @@ class server_test : public Test
 protected:
     static std::filesystem::path tmpdir, socket_path;
 
-    using server_t = http::server<webvirt::net::unix>;
     http::io_context io;
-    std::shared_ptr<server_t> server;
+    std::shared_ptr<http::server> server;
 
-    using client_t = http::client<webvirt::net::unix>;
     http::io_context client_io;
-    std::shared_ptr<client_t> client;
+    std::shared_ptr<http::client> client;
 
     config conf;
 
@@ -57,9 +55,9 @@ public:
         setup_config();
         config::change(conf);
 
-        server = std::make_shared<webvirt::http::server<webvirt::net::unix>>(
-            io, socket_path);
-        client = std::make_shared<client_t>(client_io, socket_path.string());
+        server = std::make_shared<webvirt::http::server>(io, socket_path);
+        client =
+            std::make_shared<http::client>(client_io, socket_path.string());
     }
 
     void TearDown() override
@@ -92,7 +90,7 @@ std::filesystem::path server_test::tmpdir, server_test::socket_path;
 TEST_F(server_test, standalone_io)
 {
     auto standalone_socket_path = tmpdir / "standalone.sock";
-    server_t standalone_server(standalone_socket_path.string());
+    http::server standalone_server(standalone_socket_path.string());
 }
 
 TEST_F(server_test, runs_with_defaults)
@@ -176,8 +174,8 @@ TEST_F(server_test, client_connect_error)
         server->on_error([&](const char *, boost::beast::error_code) {
             io.stop();
         });
-        server->on_accept([&](auto &conn) {
-            conn.close();
+        server->on_accept([](auto conn) {
+            conn->close();
         });
         server->run();
     });
@@ -210,8 +208,8 @@ TEST_F(server_test, write_error)
         server->on_error([this](const char *, boost::beast::error_code) {
             io.stop();
         });
-        server->on_request([&](auto &conn, const auto &, auto &) {
-            conn.close();
+        server->on_request([&](auto conn, const auto &, auto &) {
+            conn->close();
         });
         server->run();
     });

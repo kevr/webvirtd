@@ -13,12 +13,14 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include "http/handlers.hpp"
 #include <app.hpp>
 #include <http/client.hpp>
 #include <mocks/libvirt.hpp>
 #include <util/config.hpp>
 #include <util/retry.hpp>
 #include <util/util.hpp>
+#include <ws/client.hpp>
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
@@ -34,26 +36,47 @@ using testing::Invoke;
 using testing::Return;
 using testing::Test;
 
-class app_test : public Test
+class tmpdir_test : public Test
 {
 protected:
     std::filesystem::path tmpdir, socket_path;
-
-    http::io_context io_;
-    std::shared_ptr<webvirt::app> app_;
-    std::thread server_thread;
-
-    using client_t = http::client<net::unix>;
-    http::io_context client_io_;
-    std::shared_ptr<client_t> client;
-
-    http::response response;
+    uid_t uid;
+    std::string username;
 
 public:
     void SetUp() override
     {
         tmpdir = socket_path = webvirt::make_tmpdir();
         socket_path /= "socket.sock";
+
+        auto &sys = syscall::ref();
+        uid = sys.getuid();
+        auto *passwd = sys.getpwuid(uid);
+        username = passwd->pw_name;
+    }
+
+    void TearDown() override
+    {
+        syscall::ref().fs_remove_all(tmpdir);
+    }
+};
+
+class app_test : public tmpdir_test
+{
+protected:
+    http::io_context io_;
+    std::shared_ptr<webvirt::app> app_;
+    std::thread server_thread;
+
+    http::io_context client_io_;
+    std::shared_ptr<http::client> client;
+
+    http::response response;
+
+public:
+    void SetUp() override
+    {
+        tmpdir_test::SetUp();
 
         auto &conf = config::ref();
         conf.add_option("threads",
@@ -66,7 +89,7 @@ public:
         conf.parse(1, argv);
 
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
-        client = std::make_shared<client_t>(client_io_, socket_path);
+        client = std::make_shared<http::client>(client_io_, socket_path);
 
         client->on_response([this](const auto &response_) {
             response = response_;
@@ -81,6 +104,7 @@ public:
     void TearDown() override
     {
         server_thread.join();
+        tmpdir_test::TearDown();
     }
 };
 
@@ -89,9 +113,6 @@ class mock_app_test : public app_test
 protected:
     connect_ptr conn;
     mocks::libvirt lv;
-
-    uid_t uid;
-    std::string username;
 
     // libvirt control
     bool libvirt_closed = false;
@@ -105,11 +126,6 @@ public:
         libvirt::change(lv);
 
         conn = std::make_shared<webvirt::connect>();
-
-        auto &sys = syscall::ref();
-        uid = sys.getuid();
-        auto *passwd = sys.getpwuid(uid);
-        username = passwd->pw_name;
 
         auto &conf = config::ref();
         conf.add_option("libvirt-shutdown-timeout",
@@ -148,6 +164,61 @@ public:
         libvirt::reset();
     }
 };
+
+class websocket_test : public tmpdir_test
+{
+protected:
+    http::io_context io_;
+    std::shared_ptr<webvirt::app> app_;
+    std::thread server_thread;
+
+    http::io_context client_io_;
+    std::shared_ptr<websocket::client> client;
+
+public:
+    void SetUp() override
+    {
+        tmpdir_test::SetUp();
+        logger::enable_debug(true);
+        app_ = std::make_shared<webvirt::app>(io_, socket_path);
+        app_->server().on_close([this] {
+            io_.stop();
+        });
+        server_thread = std::thread([this] {
+            app_->run();
+        });
+        client = std::make_shared<websocket::client>(client_io_,
+                                                     socket_path.c_str());
+    }
+
+    void TearDown() override
+    {
+        server_thread.join();
+        logger::reset_debug();
+        tmpdir_test::TearDown();
+    }
+};
+
+TEST_F(tmpdir_test, event_registration_fails)
+{
+    testing::internal::CaptureStderr();
+
+    mocks::libvirt lv;
+    libvirt::change(lv);
+
+    EXPECT_CALL(lv, virEventRegisterDefaultImpl()).WillOnce(Return(-1));
+
+    http::io_context io;
+    auto app = std::make_shared<webvirt::app>(io, socket_path);
+    app->run();
+
+    libvirt::reset();
+
+    auto output = testing::internal::GetCapturedStderr();
+    EXPECT_NE(
+        output.find("Event loop encountered an error during registration"),
+        std::string::npos);
+}
 
 TEST_F(app_test, method_not_allowed)
 {
@@ -245,7 +316,7 @@ TEST_F(mock_app_test, persistent_virt_connection)
     EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(4);
     EXPECT_CALL(lv, virDomainGetXMLDesc(_, _)).Times(2);
 
-    client->on_response([this](const auto &response_) {
+    client->on_response_override([this](const auto &response_) {
         response = response_;
     });
 
@@ -255,6 +326,7 @@ TEST_F(mock_app_test, persistent_virt_connection)
     client->async_get(endpoint.c_str()).run();
     EXPECT_EQ(response.result(), beast::http::status::ok);
 
+    // Doesn't do anything past here
     auto &connection = app_->pool().get(username);
     EXPECT_THROW(libvirt_close(nullptr, 0, &connection.closed()),
                  webvirt::retry_error);
@@ -263,7 +335,7 @@ TEST_F(mock_app_test, persistent_virt_connection)
     EXPECT_NO_THROW(libvirt_free(nullptr));
 
     client->close();
-    client->on_response([this](const auto &response_) {
+    client->on_response_override([this](const auto &response_) {
         response = response_;
         io_.stop();
     });
@@ -275,4 +347,108 @@ TEST_F(mock_app_test, persistent_virt_connection)
 
     std::string output = testing::internal::GetCapturedStdout();
     EXPECT_NE(output.find("Reconnected to libvirt"), std::string::npos);
+}
+
+TEST_F(websocket_test, websocket)
+{
+    std::string message("test");
+    client->on_handshake([&](auto c, auto response) {
+        std::stringstream ss;
+        ss << response;
+        logger::info(
+            fmt::format("Handshake:\n{}-- End of handshake --", ss.str()));
+
+        c->async_write(message);
+    });
+    client->on_write([](auto c) {
+        c->close();
+    });
+
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
+    client->async_connect(endpoint);
+    client_io_.run();
+}
+
+TEST_F(websocket_test, error_on_read)
+{
+    app_->server().on_error([this](const char *, beast::error_code) {
+        io_.stop();
+    });
+    app_->server().on_handshake([this](websocket::connection_ptr) {
+        client->shutdown(net::unix::socket::shutdown_both);
+    });
+
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
+    client->async_connect(endpoint);
+    client_io_.run();
+}
+
+TEST_F(websocket_test, error_on_accept)
+{
+    app_->server().on_error([this](const char *, beast::error_code) {
+        io_.stop();
+    });
+    app_->server().on_websock_accept([](auto websock) {
+        logger::info("on_websock_accept");
+        websock->shutdown(net::unix::socket::shutdown_both);
+    });
+
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
+    client->on_error([this](const char *, beast::error_code) {
+        client_io_.stop();
+    });
+    client->async_connect(endpoint);
+    client_io_.run();
+}
+
+TEST_F(websocket_test, connection_write)
+{
+    app_->server().on_handshake([](websocket::connection_ptr conn) {
+        conn->write("test");
+    });
+
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
+    std::string message;
+    client->on_read([&message](auto client, const auto &str) {
+        message = str;
+        client->close();
+    });
+    client->async_connect(endpoint);
+    client_io_.run();
+
+    EXPECT_EQ(message, "test");
+}
+
+TEST_F(websocket_test, error_on_write)
+{
+    app_->server().on_handshake([](auto ws) {
+        ws->shutdown(net::unix::socket::shutdown_send);
+        ws->write("test");
+    });
+
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
+    client->on_error([this](const char *, beast::error_code) {
+        client_io_.stop();
+    });
+    client->async_connect(endpoint);
+    client_io_.run();
+
+    app_->server().on_error([this](const char *, auto) {
+        io_.stop();
+    });
+    app_->server().on_handshake_override(
+        http::noop<websocket::connection_ptr>());
+
+    client = std::make_shared<websocket::client>(client_io_, socket_path);
+    client->on_error([this](const char *, beast::error_code) {
+        client_io_.stop();
+    });
+    client->on_handshake([](auto ws, auto) {
+        ws->shutdown(net::unix::socket::shutdown_send);
+        ws->async_write("test");
+    });
+
+    client_io_.restart();
+    client->async_connect(endpoint);
+    client_io_.run();
 }
