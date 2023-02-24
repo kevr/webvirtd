@@ -19,6 +19,7 @@
 #include <http/handlers.hpp>
 #include <http/io_context.hpp>
 #include <http/types.hpp>
+#include <util/logging.hpp>
 #include <util/util.hpp>
 
 #include <boost/beast.hpp>
@@ -27,9 +28,9 @@
 namespace webvirt::http
 {
 
-template <typename protocol_t>
-class client : public std::enable_shared_from_this<client<protocol_t>>
+class client : public std::enable_shared_from_this<client>
 {
+protected:
     std::string socket_path_;
 
     io_context &io_;
@@ -41,8 +42,7 @@ class client : public std::enable_shared_from_this<client<protocol_t>>
     std::string host_;
     int version_;
 
-    using client_t = client<protocol_t>;
-    handler<client_t &> on_connect_;
+    handler<client &> on_connect_;
     handler<const http::response &> on_response_;
     handler<const char *, beast::error_code> on_error_;
     handler<> on_close_;
@@ -143,10 +143,10 @@ private:
     void async_connect()
     {
         io_.restart();
-        socket_.async_connect(socket_path_,
-                              boost::beast::bind_front_handler(
-                                  &client<protocol_t>::client_async_on_connect,
-                                  this->shared_from_this()));
+        socket_.async_connect(
+            socket_path_,
+            boost::beast::bind_front_handler(&client::client_async_on_connect,
+                                             this->shared_from_this()));
     }
 
     void client_async_on_connect(boost::beast::error_code ec)
@@ -159,29 +159,30 @@ private:
         beast::http::async_write(
             socket_,
             request_,
-            boost::beast::bind_front_handler(
-                &client<protocol_t>::client_async_on_write,
-                this->shared_from_this()));
+            boost::beast::bind_front_handler(&client::client_async_on_write,
+                                             this->shared_from_this()));
     }
 
     void client_async_on_write(boost::beast::error_code ec, std::size_t bytes)
     {
         boost::ignore_unused(bytes);
+
         if (ec) {
             return on_error_(__func__, ec);
         }
 
-        beast::http::async_read(socket_,
-                                buffer_,
-                                response_,
-                                boost::beast::bind_front_handler(
-                                    &client<protocol_t>::client_async_on_read,
-                                    this->shared_from_this()));
+        beast::http::async_read(
+            socket_,
+            buffer_,
+            response_,
+            boost::beast::bind_front_handler(&client::client_async_on_read,
+                                             this->shared_from_this()));
     }
 
     void client_async_on_read(boost::beast::error_code ec, std::size_t bytes)
     {
         boost::ignore_unused(bytes);
+
         if (ec) {
             return on_error_(__func__, ec);
         }
@@ -191,8 +192,6 @@ private:
         on_close_();
     }
 };
-
-using unix_client = client<net::unix>;
 
 }; // namespace webvirt::http
 

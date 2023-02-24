@@ -25,14 +25,21 @@ using namespace webvirt;
 using http::middleware::with_libvirt;
 using http::middleware::with_libvirt_domain;
 using http::middleware::with_methods;
+using http::middleware::with_user;
 
 app::app(http::io_context &io, const std::filesystem::path &socket_path)
     : io_(io)
     , server_(io_, socket_path.string())
 {
-    router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash));
+    // General routes
+    router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash, this));
 
-    // Host-bound routes
+    // Websocket routes
+    router_.route(R"(^/users/([^/]+)/websocket/)",
+                  with_methods({ beast::http::verb::get },
+                               with_user(bind(&app::websocket, this))));
+
+    // Host routes
     router_.route(R"(^/users/([^/]+)/host/)",
                   with_methods({ beast::http::verb::get },
                                with_libvirt(pool_,
@@ -45,7 +52,7 @@ app::app(http::io_context &io, const std::filesystem::path &socket_path)
             with_libvirt(pool_,
                          bind_libvirt(&views::host::networks, &host_view_))));
 
-    // Domain-bound routes
+    // Domain routes
     router_.route(
         R"(^/users/([^/]+)/domains/$)",
         with_methods(
@@ -128,6 +135,11 @@ virt::connection_pool &app::pool()
     return pool_;
 }
 
+http::server &app::server()
+{
+    return server_;
+}
+
 void app::event_loop()
 {
     if (virt::event::register_impl() == -1) {
@@ -160,4 +172,18 @@ void app::append_trailing_slash(http::connection_ptr,
     uri.push_back('/');
     response.set(beast::http::field::location, uri);
     response.result(beast::http::status::temporary_redirect);
+}
+
+void app::websocket(http::connection_ptr http_conn,
+                    const std::smatch &location, const http::request &,
+                    http::response &)
+{
+    const std::string user(location[1]);
+
+    websocket::connection_ptr ws_conn = http_conn->upgrade();
+    ws_conn->on_close([this, user, ws_conn] {
+        // On closure, remove the ptr from websockets_
+        websockets_.remove(user, ws_conn);
+    });
+    websockets_.add(user, std::move(ws_conn));
 }

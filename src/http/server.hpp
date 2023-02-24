@@ -50,8 +50,12 @@ private:
 
     std::chrono::milliseconds timeout_ = std::chrono::milliseconds(60 * 1000);
 
-    handler<connection &> on_accept_;
-    handler<connection &, const http::request &, http::response &> on_request_;
+    handler<http::connection_ptr> on_accept_;
+    handler<http::connection_ptr, const http::request &, http::response &>
+        on_request_;
+    handler<websocket::connection_ptr> on_websock_accept_;
+    handler<websocket::connection_ptr> on_handshake_;
+    handler<websocket::connection_ptr, const std::string &> on_websock_read_;
     handler<const char *, beast::error_code> on_error_;
     handler<> on_close_;
 
@@ -113,6 +117,9 @@ public:
 
     handler_setter(on_accept, on_accept_);
     handler_setter(on_request, on_request_);
+    handler_setter(on_websock_accept, on_websock_accept_);
+    handler_setter(on_handshake, on_handshake_);
+    handler_setter(on_websock_read, on_websock_read_);
     handler_setter(on_error, on_error_);
     handler_setter(on_close, on_close_);
 
@@ -124,14 +131,17 @@ private:
             // job fall through to the connection we make. If there's
             // a problem with the socket, operations will fails within
             // the connection immediately, which calls on_error_.
-
             auto conn = std::make_shared<connection>(
                 *io_, std::move(socket_), timeout_);
 
-            on_accept_(*conn);
+            on_accept_(conn);
+            conn->on_accept(on_accept_);
+            conn->on_request(on_request_);
+            conn->on_websock_accept(on_websock_accept_);
+            conn->on_handshake(on_handshake_);
+            conn->on_websock_read(on_websock_read_);
             conn->on_error(on_error_);
             conn->on_close(on_close_);
-            conn->on_request(on_request_);
             conn->start();
 
             async_accept();

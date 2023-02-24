@@ -22,8 +22,13 @@
 #include <views/domains.hpp>
 #include <views/host.hpp>
 #include <virt/connection_pool.hpp>
+#include <ws/connection.hpp>
+#include <ws/pool.hpp>
 
+#include <atomic>
+#include <map>
 #include <regex>
+#include <vector>
 
 namespace webvirt
 {
@@ -41,6 +46,8 @@ private:
 
     virt::connection_pool pool_;
 
+    websocket::pool websockets_;
+
     std::atomic<bool> event_loop_ { true };
     std::atomic<bool> event_error_ { false };
     std::condition_variable event_cv_;
@@ -53,6 +60,7 @@ public:
 
     std::size_t run();
     virt::connection_pool &pool();
+    http::server &server();
 
 private:
     template <typename Func, typename Pointer>
@@ -82,6 +90,8 @@ private:
 private:
     void append_trailing_slash(http::connection_ptr, const std::smatch &,
                                const http::request &, http::response &);
+    void websocket(http::connection_ptr, const std::smatch &,
+                   const http::request &, http::response &);
 };
 
 }; // namespace webvirt

@@ -29,6 +29,8 @@ sources = [
   'virt/connection_pool.cpp',
   'virt/connection.cpp',
   'virt/util.cpp',
+  'ws/pool.cpp',
+  'ws/connection.cpp',
   'http/router.cpp',
   'http/middleware.cpp',
   'http/io_context.cpp',
