@@ -26,13 +26,27 @@
 namespace webvirt::websocket
 {
 
+/** A thread-safe webvirt::websocket::connection_ptr container */
 class pool
 {
     std::mutex mutex_;
     std::map<std::string, std::list<connection_ptr>> map_;
 
 public:
+    /** Add a connection to a user's bucket
+     *
+     * @param user Key to connection bucket
+     * @param conn webvirt::websocket::connection_ptr to add
+     * @returns Reference to this
+     **/
     pool &add(const std::string &, connection_ptr);
+
+    /** Remove a connection from a user's bucket
+     *
+     * @param user Key to connection bucket
+     * @param conn webvirt::websocket::connection_ptr to remove
+     * @returns Reference to this
+     **/
     pool &remove(const std::string &, connection_ptr);
 };
 

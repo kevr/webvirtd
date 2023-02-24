@@ -28,6 +28,7 @@
 namespace webvirt::websocket
 {
 
+/** A websocket client used for testing purposes */
 class client : public std::enable_shared_from_this<client>
 {
     http::io_context::strand strand_;
@@ -45,6 +46,7 @@ class client : public std::enable_shared_from_this<client>
     http::handler<const char *, beast::error_code> on_error_;
 
 public:
+    /** Construct a client */
     client(http::io_context &io, std::filesystem::path socket_path)
         : strand_(io)
         , socket_path_(std::move(socket_path))
@@ -53,6 +55,11 @@ public:
     {
     }
 
+    /** Begin async connection to `request_uri`
+     *
+     * @param request_uri HTTP request URI to websocket endpoint
+     * @returns Reference to this client
+     **/
     client &async_connect(const std::string &request_uri)
     {
         using namespace std::placeholders;
@@ -65,6 +72,11 @@ public:
         return *this;
     }
 
+    /** Begin an async write of `data`
+     *
+     * @param data Text data to write to the websocket
+     * @returns Reference to this client
+     **/
     client &async_write(const std::string &data)
     {
         using namespace std::placeholders;
@@ -75,6 +87,7 @@ public:
         return *this;
     }
 
+    /** Close the client websocket */
     void close()
     {
         // Since a closure may happen at any point, async_close is called
@@ -90,11 +103,19 @@ public:
         });
     }
 
+    /** Shutdown the underlying socket
+     *
+     * @param type webvirt::net::unix::socket::shutdown_type
+     **/
     void shutdown(net::unix::socket::shutdown_type type)
     {
         beast::get_lowest_layer(*ws_).shutdown(type);
     }
 
+    /** Run the client strand's io_context
+     *
+     * @return Number of handlers processed
+     **/
     std::size_t run()
     {
         return strand_.context().run();

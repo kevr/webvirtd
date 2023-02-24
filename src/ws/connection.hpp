@@ -26,14 +26,22 @@
 namespace webvirt::websocket
 {
 
+/** A websocket connection
+ *
+ * This class derives itself from an external socket that has already
+ * established a connection with an endpoint, as well as an http::request
+ * retrieved using boost::beast::http.
+ *
+ * The passed http::request should contain client websocket handshake data.
+ **/
 class connection : public std::enable_shared_from_this<connection>
 {
 private:
-    http::request request_;
-
     http::io_context::strand strand_;
     beast::websocket::stream<net::unix::socket> ws_;
     beast::flat_buffer buffer_;
+
+    http::request request_;
 
     http::handler<std::shared_ptr<connection>> on_accept_;
     http::handler<std::shared_ptr<connection>> on_handshake_;
@@ -42,14 +50,32 @@ private:
     http::handler<> on_close_;
 
 public:
-    static constexpr const char *const MAGIC =
-        "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-
-public:
+    /** Construct a connection
+     *
+     * @param io webvirt::http::io_context reference
+     * @param sock webvirt::net::unix::socket rvalue
+     * @param request webvirt::http::request
+     **/
     explicit connection(boost::asio::io_context &, net::unix::socket &&,
                         http::request request);
+
+    /** Run the connection
+     *
+     * Dispatches a call to async_run to the io_context.
+     **/
     void run();
+
+    /** Write a text string to the websocket
+     *
+     * Calls beast::websocket::async_write using private
+     * async_write as a handler.
+     **/
     void write(const std::string &);
+
+    /** Shutdown the underlying socket
+     *
+     * @param type webvirt::net::unix::socket::shutdown_type
+     **/
     void shutdown(net::unix::socket::shutdown_type);
 
     handler_setter(on_accept, on_accept_);
