@@ -18,6 +18,8 @@
 
 #include <http/types.hpp>
 
+#include <vector>
+
 namespace webvirt::http
 {
 
@@ -29,29 +31,72 @@ std::function<void(args...)> noop()
 }
 
 template <typename... args>
-class handler : public std::function<void(args...)>
+class handler
 {
 public:
-    using std::function<void(args...)>::function;
     using type = std::function<void(args...)>;
 
+private:
+    std::vector<type> functions_;
+
+public:
     handler()
-        : type(noop<args...>())
+    {
+        functions_.emplace_back(noop<args...>());
+    }
+
+    handler(const handler &o)
+        : functions_(o.functions_)
     {
     }
 
-    handler(type f)
-        : type(f)
+    handler &operator=(const handler &o)
     {
+        functions_ = o.functions_;
+        return *this;
+    }
+
+    void add(type f)
+    {
+        functions_.emplace_back(f);
+    }
+
+    void clear()
+    {
+        functions_.clear();
+    }
+
+    std::vector<type> &functions()
+    {
+        return functions_;
+    }
+
+    void operator()(args... args_)
+    {
+        for (int i = functions_.size() - 1; i >= 0; --i) {
+            auto fn = functions_[i];
+            fn(std::forward<args>(args_)...);
+        }
     }
 };
 
 }; // namespace webvirt::http
 
 #define handler_setter(handler, member)                                       \
-    void handler(decltype(member) fn)                                         \
+    void handler(typename decltype(member)::type fn)                          \
     {                                                                         \
-        member = fn;                                                          \
+        member.add(fn);                                                       \
+    }                                                                         \
+                                                                              \
+    void handler(decltype(member) handler_)                                   \
+    {                                                                         \
+        member = handler_;                                                    \
+    }                                                                         \
+                                                                              \
+    void handler##_override(typename decltype(member)::type fn)               \
+    {                                                                         \
+        member.clear();                                                       \
+        member.add(fn);                                                       \
     }
 
 #endif /* HTTP_HANDLERS_HPP */

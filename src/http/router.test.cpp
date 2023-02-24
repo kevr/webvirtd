@@ -30,18 +30,28 @@ using testing::Test;
 class router_test : public Test
 {
 protected:
-    static void noop(const std::smatch &, const http::request &,
-                     http::response &)
+    static void noop(http::connection_ptr, const std::smatch &,
+                     const http::request &, http::response &)
     {
     }
 
     http::router router_;
+
+    http::io_context io_;
+    http::connection_ptr conn_;
+
+public:
+    void SetUp() override
+    {
+        conn_ = std::make_shared<http::connection>(
+            io_, net::unix::socket { io_ }, std::chrono::milliseconds(50));
+    }
 };
 
 TEST_F(router_test, noop)
 {
     http::response response;
-    noop(std::smatch(), http::request(), response);
+    noop(conn_, std::smatch(), http::request(), response);
 }
 
 TEST_F(router_test, with_user_invalid_user)
@@ -57,7 +67,7 @@ TEST_F(router_test, with_user_invalid_user)
     request.target("test");
 
     http::response response;
-    router_.run(request, response);
+    router_.run(conn_, request, response);
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
@@ -83,7 +93,7 @@ TEST_F(router_test, with_user_unknown_user)
     syscall::change(sys);
 
     http::response response;
-    router_.run(request, response);
+    router_.run(conn_, request, response);
 
     EXPECT_EQ(response.result_int(),
               static_cast<int>(beast::http::status::not_found));
@@ -93,14 +103,14 @@ TEST_F(router_test, with_user_unknown_user)
 
 TEST_F(router_test, retry_until_fatal)
 {
-    router_.route(R"(^/retry/$)", [](auto &, const auto &, auto &) {
+    router_.route(R"(^/retry/$)", [](auto, auto &, const auto &, auto &) {
         throw webvirt::retry_error("Retry!");
     });
 
     http::request request;
     request.target("/retry/");
     http::response response;
-    router_.run(request, response);
+    router_.run(conn_, request, response);
 
     EXPECT_EQ(response.result(), beast::http::status::internal_server_error);
 }

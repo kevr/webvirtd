@@ -24,8 +24,9 @@
 using namespace webvirt::views;
 using namespace std::string_literals;
 
-void domains::index(virt::connection &conn, const std::smatch &,
-                    const http::request &, http::response &response)
+void domains::index(virt::connection &conn, http::connection_ptr,
+                    const std::smatch &, const http::request &,
+                    http::response &response)
 {
     auto domains = conn.domains();
 
@@ -38,16 +39,16 @@ void domains::index(virt::connection &conn, const std::smatch &,
 }
 
 void domains::show(virt::connection &, virt::domain domain,
-                   const std::smatch &, const http::request &,
-                   http::response &response)
+                   http::connection_ptr, const std::smatch &,
+                   const http::request &, http::response &response)
 {
     return http::set_response(
         response, data::domain(domain), beast::http::status::ok);
 }
 
 void domains::autostart(virt::connection &, virt::domain domain,
-                        const std::smatch &, const http::request &request,
-                        http::response &response)
+                        http::connection_ptr, const std::smatch &,
+                        const http::request &request, http::response &response)
 {
     bool enabled = request.method() == beast::http::verb::post;
     domain.autostart(enabled);
@@ -59,8 +60,8 @@ void domains::autostart(virt::connection &, virt::domain domain,
 }
 
 void domains::bootmenu(virt::connection &conn, virt::domain domain,
-                       const std::smatch &, const http::request &request,
-                       http::response &response)
+                       http::connection_ptr, const std::smatch &,
+                       const http::request &request, http::response &response)
 {
     auto doc = domain.xml_document();
     auto os = doc.child("domain").child("os");
@@ -86,8 +87,8 @@ void domains::bootmenu(virt::connection &conn, virt::domain domain,
 }
 
 void domains::metadata(virt::connection &, virt::domain domain,
-                       const std::smatch &, const http::request &request,
-                       http::response &response)
+                       http::connection_ptr, const std::smatch &,
+                       const http::request &request, http::response &response)
 {
     Json::Value data(Json::objectValue);
     try {
@@ -130,8 +131,8 @@ void domains::metadata(virt::connection &, virt::domain domain,
 }
 
 void domains::start(virt::connection &, virt::domain domain,
-                    const std::smatch &, const http::request &,
-                    http::response &response)
+                    http::connection_ptr, const std::smatch &,
+                    const http::request &, http::response &response)
 {
     if (!domain.start()) {
         return http::set_response(response,
@@ -144,8 +145,8 @@ void domains::start(virt::connection &, virt::domain domain,
 }
 
 void domains::shutdown(virt::connection &, virt::domain domain,
-                       const std::smatch &, const http::request &,
-                       http::response &response)
+                       http::connection_ptr, const std::smatch &,
+                       const http::request &, http::response &response)
 {
     bool ok = false;
     try {

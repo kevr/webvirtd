@@ -33,6 +33,10 @@ protected:
     mocks::libvirt lv;
 
     virt::connection conn_;
+
+    http::io_context io_;
+    http::connection_ptr http_conn_;
+
     http::request request_;
     http::response response_;
 
@@ -42,7 +46,8 @@ public:
     void SetUp() override
     {
         libvirt::change(lv);
-
+        http_conn_ = std::make_shared<http::connection>(
+            io_, net::unix::socket { io_ }, std::chrono::milliseconds(10));
         request_.method(beast::http::verb::get);
     }
 
@@ -88,7 +93,7 @@ TEST_F(host_test, show)
     // Make a request as test user.
     std::string endpoint("/users/test/info/");
     auto location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
-    views_.show(conn_, location, request_, response_);
+    views_.show(conn_, http_conn_, location, request_, response_);
 
     auto data = json::parse(response_.body());
     EXPECT_EQ(data["hostname"].asString(), "test");
@@ -123,7 +128,7 @@ TEST_F(host_test, show_as_root)
 
     std::string endpoint("/users/root/info/");
     auto location = make_location(R"(^/users/([^/]+)/info/)", endpoint);
-    views_.show(conn_, location, request_, response_);
+    views_.show(conn_, http_conn_, location, request_, response_);
 
     auto data = json::parse(response_.body());
     EXPECT_EQ(data["hostname"].asString(), "test");
@@ -169,7 +174,7 @@ TEST_F(host_test, networks)
 
     std::string endpoint("/users/test/networks/");
     auto location = make_location(R"(^/users/([^/]+)/networks/)", endpoint);
-    views_.networks(conn_, location, request_, response_);
+    views_.networks(conn_, http_conn_, location, request_, response_);
 
     auto data = json::parse(response_.body());
     auto network =

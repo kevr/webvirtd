@@ -93,8 +93,10 @@ app::app(http::io_context &io, const std::filesystem::path &socket_path)
                                 bind_libvirt_domain(&views::domains::shutdown,
                                                     &domains_view_))));
 
-    server_.on_request([this](auto &, const auto &request, auto &response) {
-        return router_.run(request, response);
+    server_.on_request([this](http::connection_ptr http_conn,
+                              const http::request &request,
+                              http::response &response) {
+        return router_.run(std::move(http_conn), request, response);
     });
 }
 

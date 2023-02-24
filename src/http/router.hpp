@@ -16,6 +16,7 @@
 #ifndef HTTP_ROUTER_HPP
 #define HTTP_ROUTER_HPP
 
+#include <http/connection.hpp>
 #include <http/types.hpp>
 
 #include <map>
@@ -28,12 +29,12 @@ namespace webvirt::http
 class router
 {
 private:
-    std::map<std::string, route_function> routes_;
+    std::map<std::string, http::connection::route_function> routes_;
     std::map<std::string, std::regex> regex_;
 
 public:
-    void run(const http::request &, http::response &);
-    void route(const std::string &, route_function);
+    void run(http::connection_ptr, const http::request &, http::response &);
+    void route(const std::string &, http::connection::route_function);
 };
 
 }; // namespace webvirt::http

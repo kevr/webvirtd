@@ -36,6 +36,10 @@ protected:
     mocks::libvirt lv;
 
     virt::connection conn_;
+
+    http::io_context io_;
+    http::connection_ptr http_conn_;
+
     http::request request_;
     http::response response_;
 
@@ -64,6 +68,9 @@ public:
 
         const char *argv[] = { "webvirtd" };
         conf.parse(1, argv);
+
+        http_conn_ = std::make_shared<http::connection>(
+            io_, net::unix::socket { io_ }, std::chrono::milliseconds(10));
 
         request_.method(beast::http::verb::get);
     }
@@ -177,7 +184,7 @@ TEST_F(domains_test, domains)
     auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
                                   "/users/test/domains/test/");
     domain_ptr domain = std::make_shared<webvirt::domain>();
-    views_.index(conn_, location, request_, response_);
+    views_.index(conn_, http_conn_, location, request_, response_);
 
     auto array = json::parse(response_.body());
     EXPECT_TRUE(array.isArray());
@@ -226,7 +233,12 @@ TEST_F(domains_test, show)
     auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
                                   "/users/test/domains/test/");
     domain_ptr domain = std::make_shared<webvirt::domain>();
-    views_.show(conn_, virt::domain(domain), location, request_, response_);
+    views_.show(conn_,
+                virt::domain(domain),
+                http_conn_,
+                location,
+                request_,
+                response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
@@ -266,7 +278,12 @@ TEST_F(domains_test, show_cdrom)
     auto location = make_location(R"(^/users/([^/]+)/domains/([^/]+)/$)",
                                   "/users/test/domains/test/");
     domain_ptr domain = std::make_shared<webvirt::domain>();
-    views_.show(conn_, virt::domain(domain), location, request_, response_);
+    views_.show(conn_,
+                virt::domain(domain),
+                http_conn_,
+                location,
+                request_,
+                response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 }
@@ -287,7 +304,12 @@ TEST_F(domains_test, domain_start)
                                   "/users/test/domains/test/start/");
     auto domain = std::make_shared<webvirt::domain>();
     request_.method(boost::beast::http::verb::post);
-    views_.start(conn_, virt::domain(domain), location, request_, response_);
+    views_.start(conn_,
+                 virt::domain(domain),
+                 http_conn_,
+                 location,
+                 request_,
+                 response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::created);
 }
@@ -300,7 +322,12 @@ TEST_F(domains_test, domain_start_error)
                                   "/users/test/domains/test/start/");
     auto domain = std::make_shared<webvirt::domain>();
     request_.method(boost::beast::http::verb::post);
-    views_.start(conn_, virt::domain(domain), location, request_, response_);
+    views_.start(conn_,
+                 virt::domain(domain),
+                 http_conn_,
+                 location,
+                 request_,
+                 response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::bad_request);
 }
@@ -329,8 +356,12 @@ TEST_F(domains_test, domain_shutdown)
     request_.method(boost::beast::http::verb::post);
 
     auto domain = std::make_shared<webvirt::domain>();
-    views_.shutdown(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.shutdown(conn_,
+                    virt::domain(domain),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 }
@@ -350,8 +381,12 @@ TEST_F(domains_test, domain_shutdown_timeout)
                       "/users/test/domains/test/shutdown/");
     auto domain = std::make_shared<webvirt::domain>();
     request_.method(boost::beast::http::verb::post);
-    views_.shutdown(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.shutdown(conn_,
+                    virt::domain(domain),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::gateway_timeout);
 }
@@ -371,8 +406,12 @@ TEST_F(domains_test, domain_shutoff_timeout)
                       "/users/test/domains/test/shutdown/");
     auto domain = std::make_shared<webvirt::domain>();
     request_.method(boost::beast::http::verb::post);
-    views_.shutdown(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.shutdown(conn_,
+                    virt::domain(domain),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::gateway_timeout);
 }
@@ -387,8 +426,12 @@ TEST_F(domains_test, domain_shutdown_bad_request)
     request_.method(boost::beast::http::verb::post);
 
     auto domain = std::make_shared<webvirt::domain>();
-    views_.shutdown(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.shutdown(conn_,
+                    virt::domain(domain),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::bad_request);
 }
@@ -408,8 +451,12 @@ TEST_F(domains_test, autostart_post)
     request_.method(boost::beast::http::verb::post);
 
     domain_ptr domain = std::make_shared<webvirt::domain>();
-    views_.autostart(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.autostart(conn_,
+                     virt::domain(domain),
+                     http_conn_,
+                     location,
+                     request_,
+                     response_);
 
     EXPECT_EQ(response_.result(), boost::beast::http::status::ok);
     EXPECT_EQ(autostart, 1);
@@ -430,8 +477,12 @@ TEST_F(domains_test, autostart_delete)
     request_.method(boost::beast::http::verb::delete_);
 
     domain_ptr domain = std::make_shared<webvirt::domain>();
-    views_.autostart(
-        conn_, virt::domain(domain), location, request_, response_);
+    views_.autostart(conn_,
+                     virt::domain(domain),
+                     http_conn_,
+                     location,
+                     request_,
+                     response_);
 
     EXPECT_EQ(response_.result(), boost::beast::http::status::ok);
     EXPECT_EQ(autostart, 0);
@@ -448,8 +499,12 @@ TEST_F(domains_test, metadata_bad_request)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.metadata(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::bad_request);
 }
@@ -476,8 +531,12 @@ TEST_F(domains_test, metadata_title)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.metadata(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     auto domain = conn_.domain("test");
     auto title = domain.metadata(VIR_DOMAIN_METADATA_TITLE, nullptr, 0);
@@ -485,8 +544,12 @@ TEST_F(domains_test, metadata_title)
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
-    views_.metadata(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.metadata(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
     EXPECT_EQ(response_.result(), beast::http::status::not_modified);
 }
 
@@ -513,8 +576,12 @@ TEST_F(domains_test, metadata_description)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/metadata/$)",
                       "/users/test/domains/test/metadata/");
-    views_.metadata(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.metadata(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     auto domain = conn_.domain("test");
     auto title = domain.metadata(VIR_DOMAIN_METADATA_DESCRIPTION, nullptr, 0);
@@ -522,7 +589,7 @@ TEST_F(domains_test, metadata_description)
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
-    views_.metadata(conn_, domain, location, request_, response_);
+    views_.metadata(conn_, domain, http_conn_, location, request_, response_);
     EXPECT_EQ(response_.result(), beast::http::status::not_modified);
 }
 
@@ -547,8 +614,12 @@ TEST_F(domains_test, bootmenu_post)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
                       "/users/test/domains/test/bootmenu/");
-    views_.bootmenu(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.bootmenu(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
@@ -577,8 +648,12 @@ TEST_F(domains_test, bootmenu_delete)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
                       "/users/test/domains/test/bootmenu/");
-    views_.bootmenu(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.bootmenu(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::ok);
 
@@ -598,8 +673,12 @@ TEST_F(domains_test, bootmenu_define_xml_error)
     auto location =
         make_location(R"(^/users/([^/]+)/domains/([^/]+)/bootmenu/$)",
                       "/users/test/domains/test/bootmenu/");
-    views_.bootmenu(
-        conn_, virt::domain(domain_ptr), location, request_, response_);
+    views_.bootmenu(conn_,
+                    virt::domain(domain_ptr),
+                    http_conn_,
+                    location,
+                    request_,
+                    response_);
 
     EXPECT_EQ(response_.result(), beast::http::status::internal_server_error);
 

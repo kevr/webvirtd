@@ -55,37 +55,25 @@ public:
     virt::connection_pool &pool();
 
 private:
-    template <typename Func>
-    auto bind(Func fn)
+    template <typename Func, typename Pointer>
+    auto bind(Func fn, Pointer ptr)
     {
-        return std::bind(fn,
-                         this,
-                         std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3);
+        using namespace std::placeholders;
+        return std::bind(fn, ptr, _1, _2, _3, _4);
     }
 
     template <typename Func, typename Pointer>
     auto bind_libvirt(Func fn, Pointer ptr)
     {
-        return std::bind(fn,
-                         ptr,
-                         std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3,
-                         std::placeholders::_4);
+        using namespace std::placeholders;
+        return std::bind(fn, ptr, _1, _2, _3, _4, _5);
     }
 
     template <typename Func, typename Pointer>
     auto bind_libvirt_domain(Func fn, Pointer ptr)
     {
-        return std::bind(fn,
-                         ptr,
-                         std::placeholders::_1,
-                         std::placeholders::_2,
-                         std::placeholders::_3,
-                         std::placeholders::_4,
-                         std::placeholders::_5);
+        using namespace std::placeholders;
+        return std::bind(fn, ptr, _1, _2, _3, _4, _5, _6);
     }
 
 private:

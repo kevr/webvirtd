@@ -16,6 +16,7 @@
 #ifndef VIEWS_HOST_HPP
 #define VIEWS_HOST_HPP
 
+#include <http/connection.hpp>
 #include <http/types.hpp>
 #include <virt/connection.hpp>
 
@@ -27,10 +28,11 @@ namespace webvirt::views
 class host
 {
 public:
-    void show(virt::connection &, const std::smatch &, const http::request &,
-              http::response &);
-    void networks(virt::connection &, const std::smatch &,
-                  const http::request &, http::response &);
+    void show(virt::connection &, http::connection_ptr, const std::smatch &,
+              const http::request &, http::response &);
+    void networks(virt::connection &, http::connection_ptr,
+                  const std::smatch &, const http::request &,
+                  http::response &);
 };
 
 }; // namespace webvirt::views

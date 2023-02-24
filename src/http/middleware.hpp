@@ -16,10 +16,12 @@
 #ifndef HTTP_MIDDLEWARE_HPP
 #define HTTP_MIDDLEWARE_HPP
 
+#include <http/connection.hpp>
 #include <http/types.hpp>
 #include <virt/connection.hpp>
 #include <virt/connection_pool.hpp>
 #include <virt/domain.hpp>
+#include <ws/connection.hpp>
 
 #include <regex>
 
@@ -28,23 +30,26 @@ namespace webvirt::http
 
 namespace middleware
 {
-route_function with_methods(const std::vector<boost::beast::http::verb> &,
-                            route_function);
 
-route_function with_libvirt_domain(
+using http_route_function = connection::route_function;
+
+http_route_function with_methods(const std::vector<boost::beast::http::verb> &,
+                                 http_route_function);
+
+http_route_function with_libvirt_domain(
     virt::connection_pool &pool,
     std::function<void(virt::connection &, virt::domain domain,
-                       const std::smatch &, const http::request &,
-                       http::response &)>);
+                       http::connection_ptr, const std::smatch &,
+                       const http::request &, http::response &)>);
 
-route_function
+http_route_function
 with_libvirt(virt::connection_pool &,
-             std::function<void(virt::connection &, const std::smatch &,
-                                const http::request &, http::response &)>);
+             std::function<void(virt::connection &, http::connection_ptr,
+                                const std::smatch &, const http::request &,
+                                http::response &)>);
 
-route_function
-    with_user(std::function<void(const std::smatch &, const http::request &,
-                                 http::response &)>);
+http_route_function with_user(http_route_function);
+
 }; // namespace middleware
 
 }; // namespace webvirt::http

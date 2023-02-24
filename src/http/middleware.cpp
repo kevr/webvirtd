@@ -20,10 +20,12 @@
 #include <virt/util.hpp>
 
 #include <chrono>
+#include <regex>
 #include <sstream>
 
 using namespace webvirt;
 using namespace http;
+using namespace middleware;
 
 static bool allowed_methods(const std::vector<beast::http::verb> &methods,
                             beast::http::verb method)
@@ -32,12 +34,14 @@ static bool allowed_methods(const std::vector<beast::http::verb> &methods,
     return it != methods.end();
 }
 
-http::route_function
+http_route_function
 middleware::with_methods(const std::vector<boost::beast::http::verb> &methods,
-                         http::route_function route_fn)
+                         http_route_function route_fn)
 {
-    return [methods, route_fn](
-               const auto &m, const http::request &request, auto &response) {
+    return [methods, route_fn](http::connection_ptr conn,
+                               const std::smatch &match,
+                               const http::request &request,
+                               http::response &response) {
         // Construt and add the Allow header.
         std::string allow;
         for (auto method : methods) {
@@ -57,20 +61,21 @@ middleware::with_methods(const std::vector<boost::beast::http::verb> &methods,
             return response.result(beast::http::status::method_not_allowed);
         }
 
-        return route_fn(m, request, response);
+        return route_fn(std::move(conn), match, request, response);
     };
 }
 
-http::route_function middleware::with_libvirt_domain(
+http_route_function middleware::with_libvirt_domain(
     virt::connection_pool &pool,
     std::function<void(virt::connection &, virt::domain domain,
-                       const std::smatch &, const http::request &,
-                       http::response &)>
+                       http::connection_ptr, const std::smatch &,
+                       const http::request &, http::response &)>
         route_fn)
 {
     return with_libvirt(
         pool,
         [route_fn](virt::connection &conn,
+                   http::connection_ptr http_conn,
                    const std::smatch &match,
                    const http::request &request,
                    http::response &response) {
@@ -85,19 +90,22 @@ http::route_function middleware::with_libvirt_domain(
                                           beast::http::status::not_found);
             }
 
-            return route_fn(conn, domain, match, request, response);
+            return route_fn(
+                conn, domain, std::move(http_conn), match, request, response);
         });
 }
 
-http::route_function middleware::with_libvirt(
+http_route_function middleware::with_libvirt(
     virt::connection_pool &pool,
-    std::function<void(virt::connection &, const std::smatch &,
-                       const http::request &, http::response &)>
+    std::function<void(virt::connection &, http::connection_ptr,
+                       const std::smatch &, const http::request &,
+                       http::response &)>
         route_fn)
 {
-    return with_user([&pool, route_fn](const auto &match,
-                                       const auto &request,
-                                       auto &response) {
+    return with_user([&pool, route_fn](http::connection_ptr http_conn,
+                                       const std::smatch &match,
+                                       const http::request &request,
+                                       http::response &response) {
         const std::string user = match[1];
 
         virt::connection *conn;
@@ -110,13 +118,16 @@ http::route_function middleware::with_libvirt(
                                 beast::http::status::internal_server_error);
         }
 
-        return route_fn(*conn, match, request, response);
+        return route_fn(*conn, std::move(http_conn), match, request, response);
     });
 }
 
-http::route_function middleware::with_user(route_function route_fn)
+http_route_function middleware::with_user(http_route_function route_fn)
 {
-    return [route_fn](const auto &match, const auto &request, auto &response) {
+    return [route_fn](http::connection_ptr conn,
+                      const std::smatch &match,
+                      const http::request &request,
+                      http::response &response) {
         // Parse expected JSON from the request body.
         std::string user(match[1]);
 
@@ -129,6 +140,6 @@ http::route_function middleware::with_user(route_function route_fn)
                                 beast::http::status::not_found);
         }
 
-        return route_fn(match, request, response);
+        return route_fn(std::move(conn), match, request, response);
     };
 }

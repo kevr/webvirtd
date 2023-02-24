@@ -16,6 +16,7 @@
 #ifndef VIEWS_DOMAINS_HPP
 #define VIEWS_DOMAINS_HPP
 
+#include <http/connection.hpp>
 #include <http/types.hpp>
 #include <virt/connection.hpp>
 #include <virt/domain.hpp>
@@ -28,20 +29,24 @@ namespace webvirt::views
 class domains
 {
 public:
-    void index(virt::connection &, const std::smatch &, const http::request &,
-               http::response &);
-    void show(virt::connection &, virt::domain, const std::smatch &,
-              const http::request &, http::response &);
-    void autostart(virt::connection &, virt::domain, const std::smatch &,
-                   const http::request &, http::response &);
-    void metadata(virt::connection &, virt::domain, const std::smatch &,
-                  const http::request &, http::response &);
-    void bootmenu(virt::connection &, virt::domain, const std::smatch &,
-                  const http::request &, http::response &);
-    void start(virt::connection &, virt::domain, const std::smatch &,
+    void index(virt::connection &, http::connection_ptr, const std::smatch &,
                const http::request &, http::response &);
-    void shutdown(virt::connection &, virt::domain, const std::smatch &,
-                  const http::request &, http::response &);
+    void show(virt::connection &, virt::domain, http::connection_ptr,
+              const std::smatch &, const http::request &, http::response &);
+    void autostart(virt::connection &, virt::domain, http::connection_ptr,
+                   const std::smatch &, const http::request &,
+                   http::response &);
+    void metadata(virt::connection &, virt::domain, http::connection_ptr,
+                  const std::smatch &, const http::request &,
+                  http::response &);
+    void bootmenu(virt::connection &, virt::domain, http::connection_ptr,
+                  const std::smatch &, const http::request &,
+                  http::response &);
+    void start(virt::connection &, virt::domain, http::connection_ptr,
+               const std::smatch &, const http::request &, http::response &);
+    void shutdown(virt::connection &, virt::domain, http::connection_ptr,
+                  const std::smatch &, const http::request &,
+                  http::response &);
 };
 
 }; // namespace webvirt::views

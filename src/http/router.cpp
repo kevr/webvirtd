@@ -31,7 +31,8 @@
 
 using namespace webvirt;
 
-void http::router::run(const http::request &request, http::response &response)
+void http::router::run(http::connection_ptr http_conn,
+                       const http::request &request, http::response &response)
 {
     const auto request_uri = std::string(request.target());
     const auto method = std::string(request.method_string());
@@ -65,7 +66,8 @@ void http::router::run(const http::request &request, http::response &response)
                     // Try route.second five times.
                     retry([&, match] {
                         response = http::response();
-                        route.second(match, request, response);
+                        route.second(
+                            std::move(http_conn), match, request, response);
                     }).retries(5)();
                 } catch (std::exception &exc) {
                     // If it fails the sixth time, catch its std::domain_error.
@@ -84,7 +86,7 @@ void http::router::run(const http::request &request, http::response &response)
     next();
 
     int status_code = response.result_int();
-    if (!(status_code >= 200 && status_code < 400)) {
+    if (status_code >= 400) {
         log = [](const auto &message) {
             logger::error(message);
         };
@@ -104,7 +106,7 @@ void http::router::run(const http::request &request, http::response &response)
 }
 
 void http::router::route(const std::string &request_uri,
-                         http::route_function fn)
+                         http::connection::route_function fn)
 {
     routes_[request_uri] = fn;
     regex_[request_uri] = request_uri;
