@@ -28,6 +28,7 @@
 namespace webvirt::http
 {
 
+/** An HTTP client used for testing purposes */
 class client : public std::enable_shared_from_this<client>
 {
 protected:
@@ -48,81 +49,80 @@ protected:
     handler<> on_close_;
 
 public:
+    /** Construct an HTTP client
+     *
+     * @param io webvirt::http::io_context
+     * @param socket_path Path to unix socket
+     * @param host Host header
+     * @param version webvirt::http::version
+     **/
     explicit client(io_context &io, std::string socket_path,
                     std::string host = "localhost",
-                    int version = webvirt::http::version::http_1_1)
-        : socket_path_(std::move(socket_path))
-        , io_(io)
-        , socket_(boost::beast::net::make_strand(io_))
-    {
-        this->host(std::move(host)).version(version);
-    }
+                    int version = webvirt::http::version::http_1_1);
 
-    client &host(std::string value)
-    {
-        host_ = std::move(value);
-        return *this;
-    }
+    /** Set the value used for HTTP Host header
+     *
+     * @param value New HTTP Host header value
+     * @returns Reference to this
+     **/
+    client &host(std::string value);
 
-    const std::string &host() const
-    {
-        return host_;
-    }
+    /** Returns the Host header value
+     *
+     * @returns Internal Host header value
+     **/
+    const std::string &host() const;
 
-    client &version(int version)
-    {
-        version_ = version;
-        return *this;
-    }
+    /** Set the HTTP version
+     *
+     * @param version Version to set; see webvirt::http::version
+     * @returns Reference to this
+     **/
+    client &version(int version);
 
-    int version() const
-    {
-        return version_;
-    }
+    /** Returns the HTTP version
+     *
+     * @returns Internal HTTP version value
+     **/
+    int version() const;
 
-    client &async_options(const char *target)
-    {
-        init_request(target);
-        request_.method(beast::http::verb::options);
-        async_connect();
-        return *this;
-    }
+    /** Begin an OPTIONS request toward `target`
+     *
+     * @param target Target request URI
+     * @returns Reference to this
+     **/
+    client &async_options(const char *target);
 
-    client &async_get(const char *target)
-    {
-        init_request(target);
-        request_.method(beast::http::verb::get);
-        async_connect();
-        return *this;
-    }
+    /** Begin a GET request toward `target`
+     *
+     * @param target Target request URI
+     * @returns Reference to this
+     **/
+    client &async_get(const char *target);
 
+    /** Begin a POST request toward `target` with POST data
+     *
+     * @param target Target request URI
+     * @param data Optional POST data sent with the request
+     * @returns Reference to this
+     **/
     client &async_post(const char *target,
-                       const std::string &data = std::string())
-    {
-        init_request(target);
-        request_.method(beast::http::verb::post);
-        request_.body().append(data);
-        request_.content_length(request_.body().size());
-        async_connect();
-        return *this;
-    }
+                       const std::string &data = std::string());
 
-    const beast::http::request<beast::http::string_body> &request() const
-    {
-        return request_;
-    }
+    /** Returns internal HTTP request
+     *
+     * @returns Reference to internal HTTP request
+     **/
+    const beast::http::request<beast::http::string_body> &request() const;
 
-    void close()
-    {
-        socket_.close();
-    }
+    /** Close the client */
+    void close();
 
-    std::size_t run()
-    {
-        std::size_t count = io_.run();
-        close();
-        return count;
-    }
+    /** Run the client's webvirt::http::io_context
+     *
+     * @returns Number of handlers processed
+     **/
+    std::size_t run();
 
     handler_setter(on_connect, on_connect_);
     handler_setter(on_response, on_response_);
@@ -130,67 +130,12 @@ public:
     handler_setter(on_close, on_close_);
 
 private:
-    void init_request(const char *target)
-    {
-        request_.version(version_);
-        request_.target(target);
-        request_.set(beast::http::field::host, host_);
-        request_.set(beast::http::field::user_agent,
-                     BOOST_BEAST_VERSION_STRING);
-        request_.set(beast::http::field::accept, "*/*");
-    }
+    void init_request(const char *target);
+    void async_connect();
 
-    void async_connect()
-    {
-        io_.restart();
-        socket_.async_connect(
-            socket_path_,
-            boost::beast::bind_front_handler(&client::client_async_on_connect,
-                                             this->shared_from_this()));
-    }
-
-    void client_async_on_connect(boost::beast::error_code ec)
-    {
-        if (ec) {
-            return on_error_(__func__, ec);
-        }
-        on_connect_(*this);
-
-        beast::http::async_write(
-            socket_,
-            request_,
-            boost::beast::bind_front_handler(&client::client_async_on_write,
-                                             this->shared_from_this()));
-    }
-
-    void client_async_on_write(boost::beast::error_code ec, std::size_t bytes)
-    {
-        boost::ignore_unused(bytes);
-
-        if (ec) {
-            return on_error_(__func__, ec);
-        }
-
-        beast::http::async_read(
-            socket_,
-            buffer_,
-            response_,
-            boost::beast::bind_front_handler(&client::client_async_on_read,
-                                             this->shared_from_this()));
-    }
-
-    void client_async_on_read(boost::beast::error_code ec, std::size_t bytes)
-    {
-        boost::ignore_unused(bytes);
-
-        if (ec) {
-            return on_error_(__func__, ec);
-        }
-        on_response_(response_);
-
-        socket_.shutdown(net::unix::socket::shutdown_both, ec);
-        on_close_();
-    }
+    void client_on_connect(boost::beast::error_code ec);
+    void client_on_write(boost::beast::error_code ec, std::size_t bytes);
+    void client_on_read(boost::beast::error_code ec, std::size_t bytes);
 };
 
 }; // namespace webvirt::http

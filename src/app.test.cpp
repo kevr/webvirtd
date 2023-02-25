@@ -365,8 +365,7 @@ TEST_F(websocket_test, websocket)
     });
 
     auto endpoint = fmt::format("/users/{}/websocket/", username);
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 }
 
 TEST_F(websocket_test, error_on_read)
@@ -379,8 +378,7 @@ TEST_F(websocket_test, error_on_read)
     });
 
     auto endpoint = fmt::format("/users/{}/websocket/", username);
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 }
 
 TEST_F(websocket_test, error_on_accept)
@@ -397,8 +395,7 @@ TEST_F(websocket_test, error_on_accept)
     client->on_error([this](const char *, beast::error_code) {
         client_io_.stop();
     });
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 }
 
 TEST_F(websocket_test, connection_write)
@@ -413,8 +410,7 @@ TEST_F(websocket_test, connection_write)
         message = str;
         client->close();
     });
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 
     EXPECT_EQ(message, "test");
 }
@@ -430,8 +426,7 @@ TEST_F(websocket_test, error_on_write)
     client->on_error([this](const char *, beast::error_code) {
         client_io_.stop();
     });
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 
     app_->server().on_error([this](const char *, auto) {
         io_.stop();
@@ -449,6 +444,5 @@ TEST_F(websocket_test, error_on_write)
     });
 
     client_io_.restart();
-    client->async_connect(endpoint);
-    client_io_.run();
+    client->async_connect(endpoint).run();
 }

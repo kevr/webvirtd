@@ -37,6 +37,7 @@
 namespace webvirt::http
 {
 
+/** HTTP server-side connection */
 class connection : public std::enable_shared_from_this<connection>
 {
     http::io_context::strand strand_;
@@ -64,51 +65,42 @@ class connection : public std::enable_shared_from_this<connection>
     bool upgrade_ { false };
 
 public:
+    /** HTTP route function signature */
     typedef std::function<void(std::shared_ptr<http::connection>,
                                const std::smatch &, const http::request &,
                                http::response &)>
         route_function;
 
 public:
+    /** Construct a connection
+     *
+     * @param io webvirt::http::io_context
+     * @param socket webvirt::net::unix::socket
+     * @param ms Connection timeout in milliseconds
+     **/
     explicit connection(http::io_context &io, net::unix::socket socket,
-                        std::chrono::milliseconds ms)
-        : strand_(io)
-        , socket_(std::move(socket))
-        , deadline_(socket_.get_executor(), ms)
-    {
-    }
+                        std::chrono::milliseconds ms);
 
-    void start()
-    {
-        read_request();
-        check_deadline();
-    }
+    /** Start the connection */
+    void start();
 
-    void close()
-    {
-        socket_.close();
-    }
+    /** Close the connection */
+    void close();
 
-    std::shared_ptr<websocket::connection> websock() const
-    {
-        return websock_;
-    }
+    /** Return internal websocket::connection_ptr
+     *
+     * The websocket::connection_ptr returned by this function is only
+     * valid once upgrade() has been called.
+     *
+     * @returns Internal websocket::connection_ptr
+     **/
+    std::shared_ptr<websocket::connection> websock() const;
 
-    std::shared_ptr<websocket::connection> upgrade()
-    {
-        upgrade_ = true;
-
-        // give socket_ to a newly created websocket::connection
-        websock_ = std::make_shared<websocket::connection>(
-            strand_.context(), std::move(socket_), request_);
-        websock_->on_accept(on_websock_accept_);
-        websock_->on_handshake(on_handshake_);
-        websock_->on_read(on_websock_read_);
-        websock_->on_error(on_error_);
-        websock_->on_close(on_close_);
-
-        return websock();
-    }
+    /** Upgrade this connection to a websocket connection
+     *
+     * @returns Internal websocket::connection_ptr
+     **/
+    std::shared_ptr<websocket::connection> upgrade();
 
     handler_setter(on_accept, on_accept_);
     handler_setter(on_request, on_request_);
@@ -119,99 +111,13 @@ public:
     handler_setter(on_close, on_close_);
 
 private:
-    void read_request()
-    {
-        beast::http::async_read(
-            socket_,
-            buffer_,
-            request_,
-            strand_.wrap(std::bind(&connection::async_read,
-                                   shared_from_this(),
-                                   std::placeholders::_1,
-                                   std::placeholders::_2)));
-    }
+    void read_request();
+    void process_request();
+    void check_deadline();
 
-    void async_read(beast::error_code ec, std::size_t bytes)
-    {
-        boost::ignore_unused(bytes);
-
-        if (ec) {
-            const std::string func = __func__;
-            return on_error_(func.c_str(), ec);
-        }
-
-        process_request();
-    }
-
-    void process_request()
-    {
-        logger::debug([this] {
-            const std::string method =
-                std::string(request_.method_string().data(),
-                            request_.method_string().size());
-            const std::string target = std::string(request_.target().data(),
-                                                   request_.target().size());
-            return fmt::format(
-                "Received \"{} {} HTTP/{}.{}\"",
-                method,
-                target,
-                boost::numeric_cast<unsigned int>(request_.version() / 10),
-                boost::numeric_cast<unsigned int>(request_.version() % 10));
-        });
-
-        response_.version(request_.version());
-        response_.keep_alive(false);
-        response_.set(beast::http::field::content_type, "text/plain");
-        response_.set(beast::http::field::server, BOOST_BEAST_VERSION_STRING);
-
-        on_request_(shared_from_this(), request_, response_);
-        response_.content_length(response_.body().size());
-
-        if (beast::websocket::is_upgrade(request_)) {
-            logger::debug("Running websocket");
-            deadline_.cancel();
-            websock_->run();
-        } else {
-            beast::http::async_write(
-                socket_,
-                response_,
-                strand_.wrap(std::bind(&connection::async_write,
-                                       shared_from_this(),
-                                       std::placeholders::_1,
-                                       std::placeholders::_2)));
-        }
-    }
-
-    void async_write(beast::error_code ec, std::size_t)
-    {
-        if (ec) {
-            const std::string func = __func__;
-            return on_error_(func.c_str(), ec);
-        }
-
-        deadline_.cancel();
-        logger::debug("Closing socket");
-        socket_.shutdown(net::unix::socket::shutdown_send, ec);
-        on_close_();
-    }
-
-    void check_deadline()
-    {
-        deadline_.async_wait(
-            strand_.wrap(std::bind(&connection::async_deadline,
-                                   shared_from_this(),
-                                   std::placeholders::_1)));
-    }
-
-    void async_deadline(beast::error_code ec)
-    {
-        if (ec == boost::asio::error::operation_aborted) {
-            return;
-        }
-
-        socket_.close(ec);
-        on_close_();
-    }
+    void async_read(beast::error_code, std::size_t);
+    void async_write(beast::error_code, std::size_t);
+    void async_deadline(beast::error_code);
 };
 
 using connection_ptr = std::shared_ptr<connection>;

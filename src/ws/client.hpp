@@ -46,80 +46,41 @@ class client : public std::enable_shared_from_this<client>
     http::handler<const char *, beast::error_code> on_error_;
 
 public:
-    /** Construct a client */
-    client(http::io_context &io, std::filesystem::path socket_path)
-        : strand_(io)
-        , socket_path_(std::move(socket_path))
-        , ws_(std::make_shared<beast::websocket::stream<net::unix::socket>>(
-              io))
-    {
-    }
+    /** Construct a client
+     *
+     * @param io webvirt::http::io_context
+     * @param socket_path Path to a unix socket
+     **/
+    client(http::io_context &, std::filesystem::path);
 
     /** Begin async connection to `request_uri`
      *
      * @param request_uri HTTP request URI to websocket endpoint
      * @returns Reference to this client
      **/
-    client &async_connect(const std::string &request_uri)
-    {
-        using namespace std::placeholders;
-        beast::get_lowest_layer(*ws_).async_connect(
-            socket_path_.c_str(),
-            strand_.wrap(std::bind(&client::client_on_connect,
-                                   shared_from_this(),
-                                   _1,
-                                   request_uri)));
-        return *this;
-    }
+    client &async_connect(const std::string &);
 
     /** Begin an async write of `data`
      *
      * @param data Text data to write to the websocket
      * @returns Reference to this client
      **/
-    client &async_write(const std::string &data)
-    {
-        using namespace std::placeholders;
-        ws_->async_write(
-            boost::asio::buffer(data),
-            strand_.wrap(std::bind(
-                &client::client_on_write, shared_from_this(), _1, _2)));
-        return *this;
-    }
+    client &async_write(const std::string &);
 
     /** Close the client websocket */
-    void close()
-    {
-        // Since a closure may happen at any point, async_close is called
-        // within a boost::asio::post call to prioritize the closure
-        // over other handlers that may have previously been called
-        // (like async_read).
-        using namespace std::placeholders;
-        boost::asio::post(strand_.context(), [this] {
-            ws_->async_close(beast::websocket::close_code::normal,
-                             strand_.wrap(std::bind(&client::client_on_close,
-                                                    shared_from_this(),
-                                                    _1)));
-        });
-    }
+    void close();
 
     /** Shutdown the underlying socket
      *
      * @param type webvirt::net::unix::socket::shutdown_type
      **/
-    void shutdown(net::unix::socket::shutdown_type type)
-    {
-        beast::get_lowest_layer(*ws_).shutdown(type);
-    }
+    void shutdown(net::unix::socket::shutdown_type);
 
     /** Run the client strand's io_context
      *
      * @return Number of handlers processed
      **/
-    std::size_t run()
-    {
-        return strand_.context().run();
-    }
+    std::size_t run();
 
     handler_setter(on_connect, on_connect_);
     handler_setter(on_handshake, on_handshake_);
@@ -128,82 +89,11 @@ public:
     handler_setter(on_error, on_error_);
 
 private:
-    void client_on_connect(beast::error_code, const std::string &request_uri)
-    {
-        using namespace std::placeholders;
-
-        ws_->set_option(beast::websocket::stream_base::timeout::suggested(
-            beast::role_type::client));
-        ws_->set_option(beast::websocket::stream_base::decorator(
-            [](beast::websocket::request_type &req) { // LCOV_EXCL_LINE
-                req.set(beast::http::field::user_agent,
-                        std::string(BOOST_BEAST_VERSION_STRING) +
-                            " websocket-client-async");
-            }));
-        ws_->text(true);
-
-        on_connect_(shared_from_this());
-        ws_->async_handshake(
-            ws_response_,
-            "localhost",
-            request_uri,
-            strand_.wrap(std::bind(
-                &client::client_on_handshake, shared_from_this(), _1)));
-    }
-
-    void client_on_handshake(beast::error_code ec)
-    {
-        using namespace std::placeholders;
-
-        if (ec) {
-            logger::error(fmt::format("Client error: {}", ec.message()));
-            return on_error_(ec.message().c_str(), ec);
-        }
-
-        on_handshake_(shared_from_this(), ws_response_);
-        ws_->async_read(
-            buffer_,
-            strand_.wrap(std::bind(
-                &client::client_on_read, shared_from_this(), _1, _2)));
-    }
-
-    void client_on_write(beast::error_code ec, std::size_t bytes)
-    {
-        boost::ignore_unused(bytes);
-
-        logger::info(fmt::format("Sent {} bytes", bytes));
-
-        if (ec) {
-            logger::error(fmt::format("Client error: {}", ec.message()));
-            return on_error_(ec.message().c_str(), ec);
-        }
-
-        on_write_(shared_from_this());
-    }
-
-    void client_on_read(beast::error_code ec, std::size_t bytes)
-    {
-        using namespace std::placeholders;
-        boost::ignore_unused(bytes);
-
-        if (ec) {
-            logger::error(fmt::format("Client error: {}", ec.message()));
-            return on_error_(ec.message().c_str(), ec);
-        }
-
-        on_read_(shared_from_this(), beast::buffers_to_string(buffer_.data()));
-        buffer_.consume(bytes);
-
-        ws_->async_read(
-            buffer_,
-            strand_.wrap(std::bind(
-                &client::client_on_read, shared_from_this(), _1, _2)));
-    }
-
-    void client_on_close(beast::error_code)
-    {
-        return logger::info("Websocket client closed");
-    }
+    void client_on_connect(beast::error_code, const std::string &);
+    void client_on_handshake(beast::error_code);
+    void client_on_write(beast::error_code, std::size_t);
+    void client_on_read(beast::error_code, std::size_t);
+    void client_on_close(beast::error_code);
 };
 
 }; // namespace webvirt::websocket

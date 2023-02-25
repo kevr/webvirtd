@@ -28,9 +28,9 @@ using std::placeholders::_2;
 
 connection::connection(boost::asio::io_context &io, net::unix::socket &&sock,
                        http::request request)
-    : request_(std::move(request))
-    , strand_(io)
+    : strand_(io)
     , ws_(std::move(sock))
+    , request_(std::move(request))
 {
 }
 
