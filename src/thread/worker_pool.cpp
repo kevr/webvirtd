@@ -19,14 +19,14 @@
 using namespace webvirt::thread;
 
 worker_pool::worker_pool(http::io_context &io)
-    : io_(&io)
+    : io_(io)
 {
 }
 
 void worker_pool::start(std::size_t num_threads)
 {
     for (std::size_t i = 0; i < num_threads; ++i) {
-        auto w = std::make_unique<worker>(*io_);
+        auto w = std::make_unique<worker>(io_);
         workers_.emplace_back(std::move(w));
         workers_.back()->start();
         logger::debug(fmt::format("Thread {} launched", i + 1));

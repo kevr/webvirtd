@@ -1,4 +1,18 @@
 /*
+ * When TEST_BUILD is defined, stubbed libvirt structures are defined in this
+ * file. This allows us to bypass some whacky libvirt definitions when testing
+ * with mocks.
+ *
+ * - connect: virConnect
+ * - domain: virDomain
+ * - block_info: virDomainBlockInfo
+ * - network: virNetwork
+ * - error_: virErrorPtr
+ * - connect_ptr: std::shared_ptr<connect>
+ * - domain_ptr: std::shared_ptr<domain>
+ * - block_info_ptr: std::shared_ptr<block_info>
+ * - network_ptr: std::shared_ptr<network>
+ *
  * Copyright 2023 Kevin Morris
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,35 +41,48 @@ namespace webvirt
 {
 
 #ifdef TEST_BUILD
+
+/** virConnect stub */
 struct connect {
 };
+
+/** virDomain stub */
 struct domain {
 };
-struct network {
-};
+
+/** virDomainBlockInfo stub */
 struct block_info {
     unsigned long capacity;
     unsigned long allocation;
     unsigned long physical;
 };
 
+/** virNetwork stub */
+struct network {
+};
+
+/** virError stub */
 struct error__ {
     char *message;
 };
+
+/** virErrorPtr stub */
 using error_ = error__ *;
 
-#else
+#else /* TEST_BUILD not defined */
+
 using connect = virConnect;
 using domain = virDomain;
-using network = virNetwork;
 using block_info = virDomainBlockInfo;
+using network = virNetwork;
 using error_ = virErrorPtr;
+
 #endif
 
 using connect_ptr = std::shared_ptr<connect>;
 using domain_ptr = std::shared_ptr<domain>;
-using network_ptr = std::shared_ptr<network>;
 using block_info_ptr = std::shared_ptr<block_info>;
+using network_ptr = std::shared_ptr<network>;
 
 using error_function = void (*)(void *, error_);
 

@@ -25,11 +25,29 @@
 namespace webvirt::views
 {
 
+/** HTTP views related to a libvirt host */
 class host
 {
 public:
+    /** Show libvirt host information
+     *
+     * @param conn libvirt connection
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void show(virt::connection &, http::connection_ptr, const std::smatch &,
               const http::request &, http::response &);
+
+    /** List libvirt host networks
+     *
+     * @param conn libvirt connection
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void networks(virt::connection &, http::connection_ptr,
                   const std::smatch &, const http::request &,
                   http::response &);

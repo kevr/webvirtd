@@ -23,7 +23,24 @@
 namespace webvirt::data
 {
 
+/** Produce a simple JSON object for a libvirt domain
+ *
+ * See https://app.swaggerhub.com/apis/kevr/webvirtd for:
+ * - GET /users/(user)/domains/
+ *
+ * @param domain libvirt domain
+ * @returns JSON object for a libvirt domain
+ **/
 Json::Value simple_domain(virt::domain &);
+
+/** Produces a more detailed JSON object for a libvirt domain
+ *
+ * See https://app.swaggerhub.com/apis/kevr/webvirtd for:
+ * - GET /users/(user)/domain/(name)/
+ *
+ * @param domain libvirt domain
+ * @returns Detailed JSON object for a libvirt domain
+ **/
 Json::Value domain(virt::domain &);
 
 }; // namespace webvirt::data

@@ -1,4 +1,9 @@
 /*
+ * Stubs of real libvirt library functions and values.
+ *
+ * This source should be compiled into test binaries to replace the
+ * libvirt library.
+ *
  * Copyright 2023 Kevin Morris
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

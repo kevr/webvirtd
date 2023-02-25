@@ -19,14 +19,14 @@
 #include <http/io_context.hpp>
 #include <singleton.hpp>
 
-#include <atomic>
-
 namespace webvirt
 {
 
+/** Application state */
 class state : public singleton<state>
 {
 public:
+    /** Priamry io_context used for socket processing */
     http::io_context io;
 };
 

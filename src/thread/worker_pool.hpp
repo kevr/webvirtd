@@ -28,17 +28,29 @@
 namespace webvirt::thread
 {
 
+/** A webvirt::thread::worker container */
 class worker_pool
 {
 private:
-    http::io_context *io_ = nullptr;
+    http::io_context &io_;
 
     using worker_ptr = std::unique_ptr<worker>;
     std::vector<worker_ptr> workers_;
 
 public:
+    /** Construct a worker_pool
+     *
+     * @param io webvirt::http::io_context
+     **/
     worker_pool(http::io_context &);
+
+    /** Start workers in the pool
+     *
+     * @param num_threads Number of worker threads to start
+     **/
     void start(std::size_t);
+
+    /** Join all workers in the pool */
     void join();
 };
 

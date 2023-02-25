@@ -21,13 +21,27 @@
 namespace webvirt::stubs
 {
 
+/** A stub webvirt::http::io_context
+ *
+ * This stub does not interact with an http::io_context at all, but
+ * instead returns the number of iterations supplied on construction.
+ **/
 class io_context : public http::io_context
 {
 private:
     std::size_t iterations = 0;
 
 public:
+    /** Construct an io_context
+     *
+     * @param iterations Number of fake iterations to perform
+     **/
     io_context(std::size_t iterations = 0);
+
+    /** Run the io_context
+     *
+     * @returns Number of iterations supplied on construction
+     **/
     std::size_t run() override;
 };
 

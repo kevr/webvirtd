@@ -31,22 +31,27 @@
 namespace webvirt
 {
 
+/** A libvirt library call wrapper */
 class libvirt : public singleton<libvirt>
 {
 private:
+    /** connect_ptr destruction functor */
     struct free_connect_ptr {
         void operator()(connect *);
     };
 
+    /** domain_ptr destruction functor */
     struct free_domain_ptr {
         void operator()(domain *);
     };
 
+    /** network_ptr destruction functor */
     struct free_network_ptr {
         void operator()(network *);
     };
 
 public:
+    /** Default virtual destructor */
     virtual ~libvirt() = default;
 
     // virConnect
@@ -55,7 +60,6 @@ public:
                                                 void (*)(connect *, int,
                                                          void *),
                                                 void *, void (*)(void *));
-
     virtual std::string virConnectGetCapabilities(connect_ptr);
     virtual std::string virConnectGetHostname(connect_ptr);
     virtual int virConnectGetLibVersion(connect_ptr, unsigned long *);
@@ -66,7 +70,6 @@ public:
     virtual int virConnectGetVersion(connect_ptr, unsigned long *);
     virtual int virConnectIsEncrypted(connect_ptr);
     virtual int virConnectIsSecure(connect_ptr);
-
     virtual std::vector<domain_ptr> virConnectListAllDomains(connect_ptr, int);
     virtual std::vector<network_ptr> virConnectListAllNetworks(connect_ptr,
                                                                int);
@@ -98,7 +101,7 @@ public:
                                    void (*)(void *));
     virtual int virEventRunDefaultImpl();
 
-    // virError
+    // virterror
     virtual void virConnSetErrorFunc(connect_ptr, void *,
                                      webvirt::error_function);
 };

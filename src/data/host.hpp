@@ -24,7 +24,24 @@
 namespace webvirt::data
 {
 
+/** Produce JSON data for a libvirt host
+ *
+ * See https://app.swaggerhub.com/apis/kevr/webvirtd for:
+ * - GET /users/(user)/host/
+ *
+ * @param conn libvirt connection
+ * @returns JSON object for the libvirt host
+ **/
 Json::Value host(virt::connection &);
+
+/** Produce JSON data for a libvirt host's networks
+ *
+ * See https://app.swaggerhub.com/apis/kevr/webvirtd for:
+ * - GET /users/(user)/host/networks/
+ *
+ * @param conn libvirt connection
+ * @returns JSON array of network data for the libvirt host
+ **/
 Json::Value networks(virt::connection &);
 
 }; // namespace webvirt::data

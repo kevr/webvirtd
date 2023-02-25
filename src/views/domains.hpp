@@ -26,24 +26,93 @@
 namespace webvirt::views
 {
 
+/** HTTP views related to libvirt domains */
 class domains
 {
 public:
+    /** List domains
+     *
+     * @param conn libvirt connection
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void index(virt::connection &, http::connection_ptr, const std::smatch &,
                const http::request &, http::response &);
+
+    /** Show a single domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void show(virt::connection &, virt::domain, http::connection_ptr,
               const std::smatch &, const http::request &, http::response &);
+
+    /** Modify autostart flag of a domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void autostart(virt::connection &, virt::domain, http::connection_ptr,
                    const std::smatch &, const http::request &,
                    http::response &);
+
+    /** Modify metadata of a domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void metadata(virt::connection &, virt::domain, http::connection_ptr,
                   const std::smatch &, const http::request &,
                   http::response &);
+
+    /** Modify bootmenu flag of a domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void bootmenu(virt::connection &, virt::domain, http::connection_ptr,
                   const std::smatch &, const http::request &,
                   http::response &);
+
+    /** Start a domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void start(virt::connection &, virt::domain, http::connection_ptr,
                const std::smatch &, const http::request &, http::response &);
+
+    /** Shutdown a domain
+     *
+     * @param conn libvirt connection
+     * @param domain libvirt domain
+     * @param http_conn HTTP connection
+     * @param location Request URI regex match
+     * @param request http::request
+     * @param response http::response
+     **/
     void shutdown(virt::connection &, virt::domain, http::connection_ptr,
                   const std::smatch &, const http::request &,
                   http::response &);

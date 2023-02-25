@@ -28,6 +28,7 @@
 namespace webvirt::thread
 {
 
+/** A single HTTP worker */
 class worker
 {
 private:
@@ -35,10 +36,19 @@ private:
     std::thread thread_;
 
 public:
+    /** Construct a worker
+     *
+     * @param io webvirt::http::io_context
+     **/
     worker(http::io_context &);
+
+    /** Destruct the worker */
     ~worker();
 
+    /** Start the worker's internal thread */
     void start();
+
+    /** Join the worker's internal thread  */
     void join();
 
 private:

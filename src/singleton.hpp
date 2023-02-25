@@ -19,6 +19,7 @@
 namespace webvirt
 {
 
+/** A singleton base */
 template <typename derivative>
 class singleton
 {
@@ -27,17 +28,29 @@ private:
     inline static derivative *ptr_ = &instance_;
 
 public:
+    /** Return the currently stored reference
+     *
+     * @returns Current reference
+     **/
     static derivative &ref()
     {
         return *ptr_;
     }
 
+    /** Change the currently stored reference
+     *
+     * @returns The new reference
+     **/
     static derivative &change(derivative &ref_)
     {
         ptr_ = &ref_;
         return ref();
     }
 
+    /** Reset the stored reference to default
+     *
+     * @returns Default reference
+     **/
     static derivative &reset()
     {
         ptr_ = &instance_;
