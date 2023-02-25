@@ -85,7 +85,7 @@ must be in the `webvirt` group:
 API Documentation
 -----------------
 
-Read the API documentation at SwaggerHub: [https://app.swaggerhub.com/apis/kevr/webvirtd](https://app.swaggerhub.com/apis/kevr/webvirtd)
+Read the API documentation at SwaggerHub: [https://app.swaggerhub.com/apis-docs/kevr/webvirtd](https://app.swaggerhub.com/apis-docs/kevr/webvirtd)
 
 Licensing
 ---------
