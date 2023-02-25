@@ -15,7 +15,6 @@
 sources=$(find "$1" -type f -name '*.*pp')
 
 read -r -d '' license_comment << EOF
-/\*_\
  \* Copyright [0-9]\+ .*_\
  \*_\
  \* Licensed under the Apache License, Version 2.0 (the "License");_\
