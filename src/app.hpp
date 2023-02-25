@@ -33,6 +33,15 @@
 namespace webvirt
 {
 
+/** A class representing the webvirtd application
+ *
+ * This class can be used to run the webvirtd application's main loop,
+ * which, when run():
+ *
+ * 1. Configures internal http::router
+ * 2. Handles a libvirt event thread
+ * 3. Runs internal http::server, passing HTTP requests to http::router::run
+ **/
 class app
 {
 private:
@@ -55,14 +64,38 @@ private:
     std::thread event_thread_;
 
 public:
+    /** Construct the application
+     *
+     * @param io webvirt::http::io_context
+     * @param socket_path Path to unix socket
+     **/
     app(http::io_context &io, const std::filesystem::path &socket_path);
+
+    /** Destruct the application */
     ~app();
 
+    /** Run the application
+     *
+     * 1. Start a threaded libvirt event loop
+     * 2. Run the internal http::server
+     *
+     * @returns Number of handlers processed by http::server's io_context
+     **/
     std::size_t run();
+
+    /** Returns a reference to internal libvirt connection pool
+     *
+     * @returns Reference to internal libvirt connection pool
+     **/
     virt::connection_pool &pool();
+
+    /** Returns a reference to internal http::server
+     *
+     * @returns Reference to internal http::server
+     **/
     http::server &server();
 
-private:
+private: // Utilities
     template <typename Func, typename Pointer>
     auto bind(Func fn, Pointer ptr)
     {
@@ -84,10 +117,10 @@ private:
         return std::bind(fn, ptr, _1, _2, _3, _4, _5, _6);
     }
 
-private:
+private: // Handlers
     void event_loop();
 
-private:
+private: // Routes
     void append_trailing_slash(http::connection_ptr, const std::smatch &,
                                const http::request &, http::response &);
     void websocket(http::connection_ptr, const std::smatch &,
