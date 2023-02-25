@@ -25,11 +25,8 @@
 #include <ws/connection.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/core/detail/base64.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
-#include <boost/compute/detail/sha1.hpp>
 #include <iostream>
 #include <memory>
 #include <regex>
