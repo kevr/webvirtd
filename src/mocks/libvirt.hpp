@@ -23,10 +23,10 @@
 namespace webvirt::mocks
 {
 
-class libvirt : public webvirt::libvirt
+class libvirt_mock : public webvirt::libvirt
 {
 public:
-    ~libvirt() = default;
+    ~libvirt_mock() = default;
 
     MOCK_METHOD(connect_ptr, virConnectOpen, (const char *));
     MOCK_METHOD(int, virConnectRegisterCloseCallback,
@@ -74,6 +74,8 @@ public:
 
     MOCK_METHOD(int, virEventRegisterDefaultImpl, ());
 };
+
+using libvirt = testing::NiceMock<libvirt_mock>;
 
 }; // namespace webvirt::mocks
 
