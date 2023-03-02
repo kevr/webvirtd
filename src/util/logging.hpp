@@ -50,6 +50,25 @@ private:
                       const std::string &);
 };
 
+/** Extract 'namespace::classname' from __PRETTY_FUNCTION__ text
+ *
+ * @param pretty_function __PRETTY_FUNCTION__
+ * @returns 'namespace::classname' from __PRETTY_FUNCTION__
+ **/
+std::string pretty_function_prefix(const std::string &);
+
 }; // namespace webvirt
+
+#define CLASS_TRACE(message)                                                  \
+    webvirt::logger::debug(                                                   \
+        fmt::format("[{}] {}",                                                \
+                    webvirt::pretty_function_prefix(__PRETTY_FUNCTION__),     \
+                    message));
+
+#define CLASS_ETRACE(message)                                                 \
+    webvirt::logger::error(                                                   \
+        fmt::format("[{}] {}",                                                \
+                    webvirt::pretty_function_prefix(__PRETTY_FUNCTION__),     \
+                    message));
 
 #endif /* UTIL_LOGGING_HPP */

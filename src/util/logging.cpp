@@ -87,3 +87,12 @@ void logger::print(std::ostream &os, const std::string &prefix,
     }
     os << fmt::format("{}{} {}\n", ts, prefix, message);
 }
+
+std::string webvirt::pretty_function_prefix(const std::string &pretty_function)
+{
+    auto end = pretty_function.find('(');
+    end = pretty_function.rfind("::", end);
+    auto start = pretty_function.rfind("::", end - 1);
+    start = pretty_function.rfind("::", start - 1) + 2;
+    return pretty_function.substr(start, end - start);
+}
