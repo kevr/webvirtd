@@ -92,8 +92,9 @@ void connection::process_request()
     on_request_(shared_from_this(), request_, response_);
     response_.content_length(response_.body().size());
 
+    CLASS_TRACE("Processed request");
     if (beast::websocket::is_upgrade(request_)) {
-        logger::debug("Running websocket");
+        CLASS_TRACE("Running websocket");
         deadline_.cancel();
         websock_->run();
     } else {
@@ -119,6 +120,7 @@ void connection::async_read(beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec) {
+        CLASS_ETRACE(ec.message());
         const std::string func = __func__;
         return on_error_(func.c_str(), ec);
     }
@@ -129,12 +131,13 @@ void connection::async_read(beast::error_code ec, std::size_t bytes)
 void connection::async_write(beast::error_code ec, std::size_t)
 {
     if (ec) {
+        CLASS_ETRACE(ec.message());
         const std::string func = __func__;
         return on_error_(func.c_str(), ec);
     }
 
     deadline_.cancel();
-    logger::debug("Closing socket");
+    CLASS_TRACE("Closing socket");
     socket_.shutdown(net::unix::socket::shutdown_send, ec);
     on_close_();
 }
@@ -142,6 +145,7 @@ void connection::async_write(beast::error_code ec, std::size_t)
 void connection::async_deadline(beast::error_code ec)
 {
     if (ec == boost::asio::error::operation_aborted) {
+        CLASS_TRACE(ec.message());
         return;
     }
 

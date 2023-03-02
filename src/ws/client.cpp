@@ -71,6 +71,8 @@ std::size_t client::run()
 void client::client_on_connect(beast::error_code,
                                const std::string &request_uri)
 {
+    CLASS_TRACE("Connecting");
+
     ws_->set_option(beast::websocket::stream_base::timeout::suggested(
         beast::role_type::client));
     ws_->set_option(beast::websocket::stream_base::decorator(
@@ -93,7 +95,7 @@ void client::client_on_connect(beast::error_code,
 void client::client_on_handshake(beast::error_code ec)
 {
     if (ec) {
-        logger::error(fmt::format("Client error: {}", ec.message()));
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
 
@@ -107,10 +109,8 @@ void client::client_on_write(beast::error_code ec, std::size_t bytes)
 {
     boost::ignore_unused(bytes);
 
-    logger::info(fmt::format("Sent {} bytes", bytes));
-
     if (ec) {
-        logger::error(fmt::format("Client error: {}", ec.message()));
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
 
@@ -122,7 +122,7 @@ void client::client_on_read(beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec) {
-        logger::error(fmt::format("Client error: {}", ec.message()));
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
 
@@ -136,5 +136,5 @@ void client::client_on_read(beast::error_code ec, std::size_t bytes)
 
 void client::client_on_close(beast::error_code)
 {
-    return logger::info("Websocket client closed");
+    CLASS_TRACE("Closed");
 }

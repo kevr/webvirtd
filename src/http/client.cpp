@@ -112,7 +112,10 @@ void client::async_connect()
 
 void client::client_on_connect(boost::beast::error_code ec)
 {
+    CLASS_TRACE("Connecting");
+
     if (ec) {
+        CLASS_ETRACE(ec.message());
         return on_error_(__func__, ec);
     }
     on_connect_(*this);
@@ -129,6 +132,7 @@ void client::client_on_write(boost::beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec) {
+        CLASS_ETRACE(ec.message());
         return on_error_(__func__, ec);
     }
 
@@ -145,6 +149,7 @@ void client::client_on_read(boost::beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec) {
+        CLASS_ETRACE(ec.message());
         return on_error_(__func__, ec);
     }
     on_response_(response_);

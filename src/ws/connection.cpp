@@ -36,7 +36,7 @@ connection::connection(boost::asio::io_context &io, net::unix::socket &&sock,
 
 void connection::run()
 {
-    logger::debug("Dispatching websocket connection");
+    CLASS_TRACE("Dispatching websocket connection");
     boost::asio::dispatch(
         ws_.get_executor(),
         strand_.wrap(std::bind(&connection::async_run, shared_from_this())));
@@ -73,7 +73,7 @@ void connection::async_run()
 
     on_accept_(shared_from_this());
 
-    logger::debug("Waiting for websocket client handshake");
+    CLASS_TRACE("Waiting for handshake");
     // Accept the websocket handshake
     ws_.async_accept(request_,
                      strand_.wrap(std::bind(
@@ -82,12 +82,11 @@ void connection::async_run()
 
 void connection::async_accept(beast::error_code ec)
 {
-    logger::debug("Websocket handshake exchanged");
-
     if (ec) {
-        logger::error(ec.message());
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
+    CLASS_TRACE("Websocket handshake exchanged");
 
     // check_heartbeat();
     logger::info("Waiting for data...");
@@ -104,18 +103,17 @@ void connection::async_read(beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec == beast::websocket::error::closed) {
-        logger::debug("Websocket closed");
+        CLASS_TRACE("Websocket closed");
         return on_close_();
     } else if (ec) {
-        logger::error(ec.message());
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
 
-    logger::info(
-        fmt::format("WS Read: {}", beast::buffers_to_string(buffer_.data())));
+    logger::info(fmt::format("< Websocket: {}",
+                             beast::buffers_to_string(buffer_.data())));
     buffer_.consume(bytes);
 
-    logger::info("Waiting for data...");
     ws_.async_read(buffer_,
                    strand_.wrap(std::bind(
                        &connection::async_read, shared_from_this(), _1, _2)));
@@ -126,7 +124,7 @@ void connection::async_write(beast::error_code ec, std::size_t bytes)
     boost::ignore_unused(bytes);
 
     if (ec) {
-        logger::error(ec.message());
+        CLASS_ETRACE(ec.message());
         return on_error_(ec.message().c_str(), ec);
     }
 }
