@@ -13,6 +13,7 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include <util/json.hpp>
 #include <ws/pool.hpp>
 
 using namespace webvirt::websocket;
@@ -32,4 +33,16 @@ pool &pool::remove(const std::string &user, connection_ptr conn)
         return c == conn;
     }));
     return *this;
+}
+
+std::list<connection_ptr> &pool::operator[](const std::string &key)
+{
+    return map_[key];
+}
+
+void pool::broadcast(const std::string &user, Json::Value data)
+{
+    for (auto &ws : map_[user]) {
+        ws->write(json::stringify(data));
+    }
 }

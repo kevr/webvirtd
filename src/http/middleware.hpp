@@ -17,6 +17,7 @@
 #define HTTP_MIDDLEWARE_HPP
 
 #include <http/connection.hpp>
+#include <http/handlers.hpp>
 #include <http/types.hpp>
 #include <virt/connection.hpp>
 #include <virt/connection_pool.hpp>

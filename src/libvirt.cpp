@@ -149,6 +149,26 @@ int libvirt::virDomainCreate(domain_ptr domain)
     return ::virDomainCreate(domain.get());
 }
 
+int libvirt::virDomainRef(webvirt::domain *domain)
+{
+    return ::virDomainRef(domain);
+}
+
+int libvirt::virConnectDomainEventRegisterAny(
+    connect *conn, domain *domain, int event_id,
+    void (*cb)(webvirt::connect *, webvirt::domain *, void *), void *opaque,
+    void (*free_cb)(void *))
+{
+    return ::virConnectDomainEventRegisterAny(
+        conn, domain, event_id, cb, opaque, free_cb);
+}
+
+int libvirt::virConnectDomainEventDeregisterAny(connect_ptr conn,
+                                                int callback_id)
+{
+    return ::virConnectDomainEventDeregisterAny(conn.get(), callback_id);
+}
+
 int libvirt::virDomainGetState(domain_ptr domain, int *state, int *reason,
                                int flags)
 {

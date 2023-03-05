@@ -16,7 +16,10 @@
 #include <libvirt.hpp>
 #include <virt/event.hpp>
 
-using namespace webvirt::virt;
+#include <map>
+
+using namespace webvirt;
+using namespace virt;
 
 /* A no-op callback used for default event timeouts */
 void webvirt::virt::event_timeout(int, void *)
@@ -43,4 +46,15 @@ int event::register_impl()
 int event::run_one()
 {
     return libvirt::ref().virEventRunDefaultImpl();
+}
+
+event::event(virt::connection &conn)
+    : conn_(conn)
+{
+}
+
+event::~event()
+{
+    libvirt::ref().virConnectDomainEventDeregisterAny(conn_.get_ptr(),
+                                                      callback_id_);
 }

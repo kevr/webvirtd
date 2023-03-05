@@ -34,7 +34,7 @@ namespace webvirt
 /** A libvirt library call wrapper */
 class libvirt : public singleton<libvirt>
 {
-private:
+public:
     /** connect_ptr destruction functor */
     struct free_connect_ptr {
         void operator()(connect *);
@@ -77,6 +77,12 @@ public:
     // virDomain
     virtual domain_ptr virDomainLookupByName(connect_ptr, const char *);
     virtual int virDomainCreate(domain_ptr);
+    virtual int virDomainRef(webvirt::domain *);
+    virtual int virConnectDomainEventRegisterAny(
+        webvirt::connect *, webvirt::domain *, int,
+        void (*)(webvirt::connect *, webvirt::domain *, void *), void *,
+        void (*)(void *));
+    virtual int virConnectDomainEventDeregisterAny(connect_ptr, int);
     virtual int virDomainGetState(domain_ptr, int *, int *, int);
     virtual int virDomainGetID(domain_ptr);
     virtual const char *virDomainGetName(domain_ptr);

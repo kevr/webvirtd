@@ -52,6 +52,11 @@ public:
                 (connect_ptr, int));
     MOCK_METHOD(domain_ptr, virDomainLookupByName,
                 (connect_ptr, const char *));
+    MOCK_METHOD(int, virDomainCreate, (domain_ptr));
+    MOCK_METHOD(int, virConnectDomainEventRegisterAny,
+                (webvirt::connect *, webvirt::domain *, int,
+                 void (*)(webvirt::connect *, webvirt::domain *, void *),
+                 void *, void (*)(void *)));
     MOCK_METHOD(block_info_ptr, virDomainGetBlockInfo,
                 (domain_ptr, const char *, int));
     MOCK_METHOD(int, virDomainGetAutostart, (domain_ptr, int *));
@@ -61,7 +66,6 @@ public:
     MOCK_METHOD(int, virDomainSetMetadata,
                 (domain_ptr, int, const char *, const char *, const char *,
                  unsigned int));
-    MOCK_METHOD(int, virDomainCreate, (domain_ptr));
     MOCK_METHOD(int, virDomainShutdown, (domain_ptr));
     MOCK_METHOD(std::string, virDomainGetXMLDesc, (domain_ptr, int));
     MOCK_METHOD(int, virDomainGetState, (domain_ptr, int *, int *, int));
@@ -73,9 +77,11 @@ public:
                 (network_ptr, unsigned int));
 
     MOCK_METHOD(int, virEventRegisterDefaultImpl, ());
+    MOCK_METHOD(int, virEventRunDefaultImpl, ());
 };
 
-using libvirt = testing::NiceMock<libvirt_mock>;
+// using libvirt = testing::NiceMock<libvirt_mock>;
+using libvirt = libvirt_mock;
 
 }; // namespace webvirt::mocks
 

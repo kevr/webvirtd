@@ -31,3 +31,5 @@ if not get_option('disable_tests')
   )
   test('virt util test', virt_util_test)
 endif
+
+subdir('events')

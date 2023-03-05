@@ -119,6 +119,25 @@ int virDomainCreate(domain *)
     return 0;
 }
 
+int virDomainRef(domain *)
+{
+    return 0;
+}
+
+int virConnectDomainEventRegisterAny(webvirt::connect *, webvirt::domain *,
+                                     int,
+                                     void (*)(webvirt::connect *,
+                                              webvirt::domain *, void *),
+                                     void *, void (*)(void *))
+{
+    return 0;
+}
+
+int virConnectDomainEventDeregisterAny(webvirt::connect *, int)
+{
+    return 0;
+}
+
 int virDomainGetState(domain *, int *state, int *, int)
 {
     *state = 1;
@@ -171,9 +190,8 @@ int virDomainGetBlockInfo(domain *, const char *, block_info *, int)
     return 0;
 }
 
-int virDomainFree(domain *ptr)
+int virDomainFree(domain *)
 {
-    delete ptr;
     return 0;
 }
 

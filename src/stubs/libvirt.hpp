@@ -23,6 +23,52 @@
 
 #include <libvirt_types.hpp>
 
+enum virDomainEventType : int {
+    VIR_DOMAIN_EVENT_DEFINED,
+    VIR_DOMAIN_EVENT_UNDEFINED,
+    VIR_DOMAIN_EVENT_STARTED,
+    VIR_DOMAIN_EVENT_SUSPENDED,
+    VIR_DOMAIN_EVENT_RESUMED,
+    VIR_DOMAIN_EVENT_STOPPED,
+    VIR_DOMAIN_EVENT_SHUTDOWN,
+    VIR_DOMAIN_EVENT_PMSUSPENDED,
+    VIR_DOMAIN_EVENT_CRASHED,
+};
+
+enum virDomainEventID : int {
+    VIR_DOMAIN_EVENT_ID_LIFECYCLE,
+    VIR_DOMAIN_EVENT_ID_REBOOT,
+    VIR_DOMAIN_EVENT_ID_RTC_CHANGE,
+    VIR_DOMAIN_EVENT_ID_WATCHDOG,
+    VIR_DOMAIN_EVENT_ID_IO_ERROR,
+    VIR_DOMAIN_EVENT_ID_GRAPHICS,
+    VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON,
+    VIR_DOMAIN_EVENT_ID_CONTROL_ERROR,
+    VIR_DOMAIN_EVENT_ID_BLOCK_JOB,
+    VIR_DOMAIN_EVENT_ID_DISK_CHANGE,
+    VIR_DOMAIN_EVENT_ID_TRAY_CHANGE,
+    VIR_DOMAIN_EVENT_ID_PMWAKEUP,
+    VIR_DOMAIN_EVENT_ID_PMSUSPEND,
+    VIR_DOMAIN_EVENT_ID_BALLOON_CHANGE,
+    VIR_DOMAIN_EVENT_ID_PMSUSPEND_DISK,
+    VIR_DOMAIN_EVENT_ID_DEVICE_REMOVED,
+    VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2,
+    VIR_DOMAIN_EVENT_ID_TUNABLE,
+    VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE,
+    VIR_DOMAIN_EVENT_ID_DEVICE_ADDED,
+    VIR_DOMAIN_EVENT_ID_MIGRATION_ITERATION,
+    VIR_DOMAIN_EVENT_ID_JOB_COMPLETED,
+    VIR_DOMAIN_EVENT_ID_DEVICE_REMOVAL_FAILED,
+    VIR_DOMAIN_EVENT_ID_METADATA_CHANGE,
+    VIR_DOMAIN_EVENT_ID_BLOCK_THRESHOLD,
+    VIR_DOMAIN_EVENT_ID_MEMORY_FAILURE,
+    VIR_DOMAIN_EVENT_ID_MEMORY_DEVICE_SIZE_CHANGE,
+};
+
+#define VIR_DOMAIN_EVENT_CALLBACK(callback)                                   \
+    reinterpret_cast<void (*)(                                                \
+        webvirt::connect *, webvirt::domain *, void *)>(callback)
+
 enum virDomainState : int {
     VIR_DOMAIN_NOSTATE,
     VIR_DOMAIN_RUNNING,
@@ -65,6 +111,14 @@ int virConnectClose(webvirt::connect *);
 // virDomain
 webvirt::domain *virDomainLookupByName(webvirt::connect *, const char *);
 int virDomainCreate(webvirt::domain *);
+int virDomainRef(webvirt::domain *);
+int virConnectDomainEventRegisterAny(webvirt::connect *, webvirt::domain *,
+                                     int,
+                                     void (*)(webvirt::connect *,
+                                              webvirt::domain *, void *),
+                                     void *, void (*)(void *));
+
+int virConnectDomainEventDeregisterAny(webvirt::connect *, int);
 int virDomainGetState(webvirt::domain *, int *, int *, int);
 int virDomainGetID(webvirt::domain *);
 char *virDomainGetName(webvirt::domain *);

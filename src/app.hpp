@@ -22,6 +22,8 @@
 #include <views/domains.hpp>
 #include <views/host.hpp>
 #include <virt/connection_pool.hpp>
+#include <virt/events.hpp>
+#include <virt/events/lifecycle.hpp>
 #include <ws/connection.hpp>
 #include <ws/pool.hpp>
 
@@ -57,11 +59,16 @@ private:
 
     websocket::pool websockets_;
 
+    // username -> virt::events
+    std::map<std::string, virt::events> events_;
+
     std::atomic<bool> event_loop_ { true };
     std::atomic<bool> event_error_ { false };
     std::condition_variable event_cv_;
     std::mutex event_mutex_;
     std::thread event_thread_;
+
+    http::handler<virt::connection &> on_virt_event_registration_;
 
 public:
     /** Construct the application
@@ -95,6 +102,32 @@ public:
      **/
     http::server &server();
 
+    /** Remove application events for a particular virt::connection_pool
+     *
+     * @param conn libvirt connection
+     **/
+    void remove_events(virt::connection &);
+
+    /** Add application events for a particular virt::connection
+     *
+     * @param conn libvirt connection
+     * @param user libvirt connection's username
+     * @param lifecycle_cb Lifecycle event callback
+     **/
+    void add_events(
+        virt::connection &,
+        const virt::lifecycle_callback &lifecycle_cb =
+            virt::lifecycle_callback(virt::lifecycle_event::on_event_handler));
+
+    /** Return events bound to username
+     *
+     * @param username libvirt user's username
+     * @returns Reference to virt::events mapped to username
+     **/
+    virt::events &events(const std::string &);
+
+    handler_setter(on_virt_event_registration, on_virt_event_registration_);
+
 private: // Utilities
     template <typename Func, typename Pointer>
     auto bind(Func fn, Pointer ptr)
@@ -123,8 +156,9 @@ private: // Handlers
 private: // Routes
     void append_trailing_slash(http::connection_ptr, const std::smatch &,
                                const http::request &, http::response &);
-    void websocket(http::connection_ptr, const std::smatch &,
-                   const http::request &, http::response &);
+    void websocket(virt::connection &, http::connection_ptr,
+                   const std::smatch &, const http::request &,
+                   http::response &);
 };
 
 }; // namespace webvirt

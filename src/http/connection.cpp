@@ -18,6 +18,8 @@
 using namespace webvirt;
 using namespace http;
 
+using namespace std::placeholders;
+
 connection::connection(http::io_context &io, net::unix::socket socket,
                        std::chrono::milliseconds ms)
     : strand_(io)
@@ -60,13 +62,12 @@ std::shared_ptr<websocket::connection> connection::upgrade()
 
 void connection::read_request()
 {
-    beast::http::async_read(socket_,
-                            buffer_,
-                            request_,
-                            strand_.wrap(std::bind(&connection::async_read,
-                                                   shared_from_this(),
-                                                   std::placeholders::_1,
-                                                   std::placeholders::_2)));
+    beast::http::async_read(
+        socket_,
+        buffer_,
+        request_,
+        strand_.wrap(
+            std::bind(&connection::async_read, shared_from_this(), _1, _2)));
 }
 
 void connection::process_request()
@@ -101,18 +102,15 @@ void connection::process_request()
         beast::http::async_write(
             socket_,
             response_,
-            strand_.wrap(std::bind(&connection::async_write,
-                                   shared_from_this(),
-                                   std::placeholders::_1,
-                                   std::placeholders::_2)));
+            strand_.wrap(std::bind(
+                &connection::async_write, shared_from_this(), _1, _2)));
     }
 }
 
 void connection::check_deadline()
 {
-    deadline_.async_wait(strand_.wrap(std::bind(&connection::async_deadline,
-                                                shared_from_this(),
-                                                std::placeholders::_1)));
+    deadline_.async_wait(strand_.wrap(
+        std::bind(&connection::async_deadline, shared_from_this(), _1)));
 }
 
 void connection::async_read(beast::error_code ec, std::size_t bytes)

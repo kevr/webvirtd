@@ -65,6 +65,7 @@ void client::shutdown(net::unix::socket::shutdown_type type)
 
 std::size_t client::run()
 {
+    strand_.context().restart();
     return strand_.context().run();
 }
 

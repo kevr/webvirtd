@@ -80,6 +80,7 @@ http_route_function middleware::with_libvirt_domain(
                    const http::request &request,
                    http::response &response) {
             const std::string name(match[2]);
+
             virt::domain domain;
             try {
                 domain = conn.domain(name);
@@ -106,9 +107,9 @@ http_route_function middleware::with_libvirt(
                                        const std::smatch &match,
                                        const http::request &request,
                                        http::response &response) {
-        const std::string user = match[1];
+        const std::string user(match[1]);
 
-        virt::connection *conn;
+        virt::connection *conn = nullptr;
         try {
             conn = &pool.get(user);
         } catch (const std::runtime_error &e) {

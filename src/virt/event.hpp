@@ -16,6 +16,14 @@
 #ifndef VIRT_EVENT_HPP
 #define VIRT_EVENT_HPP
 
+#include <http/handlers.hpp>
+#include <util/signal.hpp>
+#include <virt/connection.hpp>
+#include <virt/domain.hpp>
+#include <virt/event_callback.hpp>
+
+#include <memory>
+
 namespace webvirt::virt
 {
 
@@ -33,6 +41,10 @@ void event_timeout_data_free(void *);
  **/
 class event
 {
+protected:
+    virt::connection &conn_;
+    int callback_id_ { -1 };
+
 public:
     /** Register libvirt default event implementation
      *
@@ -45,7 +57,27 @@ public:
      * @returns 0 on success, -1 on error
      **/
     static int run_one();
+
+public:
+    /** Construct an event handler
+     *
+     * This constructor binds the passed libvirt connection and domain
+     * to internal references, which are then accessed by internal
+     * libvirt event handler.
+     *
+     * Therefore, this event **must** not outlive the connection nor domain
+     * object which it depends on.
+     *
+     * @param conn libvirt connection
+     * @param event_id virDomainEventID
+     **/
+    event(virt::connection &);
+
+    /** Destruct this event */
+    virtual ~event();
 };
+
+using event_ptr = std::shared_ptr<event>;
 
 }; // namespace webvirt::virt
 

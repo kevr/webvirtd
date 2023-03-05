@@ -17,6 +17,7 @@
 #define HTTP_HANDLERS_HPP
 
 #include <http/types.hpp>
+#include <util/logging.hpp>
 
 #include <vector>
 
@@ -40,10 +41,7 @@ private:
     std::vector<type> functions_;
 
 public:
-    handler()
-    {
-        functions_.emplace_back(noop<args...>());
-    }
+    handler() = default;
 
     handler(const handler &o)
         : functions_(o.functions_)
@@ -66,16 +64,15 @@ public:
         functions_.clear();
     }
 
-    std::vector<type> &functions()
+    const std::vector<type> &functions() const
     {
         return functions_;
     }
 
-    void operator()(args... args_)
+    void operator()(args... args_) const
     {
-        for (int i = functions_.size() - 1; i >= 0; --i) {
-            auto fn = functions_[i];
-            fn(std::forward<args>(args_)...);
+        for (auto &f : functions_) {
+            f(args_...);
         }
     }
 };

@@ -18,6 +18,7 @@
 
 #include <ws/connection.hpp>
 
+#include <json/json.h>
 #include <list>
 #include <map>
 #include <mutex>
@@ -48,6 +49,10 @@ public:
      * @returns Reference to this
      **/
     pool &remove(const std::string &, connection_ptr);
+
+    std::list<connection_ptr> &operator[](const std::string &);
+
+    void broadcast(const std::string &, Json::Value);
 };
 
 using pool_ptr = std::shared_ptr<pool>;

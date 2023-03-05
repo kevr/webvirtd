@@ -13,9 +13,10 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "http/handlers.hpp"
+#include "util/signal.hpp"
 #include <app.hpp>
 #include <http/client.hpp>
+#include <http/handlers.hpp>
 #include <mocks/libvirt.hpp>
 #include <util/config.hpp>
 #include <util/retry.hpp>
@@ -53,6 +54,26 @@ public:
         uid = sys.getuid();
         auto *passwd = sys.getpwuid(uid);
         username = passwd->pw_name;
+
+        auto &conf = config::ref();
+        conf.add_option("threads",
+                        boost::program_options::value<unsigned>()
+                            ->default_value(1)
+                            ->multitoken(),
+                        "number of worker threads");
+        conf.add_option("libvirt-shutdown-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.01)
+                            ->multitoken(),
+                        "libvirt shutdown timeout");
+        conf.add_option("libvirt-shutoff-timeout",
+                        boost::program_options::value<double>()
+                            ->default_value(0.02)
+                            ->multitoken(),
+                        "libvirt shutoff timeout");
+
+        const char *argv[] = { "webvirtd" };
+        conf.parse(1, argv);
     }
 
     void TearDown() override
@@ -77,16 +98,6 @@ public:
     void SetUp() override
     {
         tmpdir_test::SetUp();
-
-        auto &conf = config::ref();
-        conf.add_option("threads",
-                        boost::program_options::value<unsigned>()
-                            ->default_value(1)
-                            ->multitoken(),
-                        "number of worker threads");
-
-        const char *argv[] = { "webvirtd" };
-        conf.parse(1, argv);
 
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
         client = std::make_shared<http::client>(client_io_, socket_path);
@@ -168,6 +179,8 @@ public:
 class websocket_test : public tmpdir_test
 {
 protected:
+    mocks::libvirt lv;
+
     http::io_context io_;
     std::shared_ptr<webvirt::app> app_;
     std::thread server_thread;
@@ -180,6 +193,14 @@ public:
     {
         tmpdir_test::SetUp();
         logger::enable_debug(true);
+
+        libvirt::change(lv);
+        auto conn = std::make_shared<webvirt::connect>();
+        EXPECT_CALL(lv, virConnectOpen(_)).WillOnce(Return(conn));
+        EXPECT_CALL(lv, virEventRegisterDefaultImpl());
+        EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
+            .WillOnce(Return(0));
+
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
         app_->server().on_close([this] {
             io_.stop();
@@ -194,6 +215,7 @@ public:
     void TearDown() override
     {
         server_thread.join();
+        libvirt::reset();
         logger::reset_debug();
         tmpdir_test::TearDown();
     }
@@ -351,6 +373,8 @@ TEST_F(mock_app_test, persistent_virt_connection)
 
 TEST_F(websocket_test, websocket)
 {
+    EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+
     std::string message("test");
     client->on_handshake([&](auto c, auto response) {
         std::stringstream ss;
@@ -370,6 +394,8 @@ TEST_F(websocket_test, websocket)
 
 TEST_F(websocket_test, error_on_read)
 {
+    EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+
     app_->server().on_error([this](const char *, beast::error_code) {
         io_.stop();
     });
@@ -400,6 +426,8 @@ TEST_F(websocket_test, error_on_accept)
 
 TEST_F(websocket_test, connection_write)
 {
+    EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+
     app_->server().on_handshake([](websocket::connection_ptr conn) {
         conn->write("test");
     });
@@ -417,6 +445,8 @@ TEST_F(websocket_test, connection_write)
 
 TEST_F(websocket_test, error_on_write)
 {
+    EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+
     app_->server().on_handshake([](auto ws) {
         ws->shutdown(net::unix::socket::shutdown_send);
         ws->write("test");
@@ -443,6 +473,58 @@ TEST_F(websocket_test, error_on_write)
         ws->async_write("test");
     });
 
-    client_io_.restart();
+    client->async_connect(endpoint).run();
+}
+
+TEST_F(websocket_test, events)
+{
+    EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+
+    virt::lifecycle_callback cb(virt::lifecycle_event::on_event_handler);
+    std::atomic<bool> ready = false;
+    virt::connection *conn_ = nullptr;
+    app_->on_virt_event_registration([&conn_, &ready](virt::connection &conn) {
+        conn_ = &conn;
+        ready = true;
+    });
+
+    EXPECT_CALL(lv, virDomainGetID(_)).WillOnce(Return(1));
+    EXPECT_CALL(lv, virDomainGetName(_)).WillOnce(Return("test"));
+    EXPECT_CALL(lv, virDomainGetState(_, _, _, _))
+        .WillOnce(Invoke([](auto, int *state, auto, auto) {
+            *state = VIR_DOMAIN_RUNNING;
+            return 0;
+        }));
+
+    webvirt::domain_ptr ptr_ = std::make_shared<webvirt::domain>();
+    EXPECT_CALL(lv, virEventRunDefaultImpl())
+        .WillRepeatedly(Invoke([this, &ready, &conn_, ptr_] {
+            if (!ready)
+                return 0;
+
+            virt::event_function cb =
+                virt::get_event_callback(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
+            virt::lifecycle_function f =
+                reinterpret_cast<virt::lifecycle_function>(
+                    reinterpret_cast<void *>(cb));
+
+            auto &events = app_->events(conn_->user());
+            auto &lifecycle_event = events.get(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
+
+            f(conn_->get_ptr().get(),
+              ptr_.get(),
+              VIR_DOMAIN_EVENT_SHUTDOWN,
+              0,
+              &lifecycle_event);
+
+            ready = false;
+            return 0;
+        }));
+
+    client->on_read([](auto client, auto text) {
+        client->close();
+        logger::info(text);
+    });
+    auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->async_connect(endpoint).run();
 }

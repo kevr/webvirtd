@@ -13,10 +13,12 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "util/logging.hpp"
 #include <app.hpp>
+#include <data/domain.hpp>
 #include <http/middleware.hpp>
-#include <virt/event.hpp>
+#include <util/logging.hpp>
+#include <virt/events/callbacks/lifecycle.hpp>
+#include <virt/events/lifecycle.hpp>
 
 #include <pugixml.hpp>
 
@@ -25,7 +27,6 @@ using namespace webvirt;
 using http::middleware::with_libvirt;
 using http::middleware::with_libvirt_domain;
 using http::middleware::with_methods;
-using http::middleware::with_user;
 
 app::app(http::io_context &io, const std::filesystem::path &socket_path)
     : io_(io)
@@ -35,9 +36,11 @@ app::app(http::io_context &io, const std::filesystem::path &socket_path)
     router_.route(R"(^.+[^/]$)", bind(&app::append_trailing_slash, this));
 
     // Websocket routes
-    router_.route(R"(^/users/([^/]+)/websocket/)",
-                  with_methods({ beast::http::verb::get },
-                               with_user(bind(&app::websocket, this))));
+    router_.route(
+        R"(^/users/([^/]+)/websocket/)",
+        with_methods(
+            { beast::http::verb::get },
+            with_libvirt(pool_, bind_libvirt(&app::websocket, this))));
 
     // Host routes
     router_.route(R"(^/users/([^/]+)/host/)",
@@ -140,6 +143,46 @@ http::server &app::server()
     return server_;
 }
 
+static constexpr int TARGET_LIFECYCLE_EVENTS =
+    (1 << VIR_DOMAIN_EVENT_STARTED) | (1 << VIR_DOMAIN_EVENT_SHUTDOWN) |
+    (1 << VIR_DOMAIN_EVENT_STOPPED);
+
+void app::remove_events(virt::connection &conn)
+{
+    const auto &user = conn.user();
+
+    auto it = events_.find(user);
+    if (it != events_.end()) {
+        auto &events = it->second;
+        events.remove(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
+        if (events.size() == 0) {
+            events_.erase(it);
+        }
+    }
+}
+
+void app::add_events(virt::connection &conn,
+                     const virt::lifecycle_callback &lifecycle_cb)
+{
+    const auto &user = conn.user();
+    auto ev = std::make_shared<virt::lifecycle_event>(
+        conn, lifecycle_cb, [this, user](auto &, auto &domain, int type, int) {
+            if ((1 << type) & TARGET_LIFECYCLE_EVENTS) {
+                websockets_.broadcast(user, data::simple_domain(domain));
+            }
+        });
+
+    auto &user_events = events_[user];
+    user_events.set(ev->id(), std::move(ev));
+
+    on_virt_event_registration_(conn);
+}
+
+virt::events &app::events(const std::string &username)
+{
+    return events_.at(username);
+}
+
 void app::event_loop()
 {
     if (virt::event::register_impl() == -1) {
@@ -174,16 +217,39 @@ void app::append_trailing_slash(http::connection_ptr,
     response.result(beast::http::status::temporary_redirect);
 }
 
-void app::websocket(http::connection_ptr http_conn,
-                    const std::smatch &location, const http::request &,
+void app::websocket(virt::connection &conn, http::connection_ptr http_conn,
+                    const std::smatch &, const http::request &,
                     http::response &)
 {
-    const std::string user(location[1]);
+    // Grab a local reference to libvirt connection's user, as it will
+    // be reused multiple times throughout this function.
+    const auto &user = conn.user();
 
+    // Upgrade the HTTP connection into a Websocket connection
     websocket::connection_ptr ws_conn = http_conn->upgrade();
-    ws_conn->on_close([this, user, ws_conn] {
+
+    // On successful websocket handshake, add libvirt events for the
+    // connection if they don't yet exist.
+    ws_conn->on_handshake([this, &conn, user](auto) {
+        if (events_.find(conn.user()) == events_.end()) {
+            add_events(conn);
+        }
+    });
+
+    // On close, remove the connection from internal websockets_ map
+    // bucket pertaining to `user`.
+    ws_conn->on_close([this, &conn, user, ws_conn] {
         // On closure, remove the ptr from websockets_
         websockets_.remove(user, ws_conn);
+
+        // If we just removed the last websocket from the user's pool
+        if (!websockets_[user].size()) {
+            // Then erase the user's event objects
+            remove_events(conn);
+        }
     });
+
+    // Finally, add the new Websocket connection, `ws_conn`, to internal
+    // websockets_ map under the `user` bucket.
     websockets_.add(user, std::move(ws_conn));
 }

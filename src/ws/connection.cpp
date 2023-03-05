@@ -13,18 +13,13 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include <boost/beast/core/stream_traits.hpp>
 #include <util/config.hpp>
 #include <util/logging.hpp>
 #include <ws/connection.hpp>
 
-#include <boost/asio/placeholders.hpp>
-#include <iostream>
-
 using namespace webvirt::websocket;
 
-using std::placeholders::_1;
-using std::placeholders::_2;
+using namespace std::placeholders;
 
 connection::connection(boost::asio::io_context &io, net::unix::socket &&sock,
                        http::request request)
@@ -37,7 +32,7 @@ connection::connection(boost::asio::io_context &io, net::unix::socket &&sock,
 void connection::run()
 {
     CLASS_TRACE("Dispatching websocket connection");
-    boost::asio::dispatch(
+    boost::asio::post(
         ws_.get_executor(),
         strand_.wrap(std::bind(&connection::async_run, shared_from_this())));
 }
@@ -88,14 +83,12 @@ void connection::async_accept(beast::error_code ec)
     }
     CLASS_TRACE("Websocket handshake exchanged");
 
-    // check_heartbeat();
-    logger::info("Waiting for data...");
-    on_handshake_(shared_from_this());
-    ws_.async_read(buffer_,
-                   std::bind(&connection::async_read,
-                             shared_from_this(),
-                             std::placeholders::_1,
-                             std::placeholders::_2));
+    auto ws_ptr = shared_from_this();
+    on_handshake_(ws_ptr);
+
+    ws_.async_read(
+        buffer_,
+        std::bind(&connection::async_read, std::move(ws_ptr), _1, _2));
 }
 
 void connection::async_read(beast::error_code ec, std::size_t bytes)

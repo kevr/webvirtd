@@ -13,55 +13,33 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#ifndef VIRT_PTR_TYPE_HPP
-#define VIRT_PTR_TYPE_HPP
+#ifndef VIRT_EVENT_CALLBACK_HPP
+#define VIRT_EVENT_CALLBACK_HPP
 
-#include <utility>
+#include <libvirt.hpp>
 
 namespace webvirt::virt
 {
 
-template <typename ptr_t>
-class ptr_type
+class event_callback
 {
 protected:
-    ptr_t ptr_;
+    void *fptr_ { nullptr };
+
+protected:
+    event_callback(void *fptr);
 
 public:
-    ptr_type() = default;
+    virtual ~event_callback() = default;
 
-    ptr_type(ptr_t ptr)
-        : ptr_(std::move(ptr))
-    {
-    }
-
-    ptr_type(const ptr_type &o)
-        : ptr_(o.ptr_)
-    {
-    }
-
-    ptr_type(ptr_type &&o)
-        : ptr_(std::move(o.ptr_))
-    {
-    }
-
-    ptr_type &operator=(ptr_type o)
-    {
-        ptr_ = std::move(o.ptr_);
-        return *this;
-    }
-
-    ptr_t get_ptr() const
-    {
-        return ptr_;
-    }
-
-    operator bool() const
-    {
-        return ptr_ != nullptr;
-    }
+    typedef void (*function)(webvirt::connect *, webvirt::domain *, void *);
+    virtual function function_ptr() const = 0;
 };
+
+typedef void (*event_function)(webvirt::connect *, webvirt::domain *, void *);
+event_function add_event_callback(int, event_function);
+event_function get_event_callback(int);
 
 }; // namespace webvirt::virt
 
-#endif /* VIRT_PTR_TYPE_HPP */
+#endif /* VIRT_EVENT_CALLBACK_HPP */
