@@ -37,6 +37,8 @@ bool virt::connection::closed()
 virt::connection::connection(const connection &conn)
     : conn_(conn.conn_)
     , errno_(conn.errno_)
+    , closed_(conn.closed_)
+    , user_(conn.user_)
 {
 }
 
@@ -64,6 +66,8 @@ virt::connection &virt::connection::operator=(const virt::connection &conn)
 {
     conn_ = conn.conn_;
     errno_ = conn.errno_;
+    closed_ = conn.closed_;
+    user_ = conn.user_;
     return *this;
 }
 
