@@ -98,6 +98,9 @@ public:
 
     /** Returns a reference to internal http::server
      *
+     * This reference is primarily used when testing internal implementations
+     * of this class externally.
+     *
      * @returns Reference to internal http::server
      **/
     http::server &server();
