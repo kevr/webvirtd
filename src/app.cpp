@@ -219,7 +219,7 @@ void app::append_trailing_slash(http::connection_ptr,
 
 void app::websocket(virt::connection &conn, http::connection_ptr http_conn,
                     const std::smatch &, const http::request &,
-                    http::response &)
+                    http::response &response)
 {
     // Grab a local reference to libvirt connection's user, as it will
     // be reused multiple times throughout this function.
@@ -252,4 +252,7 @@ void app::websocket(virt::connection &conn, http::connection_ptr http_conn,
     // Finally, add the new Websocket connection, `ws_conn`, to internal
     // websockets_ map under the `user` bucket.
     websockets_.add(user, std::move(ws_conn));
+
+    // Setup response status for logging purposes.
+    response.result(beast::http::status::switching_protocols);
 }
