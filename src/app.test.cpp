@@ -495,6 +495,7 @@ TEST_F(websocket_test, events)
             *state = VIR_DOMAIN_RUNNING;
             return 0;
         }));
+    EXPECT_CALL(lv, virDomainGetMetadata(_, _, _, _)).Times(2);
 
     webvirt::domain_ptr ptr_ = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virEventRunDefaultImpl())
