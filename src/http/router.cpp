@@ -54,14 +54,11 @@ void http::router::run(http::connection_ptr http_conn,
         set_response(response, res, beast::http::status::not_found);
     };
 
-    bench<double> bench_;
     for (auto &route : routes_) {
         const std::regex &re = regex_.at(route.first);
         std::smatch match;
         if (std::regex_match(request_uri, match, re)) {
             next = [&, match] {
-                bench_.start();
-
                 try {
                     // Try route.second five times.
                     retry([&, match] {
@@ -69,21 +66,21 @@ void http::router::run(http::connection_ptr http_conn,
                         route.second(
                             std::move(http_conn), match, request, response);
                     }).retries(5)();
-                } catch (std::exception &exc) {
+                } catch (const std::exception &exc) {
                     // If it fails the sixth time, catch its std::domain_error.
                     http::set_response(
                         response,
                         json::error(exc.what()),
                         beast::http::status::internal_server_error);
                 }
-
-                bench_.end();
             };
             break;
         }
     }
 
+    bench<double> bench_;
     next();
+    bench_.end();
 
     int status_code = response.result_int();
     if (status_code >= 400) {
@@ -95,14 +92,14 @@ void http::router::run(http::connection_ptr http_conn,
     double elapsed = bench_.elapsed() * 1000;
     auto major = response.version() / 10;
     auto minor = response.version() % 10;
-    log(fmt::format("\"{} {} HTTP/{}.{}\" {} {} (took {}ms)",
+    log(fmt::format("\"{} {} HTTP/{}.{}\" {} {} (took {:.1f}ms)",
                     method,
                     request_uri,
                     major,
                     minor,
                     response.result_int(),
                     response.body().size(),
-                    int(elapsed)));
+                    elapsed));
 }
 
 void http::router::route(const std::string &request_uri,
