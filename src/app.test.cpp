@@ -523,7 +523,7 @@ TEST_F(websocket_test, events)
 
     client->on_read([](auto client, auto text) {
         client->close();
-        logger::info(text);
+        std::cout << text;
     });
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->async_connect(endpoint).run();
