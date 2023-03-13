@@ -149,7 +149,7 @@ static constexpr int TARGET_LIFECYCLE_EVENTS =
 
 void app::remove_events(virt::connection &conn)
 {
-    std::lock_guard<std::mutex> guard(events_mtx_);
+    std::lock_guard<std::mutex> guard(events_mutex_);
 
     const auto &user = conn.user();
     auto it = events_.find(user);
@@ -165,7 +165,7 @@ void app::remove_events(virt::connection &conn)
 void app::add_events(virt::connection &conn,
                      const virt::lifecycle_callback &lifecycle_cb)
 {
-    std::lock_guard<std::mutex> guard(events_mtx_);
+    std::lock_guard<std::mutex> guard(events_mutex_);
 
     const auto &user = conn.user();
     auto ev = std::make_shared<virt::lifecycle_event>(
@@ -183,7 +183,7 @@ void app::add_events(virt::connection &conn,
 
 virt::events &app::events(const std::string &username)
 {
-    std::lock_guard<std::mutex> guard(events_mtx_);
+    std::lock_guard<std::mutex> guard(events_mutex_);
     return events_.at(username);
 }
 
