@@ -63,12 +63,12 @@ public:
                         "number of worker threads");
         conf.add_option("libvirt-shutdown-timeout",
                         boost::program_options::value<double>()
-                            ->default_value(0.01)
+                            ->default_value(0.001)
                             ->multitoken(),
                         "libvirt shutdown timeout");
         conf.add_option("libvirt-shutoff-timeout",
                         boost::program_options::value<double>()
-                            ->default_value(0.02)
+                            ->default_value(0.002)
                             ->multitoken(),
                         "libvirt shutoff timeout");
 
