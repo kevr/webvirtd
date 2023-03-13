@@ -42,6 +42,7 @@ std::list<connection_ptr> &pool::operator[](const std::string &key)
 
 void pool::broadcast(const std::string &user, Json::Value data)
 {
+    std::lock_guard<std::mutex> guard(mutex_);
     for (auto &ws : map_[user]) {
         ws->write(json::stringify(data));
     }
