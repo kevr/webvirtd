@@ -21,6 +21,7 @@
 
 #include <map>
 #include <memory>
+#include <thread>
 
 namespace webvirt::virt
 {
@@ -28,6 +29,7 @@ namespace webvirt::virt
 /** A collection of webvirt::virt::event objects */
 class events
 {
+    std::mutex events_mutex_;
     std::map<int, event_ptr> events_;
 
 public:
@@ -67,7 +69,7 @@ public:
      *
      * @returns Size of internal events mapping
      **/
-    std::size_t size() const;
+    std::size_t size();
 };
 
 }; // namespace webvirt::virt
