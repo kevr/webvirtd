@@ -190,13 +190,12 @@ void app::event_loop()
     }
     logger::info("Registered default libvirt event implementation");
 
-    logger::info("Event loop started");
-
     event_cv_.notify_one();
     if (event_error_) {
         return;
     }
 
+    logger::info("Event loop started");
     while (event_loop_) {
         // Run a single event loop iteration. Errors are logged
         // via libvirt's on error handler.
