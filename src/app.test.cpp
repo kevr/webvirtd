@@ -153,6 +153,9 @@ public:
         const char *argv[] = { "webvirtd" };
         conf.parse(1, argv);
 
+        EXPECT_CALL(lv, virEventRegisterDefaultImpl())
+            .WillRepeatedly(Return(0));
+        EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
             .WillRepeatedly(
                 Invoke([&](connect_ptr,
@@ -201,15 +204,13 @@ public:
         EXPECT_CALL(lv, virConnectRegisterCloseCallback(_, _, _, _))
             .WillOnce(Return(0));
 
+        client = std::make_shared<websocket::client>(client_io_,
+                                                     socket_path.c_str());
+
         app_ = std::make_shared<webvirt::app>(io_, socket_path);
         app_->server().on_close([this] {
             io_.stop();
         });
-        server_thread = std::thread([this] {
-            app_->run();
-        });
-        client = std::make_shared<websocket::client>(client_io_,
-                                                     socket_path.c_str());
     }
 
     void TearDown() override
@@ -218,6 +219,14 @@ public:
         libvirt::reset();
         logger::reset_debug();
         tmpdir_test::TearDown();
+    }
+
+protected:
+    void start_app()
+    {
+        server_thread = std::thread([this] {
+            app_->run();
+        });
     }
 };
 
@@ -374,6 +383,9 @@ TEST_F(mock_app_test, persistent_virt_connection)
 TEST_F(websocket_test, websocket)
 {
     EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+    EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
+
+    start_app();
 
     std::string message("test");
     client->on_handshake([&](auto c, auto response) {
@@ -395,6 +407,7 @@ TEST_F(websocket_test, websocket)
 TEST_F(websocket_test, error_on_read)
 {
     EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+    EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
 
     app_->server().on_error([this](const char *, beast::error_code) {
         io_.stop();
@@ -403,19 +416,24 @@ TEST_F(websocket_test, error_on_read)
         client->shutdown(net::unix::socket::shutdown_both);
     });
 
+    start_app();
+
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->async_connect(endpoint).run();
 }
 
 TEST_F(websocket_test, error_on_accept)
 {
+    EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
+
     app_->server().on_error([this](const char *, beast::error_code) {
         io_.stop();
     });
     app_->server().on_websock_accept([](auto websock) {
-        logger::info("on_websock_accept");
         websock->shutdown(net::unix::socket::shutdown_both);
     });
+
+    start_app();
 
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->on_error([this](const char *, beast::error_code) {
@@ -427,10 +445,13 @@ TEST_F(websocket_test, error_on_accept)
 TEST_F(websocket_test, connection_write)
 {
     EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+    EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
 
     app_->server().on_handshake([](websocket::connection_ptr conn) {
         conn->write("test");
     });
+
+    start_app();
 
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     std::string message;
@@ -446,11 +467,14 @@ TEST_F(websocket_test, connection_write)
 TEST_F(websocket_test, error_on_write)
 {
     EXPECT_CALL(lv, virConnectDomainEventRegisterAny(_, _, _, _, _, _));
+    EXPECT_CALL(lv, virEventRunDefaultImpl()).WillRepeatedly(Return(0));
 
     app_->server().on_handshake([](auto ws) {
         ws->shutdown(net::unix::socket::shutdown_send);
         ws->write("test");
     });
+
+    start_app();
 
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->on_error([this](const char *, beast::error_code) {
@@ -500,32 +524,35 @@ TEST_F(websocket_test, events)
     webvirt::domain_ptr ptr_ = std::make_shared<webvirt::domain>();
     EXPECT_CALL(lv, virEventRunDefaultImpl())
         .WillRepeatedly(Invoke([this, &ready, &conn_, ptr_] {
-            if (!ready)
-                return 0;
+            if (ready) {
+                virt::event_function cb =
+                    virt::get_event_callback(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
+                virt::lifecycle_function f =
+                    reinterpret_cast<virt::lifecycle_function>(
+                        reinterpret_cast<void *>(cb));
 
-            virt::event_function cb =
-                virt::get_event_callback(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
-            virt::lifecycle_function f =
-                reinterpret_cast<virt::lifecycle_function>(
-                    reinterpret_cast<void *>(cb));
+                auto &events = app_->events(conn_->user());
+                auto &lifecycle_event =
+                    events.get(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
 
-            auto &events = app_->events(conn_->user());
-            auto &lifecycle_event = events.get(VIR_DOMAIN_EVENT_ID_LIFECYCLE);
+                f(conn_->get_ptr().get(),
+                  ptr_.get(),
+                  VIR_DOMAIN_EVENT_SHUTDOWN,
+                  0,
+                  &lifecycle_event);
 
-            f(conn_->get_ptr().get(),
-              ptr_.get(),
-              VIR_DOMAIN_EVENT_SHUTDOWN,
-              0,
-              &lifecycle_event);
-
-            ready = false;
+                ready = false;
+            }
             return 0;
         }));
 
     client->on_read([](auto client, auto text) {
-        client->close();
         std::cout << text;
+        client->close();
     });
+
+    start_app();
+
     auto endpoint = fmt::format("/users/{}/websocket/", username);
     client->async_connect(endpoint).run();
 }
