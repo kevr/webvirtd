@@ -20,20 +20,24 @@ using namespace virt;
 
 void events::set(int key, event_ptr &&ev)
 {
+    std::lock_guard<std::mutex> guard(events_mutex_);
     events_.emplace(key, std::move(ev));
 }
 
 virt::event &events::get(int event_id)
 {
+    std::lock_guard<std::mutex> guard(events_mutex_);
     return *events_.at(event_id);
 }
 
 void events::remove(int key)
 {
+    std::lock_guard<std::mutex> guard(events_mutex_);
     events_.erase(events_.find(key));
 }
 
-std::size_t events::size() const
+std::size_t events::size()
 {
+    std::lock_guard<std::mutex> guard(events_mutex_);
     return events_.size();
 }

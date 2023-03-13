@@ -20,6 +20,7 @@
 
 #include <map>
 #include <string>
+#include <thread>
 
 namespace webvirt::virt
 {
@@ -28,6 +29,7 @@ class connection_pool
 {
 private:
     // username -> connection
+    std::mutex connection_mutex_;
     std::map<std::string, connection> connections_;
 
 public:
