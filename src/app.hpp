@@ -60,6 +60,7 @@ private:
     websocket::pool websockets_;
 
     // username -> virt::events
+    std::mutex events_mutex_;
     std::map<std::string, virt::events> events_;
 
     std::atomic<bool> event_loop_ { true };

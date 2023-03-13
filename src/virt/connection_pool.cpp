@@ -22,8 +22,9 @@ using namespace webvirt::virt;
 
 connection &connection_pool::get(const std::string &user)
 {
-    bench<double> bench_;
+    std::lock_guard<std::mutex> guard(connection_mutex_);
 
+    bench<double> bench_;
     auto iter = connections_.find(user);
     if (iter == connections_.end()) {
         connections_[user] = virt::connection();

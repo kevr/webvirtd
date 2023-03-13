@@ -37,6 +37,7 @@ pool &pool::remove(const std::string &user, connection_ptr conn)
 
 std::list<connection_ptr> &pool::operator[](const std::string &key)
 {
+    std::lock_guard<std::mutex> guard(mutex_);
     return map_[key];
 }
 
