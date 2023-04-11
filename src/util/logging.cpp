@@ -22,6 +22,7 @@ using namespace webvirt;
 
 std::atomic<bool> logger::debug_ { false };
 std::atomic<bool> logger::time_ { true };
+std::mutex logger::mutex_;
 
 void logger::info(const std::string &message)
 {
@@ -71,6 +72,7 @@ std::string logger::timestamp()
 {
     auto now = std::time({});
     char format[std::size("dd/Mon/yyyy hh:mm:ss")];
+    std::lock_guard<std::mutex> guard(mutex_);
     std::strftime(std::data(format),
                   std::size(format),
                   "%d/%b/%Y %H:%M:%S",
