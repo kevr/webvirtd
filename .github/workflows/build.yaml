@@ -44,7 +44,7 @@ jobs:
         env:
           CC: "ccache gcc"
           CXX: "ccache g++"
-        run: meson setup --buildtype release -Ddisable_tests=true build
+        run: meson setup --buildtype release -Dtests=false build
 
       - name: Build Project
         run: ninja -C build -j2

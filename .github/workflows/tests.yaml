@@ -44,7 +44,7 @@ jobs:
         env:
           CC: "ccache gcc"
           CXX: "ccache g++"
-        run: meson setup -Db_coverage=true -Ddisable_bin=true build
+        run: meson setup -Db_coverage=true -Dbinary=false build
 
       - name: Build Project
         run: ninja -C build -j2
