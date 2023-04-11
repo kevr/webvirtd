@@ -1,4 +1,4 @@
-if not get_option('disable_tests')
+if get_option('tests')
   virt_lifecycle_event_test = executable(
     'lifecycle.test',
     'lifecycle.test.cpp',

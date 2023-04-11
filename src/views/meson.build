@@ -1,4 +1,4 @@
-if not get_option('disable_tests')
+if get_option('tests')
   views_domains_test = executable(
     'domains.test',
     'domains.test.cpp',

@@ -48,7 +48,7 @@ sources = [
   'stubs/io_context.cpp',
 ]
 
-if not get_option('disable_tests')
+if get_option('tests')
   flags += ['-g']
 
   libwebvirtd_test = static_library(
@@ -66,7 +66,7 @@ if not get_option('disable_tests')
   test_deps = [webvirtd_test_dep] + test_deps
 endif
 
-if not get_option('disable_bin')
+if get_option('binary')
   libwebvirtd = static_library(
     'webvirtd',
     sources,
@@ -79,9 +79,7 @@ if not get_option('disable_bin')
   )
 
   deps = [webvirtd_dep] + deps
-endif
 
-if not get_option('disable_bin')
   executable('webvirtd',
              'main.cpp',
              dependencies : deps,
@@ -89,7 +87,7 @@ if not get_option('disable_bin')
              install : true)
 endif
 
-if not get_option('disable_tests')
+if get_option('tests')
   main_test = executable(
     'main.test',
     'main.test.cpp',

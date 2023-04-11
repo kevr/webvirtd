@@ -1,4 +1,4 @@
-if not get_option('disable_tests')
+if get_option('tests')
   virt_connection_test = executable(
     'connection.test',
     'connection.test.cpp',

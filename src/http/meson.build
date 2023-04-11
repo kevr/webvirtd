@@ -1,5 +1,5 @@
 
-if not get_option('disable_tests')
+if get_option('tests')
   server_test = executable(
     'server.test',
     'server.test.cpp',

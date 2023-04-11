@@ -1,4 +1,4 @@
-if not get_option('disable_tests')
+if get_option('tests')
   config_test = executable(
     'config.test',
     'config.test.cpp',
