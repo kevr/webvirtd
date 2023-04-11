@@ -14,10 +14,13 @@ Configuration
 To compile webvirtd, it must first be configured using [meson](https://mesonbuild.com/):
 
     ## Release build
-    $ meson setup --buildtype release -Ddisable_tests=true builddir
+    $ meson setup --buildtype release -Dtests=false builddir
 
     ## Development build
     $ meson setup --buildtype debug -Db_coverage=true builddir
+
+    ## Development build without binary
+    $ meson setup --buildtype debug -Db_coverage=true -Dbinary=false builddir
 
 Compilation
 -----------
