@@ -16,6 +16,9 @@
 #ifndef SINGLETON_HPP
 #define SINGLETON_HPP
 
+#include <mutex>
+#include <thread>
+
 namespace webvirt
 {
 
@@ -26,6 +29,7 @@ class singleton
 private:
     inline static derivative instance_;
     inline static derivative *ptr_ = &instance_;
+    inline static std::mutex mutex_;
 
 public:
     /** Return the currently stored reference
@@ -34,6 +38,7 @@ public:
      **/
     static derivative &ref()
     {
+        std::lock_guard<std::mutex> guard(mutex_);
         return *ptr_;
     }
 
@@ -43,8 +48,9 @@ public:
      **/
     static derivative &change(derivative &ref_)
     {
+        std::lock_guard<std::mutex> guard(mutex_);
         ptr_ = &ref_;
-        return ref();
+        return *ptr_;
     }
 
     /** Reset the stored reference to default
@@ -53,8 +59,9 @@ public:
      **/
     static derivative &reset()
     {
+        std::lock_guard<std::mutex> guard(mutex_);
         ptr_ = &instance_;
-        return ref();
+        return *ptr_;
     }
 };
 

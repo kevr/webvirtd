@@ -21,6 +21,7 @@
 #include <fmt/format.h>
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <string>
 
 namespace webvirt
@@ -31,6 +32,7 @@ class logger
 private:
     static std::atomic<bool> debug_;
     static std::atomic<bool> time_;
+    static std::mutex mutex_;
 
 public:
     static void info(const std::string &);
